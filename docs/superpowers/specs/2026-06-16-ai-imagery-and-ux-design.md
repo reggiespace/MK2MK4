@@ -45,6 +45,10 @@ system.** Slides are flat solid-color cards rendered by Pillow
 - **Image prompts come from the LLM** that writes the slides (web side, where the
   OpenAI key lives). The worker only consumes a prompt + style and calls fal.ai.
 - **AI imagery applies to all formats**: single image, carousel, reel.
+- **Reel motion** (fal.ai image-to-video) is a **per-piece opt-in toggle**, built in
+  phase 1. Ken Burns over the still remains the default and the fallback. Motion
+  animates the **background only**; text/scrim/logo overlay statically on top so
+  captions stay crisp.
 - **Art direction** is a per-brand setting with presets: `warm_lifestyle` (default),
   `editorial_illustration`, `cinematic`. (Abstract dropped per operator.)
 - **Strict safety guardrails** on every prompt: no before/after bodies, no
@@ -95,10 +99,28 @@ optional `background_image: bytes | None`:
 - Editable from Settings.
 - Passed through the render payload to the worker.
 
+### 4b. Reel motion (fal.ai image-to-video)
+- **Schema:** add `ContentPiece.motion Boolean @default(false)` (per-piece opt-in).
+- **Worker:** `imagery.py` gains `animate_background(image_bytes, art_direction, size) ->
+  bytes | None` — fal.ai image-to-video (Kling/Luma/WAN-class; model id configurable,
+  confirmed against fal docs at plan time). Returns `None` on failure → caller falls
+  back to the Ken Burns still.
+- **Text-as-overlay:** `render_slide` gains a transparent-layer mode that renders only
+  scrim + eyebrow/headline/body/accent/logo on a transparent canvas (no background).
+- **Reel assembly** ([`reel.py`](../../../apps/worker/app/renderer/reel.py)): when
+  `motion` is on, per slide — generate still bg → animate it → ffmpeg `overlay` the
+  static transparent text PNG onto the moving clip (cover-fit to 1080×1920) → xfade
+  between clips → mux ElevenLabs VO. When `motion` is off (or animation fails), keep
+  the current looped-still + zoompan Ken Burns path with the composited frame.
+- **Cost:** each animated clip records `MediaAsset.costCents`; rolled into the piece.
+  Image-to-video is materially pricier (~$0.10–0.50+ per clip) and slower (async),
+  which the existing status polling already accommodates.
+
 ### 5. Render data flow
-- `pieces/[id]/render/route.ts` payload: add `imagePrompt` to each slide and
-  `artDirection` to `brandKit`.
-- Worker `SlideInput` gains `imagePrompt`; `BrandKitInput` gains `artDirection`.
+- `pieces/[id]/render/route.ts` payload: add `imagePrompt` to each slide,
+  `artDirection` to `brandKit`, and the piece-level `motion` flag.
+- Worker `SlideInput` gains `imagePrompt`; `BrandKitInput` gains `artDirection`;
+  `RenderRequest` gains `motion`.
 - Worker generates an image per slide (cached), composites, saves each as a
   `MediaAsset` (`engine: fal`, `prompt`, `costCents`, `meta`).
 - **Callback** ([`api/worker/callback`](../../../apps/web/src/app/api/worker/callback))
@@ -119,6 +141,9 @@ optional `background_image: bytes | None`:
 - **Render status polling:** the review page polls `GET /api/pieces/[id]/render` (or
   job status) while a job is running, shows a progress bar, and auto-swaps in the
   finished image/video — no manual refresh.
+- **Motion toggle (reels):** a per-piece "Animate (AI motion)" switch in the reel
+  review panel, persisted via `PATCH /api/pieces/[id]`, with an inline note that it
+  costs more and takes longer. Off by default.
 
 ### 8. Logo
 - Place `assets/brands/logo-iq-transparent.png` (operator-provided, transparent PNG).
@@ -143,19 +168,26 @@ optional `background_image: bytes | None`:
 - **Integration:** render a reel with the mock image engine → MP4 has non-black frames
   with composited text; `MediaAsset` rows + `Slide.mediaAssetId` linked; preview shows
   the real image; cost rolled up.
+- **Motion path:** with a mock video engine, a `motion: true` reel overlays the static
+  text PNG onto animated clips and stays caption-legible; animation failure falls back
+  to the Ken Burns still without failing the job; cost recorded per clip.
 - **Manual:** generate a piece per format per art-direction preset; verify logo
   legibility on each skin; verify status polling + auto-swap.
 
 ## Phasing (for the implementation plan)
 
-1. **Imagery core** — schema (`Slide.imagePrompt`, `BrandKit.artDirection`), prompt
-   builder + LLM emit, worker `imagery.py`, compositing + scrim, callback persistence,
-   fallback. (Fixes the black screen.)
-2. **Logo** — place asset, per-skin chip compositing.
-3. **Preview parity** — align web preview to renderer output.
-4. **Navigation & status** — Pieces library, back-nav fix, render-status polling.
+1. **Imagery core** — schema (`Slide.imagePrompt`, `BrandKit.artDirection`,
+   `ContentPiece.motion`), prompt builder + LLM emit, worker `imagery.py`,
+   compositing + scrim, callback persistence, fallback. (Fixes the black screen.)
+2. **Reel motion** — `animate_background`, transparent text-overlay mode, motion-aware
+   reel assembly, motion toggle UI + cost note, Ken Burns fallback.
+3. **Logo** — place asset, per-skin chip compositing.
+4. **Preview parity** — align web preview to renderer output.
+5. **Navigation & status** — Pieces library, back-nav fix, render-status polling.
 
 ## Open implementation details (resolved during planning)
 
-- Exact fal.ai model id + request shape — confirm against current fal docs.
+- Exact fal.ai image **and** image-to-video model ids + request shapes — confirm against
+  current fal docs.
+- Animated clip length vs. `SLIDE_DURATION_S` (loop/trim a short clip to fill 4s).
 - Whether to also offer a per-piece art-direction override (default: brand-level only).
