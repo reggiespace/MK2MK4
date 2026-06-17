@@ -7,7 +7,7 @@ WORKDIR /app
 FROM base AS deps
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/web/package.json ./apps/web/package.json
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --prod=false
 
 # ---- build ----
 FROM base AS build
@@ -28,11 +28,13 @@ COPY --from=build /app/apps/web/public ./apps/web/public
 # Prisma CLI + adapter needed at runtime for entrypoint migrations
 COPY --from=build /app/apps/web/node_modules/prisma ./apps/web/node_modules/prisma
 COPY --from=build /app/apps/web/node_modules/@prisma ./apps/web/node_modules/@prisma
+COPY --from=build /app/apps/web/node_modules/bcryptjs ./apps/web/node_modules/bcryptjs
 COPY --from=build /app/apps/web/prisma ./apps/web/prisma
 RUN mkdir -p apps/web/node_modules/.bin && \
     ln -sf ../prisma/build/index.js apps/web/node_modules/.bin/prisma && \
     chmod +x apps/web/node_modules/prisma/build/index.js
+COPY infra/init-operator.js /init-operator.js
 COPY infra/entrypoint-web.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN chmod +x /init-operator.js /entrypoint.sh
 EXPOSE 3000
 ENTRYPOINT ["/entrypoint.sh"]
