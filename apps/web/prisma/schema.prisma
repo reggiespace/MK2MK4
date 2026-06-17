@@ -62,6 +62,7 @@ model BrandKit {
   tokens    Json // { moss, slate, brass, cream, ink, darkBg, darkFg, ... }
   fonts     Json // { display: "Spectral", body: "Albert Sans", mono: "IBM Plex Mono" }
   defaultSkin Skin  @default(mark_forward)
+  artDirection ArtDirection @default(warm_lifestyle)
   toneGuide String  @db.Text
   voiceId   String // ElevenLabs voice id for this locale
 }
@@ -119,6 +120,12 @@ enum Skin {
   mark_forward
 }
 
+enum ArtDirection {
+  warm_lifestyle
+  editorial_illustration
+  cinematic
+}
+
 enum PieceStatus {
   draft
   rendering
@@ -142,6 +149,7 @@ model ContentPiece {
   formatRationale String? @db.Text
   voiceover   String?     @db.Text // reel narration script
   voiceGender VoiceGender? // reel voiceover gender; null → female default
+  motion      Boolean     @default(false) // reel AI motion (image-to-video) opt-in
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -167,6 +175,7 @@ model Slide {
   eyebrow       String?
   headline      String?
   body          String?    @db.Text
+  imagePrompt   String?    @db.Text // literal scene description for fal.ai
   mediaAssetId  String?
   mediaAsset    MediaAsset? @relation("SlideAsset", fields: [mediaAssetId], references: [id], onDelete: SetNull)
 

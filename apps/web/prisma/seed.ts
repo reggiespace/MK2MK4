@@ -70,6 +70,7 @@ async function seedBrand(opts: {
       tokens: VESSEL_TOKENS,
       fonts: FONTS,
       defaultSkin: "mark_forward",
+      artDirection: "warm_lifestyle",
       toneGuide: opts.tone,
       voiceId: "", // TODO: set ElevenLabs voice id per locale
     },
