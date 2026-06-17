@@ -398,6 +398,14 @@ In `config.py`, in `Settings`, add:
     fal_video_model: str = os.getenv("FAL_VIDEO_MODEL", "fal-ai/bytedance/seedance/v1/lite/image-to-video")
 ```
 
+**Model selection (defaults chosen; swap via env):**
+- Image default `fal-ai/flux/schnell` (~$0.003/img, fast — backgrounds sit under a scrim).
+  Premium swap: `fal-ai/flux-pro/v1.1` (~$0.04) for hero/cover/single posts;
+  `fal-ai/recraft/v3` for the `editorial_illustration` art direction.
+- Video default `fal-ai/bytedance/seedance/v1/lite/image-to-video` ($0.18 / 5s 720p — a
+  backdrop behind crisp text). Premium swap: `.../pro/...` (~$0.62 / 5s 1080p).
+- A 5-slide motion reel ≈ $0.90 (lite) or ≈ $3.10 (pro); stills-only ≈ cents.
+
 - [ ] **Step 2: Write the failing test**
 
 `apps/worker/tests/test_imagery.py`:
@@ -420,7 +428,7 @@ def test_caches_by_prompt_hash(monkeypatch, tmp_path):
     monkeypatch.setattr(imagery, "_cache_dir", lambda: tmp_path)
     calls = {"n": 0}
 
-    def fake_call(prompt, model, size):
+    def fake_call(prompt, model, size, seed):
         calls["n"] += 1
         return b"PNGDATA"
 
@@ -438,7 +446,7 @@ def test_caches_by_prompt_hash(monkeypatch, tmp_path):
 def test_falls_back_to_none_on_error(monkeypatch, tmp_path):
     monkeypatch.setattr(imagery, "_cache_dir", lambda: tmp_path)
 
-    def boom(prompt, model, size):
+    def boom(prompt, model, size, seed):
         raise RuntimeError("fal down")
 
     monkeypatch.setattr(imagery, "_fal_image", boom)
@@ -480,28 +488,31 @@ def _cache_dir() -> Path:
     return d
 
 
-def _key(art_direction: str, prompt: str, size: tuple[int, int]) -> str:
+def _key(art_direction: str, prompt: str, size: tuple[int, int], seed: int | None) -> str:
     raw = f"{art_direction}|{prompt}|{size[0]}x{size[1]}"
+    if seed is not None:
+        raw += f"|seed{seed}"
     return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def piece_seed(piece_id: str) -> int:
+    """Stable per-piece seed so re-renders reproduce the same imagery."""
+    return int(hashlib.sha256(piece_id.encode()).hexdigest()[:8], 16)
 
 
 def _download(url: str) -> bytes:
     return httpx.get(url, timeout=60).content
 
 
-def _fal_image(prompt: str, model: str, size: tuple[int, int]) -> bytes:
+def _fal_image(prompt: str, model: str, size: tuple[int, int], seed: int | None) -> bytes:
     """Call fal.ai text-to-image and return PNG/JPEG bytes."""
     import fal_client
 
     w, h = size
-    result = fal_client.subscribe(
-        model,
-        arguments={
-            "prompt": prompt,
-            "image_size": {"width": w, "height": h},
-            "num_images": 1,
-        },
-    )
+    args = {"prompt": prompt, "image_size": {"width": w, "height": h}, "num_images": 1}
+    if seed is not None:
+        args["seed"] = seed
+    result = fal_client.subscribe(model, arguments=args)
     return _download(result["images"][0]["url"])
 
 
@@ -510,6 +521,7 @@ def generate_background(
     art_direction: str,
     size: tuple[int, int],
     api_key: str | None,
+    seed: int | None = None,
 ) -> bytes | None:
     """Return a generated background image (bytes) or None on failure/no key."""
     if not api_key:
@@ -517,12 +529,12 @@ def generate_background(
         return None
 
     cache_dir = _cache_dir()
-    cache_path = cache_dir / f"{_key(art_direction, prompt, size)}.png"
+    cache_path = cache_dir / f"{_key(art_direction, prompt, size, seed)}.png"
     if cache_path.exists():
         return cache_path.read_bytes()
 
     try:
-        data = _fal_image(prompt, get_settings().fal_image_model, size)
+        data = _fal_image(prompt, get_settings().fal_image_model, size, seed)
         cache_path.write_bytes(data)
         return data
     except Exception as exc:  # never break the pipeline
@@ -693,31 +705,34 @@ In `main.py`: add `imagePrompt: str | None = None` to `SlideInput`; add `artDire
 In `main.py`, add a helper and use it in `_render_image_bg` and `_render_carousel_bg`:
 
 ```python
-from .renderer.imagery import generate_background
+from .renderer.imagery import generate_background, piece_seed
 
-def _bg_for_slide(slide, art_direction, size):
+def _bg_for_slide(slide, art_direction, size, piece_id):
     if not slide.imagePrompt:
         return None
     return generate_background(
-        slide.imagePrompt, art_direction, size, get_settings().fal_key
+        slide.imagePrompt, art_direction, size, get_settings().fal_key,
+        seed=piece_seed(piece_id),
     )
 ```
 
-In both paths, compute `bg = _bg_for_slide(slide, req.brandKit.artDirection, PORTRAIT_SIZE)` and pass `background_image=bg` to `render_slide(...)`. Set the asset `engine` to `"fal"` when `bg is not None` else `"template"`, and include `"prompt": slide.imagePrompt` in the asset dict.
+In both paths, compute `bg = _bg_for_slide(slide, req.brandKit.artDirection, PORTRAIT_SIZE, req.pieceId)` and pass `background_image=bg` to `render_slide(...)`. Set the asset `engine` to `"fal"` when `bg is not None` else `"template"`, and include `"prompt": slide.imagePrompt` in the asset dict.
 
 - [ ] **Step 5: Pass backgrounds + art direction into the reel**
 
 In `reel.py`, change `render_reel(...)` to accept `art_direction: str = "warm_lifestyle"` and, inside the slide loop, generate a background per slide and pass it to `render_slide(..., background_image=bg)`:
 
 ```python
-from .imagery import generate_background
+from .imagery import generate_background, piece_seed
 ...
         art_direction = brand_kit.get("artDirection", "warm_lifestyle")
+        seed = piece_seed(piece_id)
         for i, slide in enumerate(slides):
             bg = None
             if slide.get("imagePrompt"):
                 bg = generate_background(
-                    slide["imagePrompt"], art_direction, REEL_SIZE, settings.fal_key
+                    slide["imagePrompt"], art_direction, REEL_SIZE, settings.fal_key,
+                    seed=seed,
                 )
             png = render_slide(
                 skin=slide.get("skin", "dark"), role=slide.get("role", "body"),
@@ -841,14 +856,27 @@ def _fal_upload(data: bytes, content_type: str) -> str:
     return fal_client.upload(data, content_type)
 
 
+def _video_url(result: dict) -> str:
+    """Seedance returns output.video_url; others return video.url. Handle both."""
+    out = result.get("output") or {}
+    if out.get("video_url"):
+        return out["video_url"]
+    video = result.get("video") or {}
+    if video.get("url"):
+        return video["url"]
+    raise KeyError("no video url in fal result")
+
+
 def _fal_video(image_url: str, model: str, prompt: str) -> bytes:
     import fal_client
     result = fal_client.subscribe(
         model,
-        arguments={"image_url": image_url, "prompt": prompt, "duration": "5"},
+        arguments={
+            "image_url": image_url, "prompt": prompt,
+            "duration": "5", "resolution": "720p",
+        },
     )
-    video = result.get("video") or {}
-    return _download(video["url"])
+    return _download(_video_url(result))
 
 
 def animate_background(
@@ -1252,6 +1280,6 @@ git commit -m "feat(web): poll render status and auto-load finished media"
 
 **Placeholder scan:** No TBD/TODO. UI tasks (11, 13, 14, 15, 16) use concrete file changes + manual verification rather than brittle component tests — intentional given no DOM test harness; pure logic (prompt builder, schema, worker) is fully TDD'd.
 
-**Type consistency:** `generate_background(prompt, art_direction, size, api_key)` and `animate_background(image_bytes, art_direction, size, api_key)` consistent across Tasks 4/6/8/10. `render_slide(..., background_image=, transparent=, size=)` consistent across Tasks 5/9/12. Request fields `imagePrompt` / `artDirection` / `motion` consistent across web (Tasks 1/3/7/11) and worker (Task 6). `_assemble(clips, overlays, audio, motion)` consistent in Task 10.
+**Type consistency:** `generate_background(prompt, art_direction, size, api_key, seed=None)` (seed threaded via `piece_seed(piece_id)` in Task 6) and `animate_background(image_bytes, art_direction, size, api_key)` consistent across Tasks 4/6/8/10. `_fal_image(prompt, model, size, seed)` matches its monkeypatched test fakes (4 args). `render_slide(..., background_image=, transparent=, size=)` consistent across Tasks 5/9/12. Request fields `imagePrompt` / `artDirection` / `motion` consistent across web (Tasks 1/3/7/11) and worker (Task 6). `_assemble(clips, overlays, audio, motion)` consistent in Task 10.
 
 **Settings note:** `Settings` attributes are class-level; the `test_returns_none_without_key` passes `api_key=None` directly rather than mutating settings, so it does not depend on monkeypatching class attributes.
