@@ -84,6 +84,30 @@ def _gradient_background(size: tuple[int, int], colors: tuple[tuple, tuple]) -> 
     return img
 
 
+def _cover_fit(img: Image.Image, size: tuple[int, int]) -> Image.Image:
+    """Scale + center-crop an image to exactly fill size."""
+    tw, th = size
+    iw, ih = img.size
+    scale = max(tw / iw, th / ih)
+    nw, nh = int(iw * scale), int(ih * scale)
+    img = img.resize((nw, nh), Image.LANCZOS)
+    left, top = (nw - tw) // 2, (nh - th) // 2
+    return img.crop((left, top, left + tw, top + th))
+
+
+def _text_scrim(size: tuple[int, int]) -> Image.Image:
+    """Bottom-up dark gradient so text stays legible over any photo."""
+    w, h = size
+    scrim = Image.new("RGBA", size, (0, 0, 0, 0))
+    px = scrim.load()
+    for y in range(h):
+        t = y / h
+        alpha = int(200 * max(0.0, (t - 0.35) / 0.65))  # ramp from 35% down
+        for x in range(w):
+            px[x, y] = (8, 12, 18, alpha)
+    return scrim
+
+
 def _wrap_text(text: str, font: Any, max_width: int, draw: ImageDraw.ImageDraw) -> list[str]:
     """Wrap text to fit within max_width pixels."""
     words = text.split()
@@ -111,13 +135,18 @@ def render_slide(
     headline: str | None,
     body: str | None,
     logo_path: str | None = None,
+    background_image: bytes | None = None,
     size: tuple[int, int] = PORTRAIT_SIZE,
 ) -> bytes:
     """Render a single slide to PNG bytes."""
     skin_tokens = SKINS.get(skin, SKINS["dark"])
 
     # Background
-    if skin_tokens["gradient"]:
+    if background_image:
+        base = Image.open(io.BytesIO(background_image)).convert("RGB")
+        img = _cover_fit(base, size).convert("RGB")
+        img = Image.alpha_composite(img.convert("RGBA"), _text_scrim(size)).convert("RGB")
+    elif skin_tokens["gradient"]:
         img = _gradient_background(size, skin_tokens["gradient"])
     else:
         img = Image.new("RGB", size, skin_tokens["bg"])
