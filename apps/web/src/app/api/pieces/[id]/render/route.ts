@@ -53,17 +53,20 @@ export async function POST(
         eyebrow: s.eyebrow,
         headline: s.headline,
         body: s.body,
+        imagePrompt: s.imagePrompt,
       })),
       brandKit: {
         logoPath: piece.brand.brandKit?.logoPath ?? "",
         tokens: piece.brand.brandKit?.tokens,
         fonts: piece.brand.brandKit?.fonts,
         defaultSkin: piece.brand.brandKit?.defaultSkin,
+        artDirection: piece.brand.brandKit?.artDirection ?? "warm_lifestyle",
         voiceId: piece.brand.brandKit?.voiceId ?? "",
       },
       voiceover: piece.voiceover,
       locale: piece.brand.locale,
       voiceGender: piece.voiceGender ?? "female",
+      motion: piece.motion,
     };
 
     fetch(`${workerUrl}/render/${kind}`, {

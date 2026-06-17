@@ -12,6 +12,8 @@ const bodySchema = z.object({
       type: z.enum(["image", "video", "audio"]),
       engine: z.string().optional(),
       slideIndex: z.number().optional(),
+      prompt: z.string().optional(),
+      costCents: z.number().optional(),
     }),
   ),
 });
@@ -54,6 +56,8 @@ export async function POST(req: Request) {
           type: a.type,
           url: a.url,
           engine: (a.engine as "template" | "fal" | "elevenlabs") ?? "template",
+          prompt: a.prompt ?? null,
+          costCents: a.costCents ?? 0,
         },
       }),
     ),
@@ -70,6 +74,8 @@ export async function POST(req: Request) {
     }
   }
 
+  const totalCost = assets.reduce((sum, a) => sum + (a.costCents ?? 0), 0);
+
   // Mark job done and piece ready for review.
   await prisma.renderJob.updateMany({
     where: { id: jobId },
@@ -77,7 +83,11 @@ export async function POST(req: Request) {
   });
   await prisma.contentPiece.update({
     where: { id: pieceId },
-    data: { status: "review", updatedAt: new Date() },
+    data: {
+      status: "review",
+      costCents: { increment: totalCost },
+      updatedAt: new Date(),
+    },
   });
 
   return NextResponse.json({ ok: true });
