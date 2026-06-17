@@ -17,7 +17,7 @@ from typing import Any
 
 from ..config import get_settings
 from .vessel import render_slide, PORTRAIT_SIZE
-from .imagery import generate_background, piece_seed
+from .imagery import generate_background, animate_background, piece_seed
 
 REEL_SIZE = (1080, 1920)
 SLIDE_DURATION_S = 4       # seconds per slide in the reel
@@ -97,6 +97,82 @@ def _build_srt(slides: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
+def _assemble(
+    clips: list[Path],
+    overlays: list[Path],
+    audio_path: Path,
+    motion: bool,
+) -> bytes:
+    """Assemble slide clips/frames + audio into MP4 and return bytes."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        n = len(clips)
+
+        if motion:
+            # Motion path: overlay transparent text PNGs on MP4 clips, then xfade.
+            # For each clip: scale/trim → overlay text → label as [v{i}].
+            filter_parts: list[str] = []
+            inputs: list[str] = []
+            for i, (clip_p, overlay_p) in enumerate(zip(clips, overlays)):
+                inputs += ["-t", str(SLIDE_DURATION_S), "-i", str(clip_p)]
+                inputs += ["-i", str(overlay_p)]
+                filter_parts.append(
+                    f"[{i * 2}:v]scale=1080:1920:force_original_aspect_ratio=increase,"
+                    f"crop=1080:1920,setpts=PTS-STARTPTS[bg{i}];"
+                    f"[bg{i}][{i * 2 + 1}:v]overlay=0:0[v{i}]"
+                )
+        else:
+            # Ken Burns path: still frames with slow zoom.
+            filter_parts = []
+            inputs = []
+            for i, clip_p in enumerate(clips):
+                inputs += ["-loop", "1", "-t", str(SLIDE_DURATION_S + FADE_DURATION_S), "-i", str(clip_p)]
+                filter_parts.append(
+                    f"[{i}:v]scale=1080:1920:force_original_aspect_ratio=increase,"
+                    f"crop=1080:1920,"
+                    f"zoompan=z='min(zoom+0.0015,1.05)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
+                    f":d={int(SLIDE_DURATION_S * 25)}:fps=25:s=1080x1920[v{i}]"
+                )
+
+        # Cross-fade between slides
+        if n > 1:
+            xfade_chain = ""
+            prev = "v0"
+            for i in range(1, n):
+                offset = i * SLIDE_DURATION_S - FADE_DURATION_S
+                out_label = f"xf{i}" if i < n - 1 else "vout"
+                xfade_chain += (
+                    f";[{prev}][v{i}]xfade=transition=fade:duration={FADE_DURATION_S}"
+                    f":offset={offset}[{out_label}]"
+                )
+                prev = out_label
+            filter_complex = ";".join(filter_parts) + xfade_chain
+            video_map = "[vout]"
+        else:
+            filter_complex = filter_parts[0].replace("[v0]", "[vout]")
+            video_map = "[vout]"
+
+        audio_idx = n * 2 if motion else n
+        out_path = tmp_path / "reel.mp4"
+        cmd = (
+            ["ffmpeg", "-y"]
+            + inputs
+            + ["-i", str(audio_path)]
+            + [
+                "-filter_complex", filter_complex,
+                "-map", video_map,
+                "-map", f"{audio_idx}:a",
+                "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+                "-c:a", "aac", "-b:a", "128k",
+                "-shortest",
+                "-pix_fmt", "yuv420p",
+                str(out_path),
+            ]
+        )
+        subprocess.run(cmd, check=True, capture_output=True)
+        return out_path.read_bytes()
+
+
 def render_reel(
     *,
     job_id: str,
@@ -107,9 +183,13 @@ def render_reel(
     locale: str,
     voice_gender: str | None = None,
     progress_callback: Any = None,
+    motion: bool = False,
 ) -> bytes:
     """Render a complete reel MP4 and return the bytes."""
     settings = get_settings()
+    art_direction = brand_kit.get("artDirection", "warm_lifestyle")
+    seed = piece_seed(piece_id)
+    logo_path = brand_kit.get("logoPath")
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
@@ -132,94 +212,75 @@ def render_reel(
                 check=True, capture_output=True,
             )
 
-        # 2. Render slide PNGs
-        slide_paths: list[Path] = []
-        logo_path = brand_kit.get("logoPath")
-        art_direction = brand_kit.get("artDirection", "warm_lifestyle")
-        seed = piece_seed(piece_id)
-        for i, slide in enumerate(slides):
+        # 2. Pre-generate still backgrounds
+        bgs: list[bytes | None] = []
+        for slide in slides:
             bg = None
             if slide.get("imagePrompt"):
                 bg = generate_background(
                     slide["imagePrompt"], art_direction, REEL_SIZE, settings.fal_key,
                     seed=seed,
                 )
-            png = render_slide(
-                skin=slide.get("skin", "dark"),
-                role=slide.get("role", "body"),
-                eyebrow=slide.get("eyebrow"),
-                headline=slide.get("headline"),
-                body=slide.get("body"),
-                logo_path=logo_path,
-                background_image=bg,
-                size=REEL_SIZE,
-            )
-            p = tmp_path / f"slide_{i:02d}.png"
-            p.write_bytes(png)
-            slide_paths.append(p)
-            if progress_callback:
-                progress_callback(25 + int(40 * (i + 1) / len(slides)))
+            bgs.append(bg)
 
-        # 3. SRT captions
-        srt_path = tmp_path / "captions.srt"
-        srt_path.write_text(_build_srt(slides))
+        # 3. Attempt motion animations; degrade if any fails
+        clip_data: list[bytes] = []
+        if motion:
+            for bg in bgs:
+                if bg is None:
+                    motion = False
+                    clip_data.clear()
+                    break
+                c = animate_background(bg, art_direction, REEL_SIZE, settings.fal_key)
+                if c is None:
+                    motion = False
+                    clip_data.clear()
+                    break
+                clip_data.append(c)
 
-        # 4. ffmpeg assembly
-        # Build a concat input list with ken-burns zoom filter per slide.
-        filter_parts: list[str] = []
-        inputs: list[str] = []
-        for i, p in enumerate(slide_paths):
-            inputs += ["-loop", "1", "-t", str(SLIDE_DURATION_S + FADE_DURATION_S), "-i", str(p)]
-            # Ken-burns: slow zoom in from 1.0x to 1.05x
-            zoom_filter = (
-                f"[{i}:v]scale=1080:1920:force_original_aspect_ratio=increase,"
-                f"crop=1080:1920,"
-                f"zoompan=z='min(zoom+0.0015,1.05)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
-                f":d={int(SLIDE_DURATION_S * 25)}:fps=25:s=1080x1920[v{i}]"
-            )
-            filter_parts.append(zoom_filter)
+        # 4. Write slide files based on final motion state
+        slide_clips: list[Path] = []
+        slide_overlays: list[Path] = []
 
-        # Cross-fade between slides
-        n = len(slide_paths)
-        if n > 1:
-            xfade_chain = ""
-            prev = "v0"
-            for i in range(1, n):
-                offset = i * SLIDE_DURATION_S - FADE_DURATION_S
-                out = f"xf{i}" if i < n - 1 else "vout"
-                xfade_chain += (
-                    f";[{prev}][v{i}]xfade=transition=fade:duration={FADE_DURATION_S}"
-                    f":offset={offset}[{out}]"
+        for i, (slide, bg) in enumerate(zip(slides, bgs)):
+            if motion:
+                clip_p = tmp_path / f"clip_{i:02d}.mp4"
+                clip_p.write_bytes(clip_data[i])
+                slide_clips.append(clip_p)
+
+                overlay_png = render_slide(
+                    skin=slide.get("skin", "dark"),
+                    role=slide.get("role", "body"),
+                    eyebrow=slide.get("eyebrow"),
+                    headline=slide.get("headline"),
+                    body=slide.get("body"),
+                    logo_path=logo_path,
+                    transparent=True,
+                    size=REEL_SIZE,
                 )
-                prev = out
-            filter_complex = ";".join(filter_parts) + xfade_chain
-            video_map = "[vout]"
-        else:
-            filter_complex = filter_parts[0].replace(f"[v0]", "[vout]")
-            video_map = "[vout]"
+                overlay_p = tmp_path / f"overlay_{i:02d}.png"
+                overlay_p.write_bytes(overlay_png)
+                slide_overlays.append(overlay_p)
+            else:
+                png = render_slide(
+                    skin=slide.get("skin", "dark"),
+                    role=slide.get("role", "body"),
+                    eyebrow=slide.get("eyebrow"),
+                    headline=slide.get("headline"),
+                    body=slide.get("body"),
+                    logo_path=logo_path,
+                    background_image=bg,
+                    size=REEL_SIZE,
+                )
+                p = tmp_path / f"slide_{i:02d}.png"
+                p.write_bytes(png)
+                slide_clips.append(p)
 
-        out_no_sub = tmp_path / "reel_nosub.mp4"
-        cmd = (
-            ["ffmpeg", "-y"]
-            + inputs
-            + ["-i", str(audio_path)]
-            + [
-                "-filter_complex", filter_complex,
-                "-map", video_map,
-                "-map", f"{n}:a",
-                "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-                "-c:a", "aac", "-b:a", "128k",
-                "-shortest",
-                "-pix_fmt", "yuv420p",
-                str(out_no_sub),
-            ]
-        )
-        subprocess.run(cmd, check=True, capture_output=True)
+            if progress_callback:
+                progress_callback(25 + int(55 * (i + 1) / len(slides)))
+
+        # 5. Assemble
+        result = _assemble(slide_clips, slide_overlays, audio_path, motion)
         if progress_callback:
-            progress_callback(80)
-
-        # 5. Burn captions (requires ffmpeg built with libass; skip if unavailable)
-        if progress_callback:
-            progress_callback(95)
-
-        return out_no_sub.read_bytes()
+            progress_callback(100)
+        return result

@@ -165,6 +165,7 @@ def _render_reel_bg(req: RenderRequest) -> None:
             locale=req.locale,
             voice_gender=req.voiceGender,
             progress_callback=progress_cb,
+            motion=req.motion,
         )
         path = f"pieces/{req.pieceId}/reel.mp4"
         url = save_asset(path, mp4)
