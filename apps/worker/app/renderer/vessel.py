@@ -212,7 +212,13 @@ def render_slide(
             logo_h = int(h * 0.065)
             logo_w = int(logo.width * logo_h / logo.height)
             logo = logo.resize((logo_w, logo_h), Image.LANCZOS)
-            # Place at top-left with padding
+            if skin == "dark":
+                chip_pad = 16
+                draw.rounded_rectangle(
+                    [pad - chip_pad, pad - chip_pad,
+                     pad + logo_w + chip_pad, pad + logo_h + chip_pad],
+                    radius=20, fill=(236, 230, 214),
+                )
             img.paste(logo, (pad, pad), logo)
         except Exception:
             pass
