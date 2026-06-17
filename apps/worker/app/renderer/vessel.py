@@ -136,13 +136,17 @@ def render_slide(
     body: str | None,
     logo_path: str | None = None,
     background_image: bytes | None = None,
+    transparent: bool = False,
     size: tuple[int, int] = PORTRAIT_SIZE,
 ) -> bytes:
     """Render a single slide to PNG bytes."""
     skin_tokens = SKINS.get(skin, SKINS["dark"])
 
     # Background
-    if background_image:
+    if transparent:
+        img = Image.new("RGBA", size, (0, 0, 0, 0))
+        img = Image.alpha_composite(img, _text_scrim(size))
+    elif background_image:
         base = Image.open(io.BytesIO(background_image)).convert("RGB")
         img = _cover_fit(base, size).convert("RGB")
         img = Image.alpha_composite(img.convert("RGBA"), _text_scrim(size)).convert("RGB")
@@ -234,5 +238,8 @@ def render_slide(
         )
 
     out = io.BytesIO()
-    img.save(out, format="PNG", optimize=True)
+    if transparent:
+        img.save(out, format="PNG")
+    else:
+        img.save(out, format="PNG", optimize=True)
     return out.getvalue()
