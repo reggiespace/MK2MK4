@@ -13,6 +13,8 @@ class Settings:
     elevenlabs_api_key: str | None = os.getenv("ELEVENLABS_API_KEY") or None
     shared_secret: str = os.getenv("WORKER_SHARED_SECRET", "")
     storage_dir: str = os.getenv("STORAGE_DIR", "./storage")
+    fal_image_model: str = os.getenv("FAL_IMAGE_MODEL", "fal-ai/flux/schnell")
+    fal_video_model: str = os.getenv("FAL_VIDEO_MODEL", "fal-ai/bytedance/seedance/v1/lite/image-to-video")
 
     # Brand voices keyed by "<REGION>_<GENDER>" (e.g. "BR_FEMALE", "US_MALE").
     elevenlabs_voices: dict[str, str] = {
