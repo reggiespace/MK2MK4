@@ -17,6 +17,7 @@ from typing import Any
 
 from ..config import get_settings
 from .vessel import render_slide, PORTRAIT_SIZE
+from .imagery import generate_background, piece_seed
 
 REEL_SIZE = (1080, 1920)
 SLIDE_DURATION_S = 4       # seconds per slide in the reel
@@ -134,7 +135,15 @@ def render_reel(
         # 2. Render slide PNGs
         slide_paths: list[Path] = []
         logo_path = brand_kit.get("logoPath")
+        art_direction = brand_kit.get("artDirection", "warm_lifestyle")
+        seed = piece_seed(piece_id)
         for i, slide in enumerate(slides):
+            bg = None
+            if slide.get("imagePrompt"):
+                bg = generate_background(
+                    slide["imagePrompt"], art_direction, REEL_SIZE, settings.fal_key,
+                    seed=seed,
+                )
             png = render_slide(
                 skin=slide.get("skin", "dark"),
                 role=slide.get("role", "body"),
@@ -142,6 +151,7 @@ def render_reel(
                 headline=slide.get("headline"),
                 body=slide.get("body"),
                 logo_path=logo_path,
+                background_image=bg,
                 size=REEL_SIZE,
             )
             p = tmp_path / f"slide_{i:02d}.png"

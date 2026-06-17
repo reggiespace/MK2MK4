@@ -13,6 +13,7 @@ from .config import get_settings
 from . import jobs
 from .renderer.vessel import render_slide, PORTRAIT_SIZE
 from .renderer.reel import render_reel
+from .renderer.imagery import generate_background, piece_seed
 from .storage import save_asset
 
 logging.basicConfig(
@@ -49,6 +50,7 @@ class SlideInput(BaseModel):
     eyebrow: str | None = None
     headline: str | None = None
     body: str | None = None
+    imagePrompt: str | None = None
 
 
 class BrandKitInput(BaseModel):
@@ -57,6 +59,7 @@ class BrandKitInput(BaseModel):
     fonts: Any = None
     defaultSkin: str = "mark_forward"
     voiceId: str | None = None
+    artDirection: str = "warm_lifestyle"
 
 
 class RenderRequest(BaseModel):
@@ -68,6 +71,7 @@ class RenderRequest(BaseModel):
     voiceover: str | None = None
     locale: str = "en"
     voiceGender: str | None = None
+    motion: bool = False
 
 
 class JobResponse(BaseModel):
@@ -81,6 +85,15 @@ class JobResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Background rendering helpers
 # ---------------------------------------------------------------------------
+
+def _bg_for_slide(slide: SlideInput, art_direction: str, size: tuple[int, int], piece_id: str) -> bytes | None:
+    if not slide.imagePrompt:
+        return None
+    return generate_background(
+        slide.imagePrompt, art_direction, size, get_settings().fal_key,
+        seed=piece_seed(piece_id),
+    )
+
 
 def _callback(job_id: str, piece_id: str, assets: list[dict[str, Any]]) -> None:
     """Notify the web app that a render job is complete."""
@@ -107,6 +120,7 @@ def _render_image_bg(req: RenderRequest) -> None:
         if not slide:
             raise ValueError("no slides provided")
 
+        bg = _bg_for_slide(slide, req.brandKit.artDirection, PORTRAIT_SIZE, req.pieceId)
         png = render_slide(
             skin=slide.skin,
             role=slide.role,
@@ -114,16 +128,19 @@ def _render_image_bg(req: RenderRequest) -> None:
             headline=slide.headline,
             body=slide.body,
             logo_path=req.brandKit.logoPath,
+            background_image=bg,
             size=PORTRAIT_SIZE,
         )
         jobs.update(job_id, progress=80)
-        log.info("image rendered skin=%s size=%d bytes", slide.skin, len(png))
+        engine = "fal" if bg is not None else "template"
+        log.info("image rendered skin=%s engine=%s size=%d bytes", slide.skin, engine, len(png))
 
         path = f"pieces/{req.pieceId}/image_{slide.index}.png"
         url = save_asset(path, png)
-        jobs.update(job_id, status="done", progress=100, result={"assets": [{"url": url, "type": "image"}]})
+        asset = {"url": url, "type": "image", "engine": engine, "slideIndex": slide.index, "prompt": slide.imagePrompt}
+        jobs.update(job_id, status="done", progress=100, result={"assets": [asset]})
         log.info("image done job=%s url=%s", job_id, url)
-        _callback(job_id, req.pieceId, [{"url": url, "type": "image", "engine": "template"}])
+        _callback(job_id, req.pieceId, [asset])
     except Exception as exc:
         log.exception("image render failed job=%s", job_id)
         jobs.update(job_id, status="failed", error=str(exc))
@@ -169,6 +186,7 @@ def _render_carousel_bg(req: RenderRequest) -> None:
     try:
         total = len(req.slides)
         for i, slide in enumerate(req.slides):
+            bg = _bg_for_slide(slide, req.brandKit.artDirection, PORTRAIT_SIZE, req.pieceId)
             png = render_slide(
                 skin=slide.skin,
                 role=slide.role,
@@ -176,11 +194,13 @@ def _render_carousel_bg(req: RenderRequest) -> None:
                 headline=slide.headline,
                 body=slide.body,
                 logo_path=req.brandKit.logoPath,
+                background_image=bg,
                 size=PORTRAIT_SIZE,
             )
             path = f"pieces/{req.pieceId}/slide_{slide.index}.png"
             url = save_asset(path, png)
-            assets.append({"url": url, "type": "image", "engine": "template", "slideIndex": slide.index})
+            engine = "fal" if bg is not None else "template"
+            assets.append({"url": url, "type": "image", "engine": engine, "slideIndex": slide.index, "prompt": slide.imagePrompt})
             pct = int(10 + 85 * (i + 1) / total)
             log.info("carousel slide %d/%d done job=%s", i + 1, total, job_id)
             jobs.update(job_id, progress=pct)
