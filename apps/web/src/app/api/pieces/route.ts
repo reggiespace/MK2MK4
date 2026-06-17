@@ -14,9 +14,8 @@ const bodySchema = z.object({
   format: z.enum(["single", "carousel", "reel"]).optional(),
 });
 
-function skinForRole(role: SlideRole, brandDefault: Skin): Skin {
-  if (role === "cover") return brandDefault;
-  return "dark";
+function skinForRole(_role: SlideRole, brandDefault: Skin): Skin {
+  return brandDefault;
 }
 
 export async function GET(req: Request) {
@@ -100,6 +99,7 @@ export async function POST(req: Request) {
             eyebrow: s.eyebrow ?? null,
             headline: s.headline ?? null,
             body: s.body ?? null,
+            imagePrompt: s.imagePrompt ?? null,
           })),
         },
       },

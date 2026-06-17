@@ -120,16 +120,16 @@ class MockProvider implements LlmProvider {
 
     const slides: DraftResponse["slides"] =
       format === "single"
-        ? [{ role: "cover", eyebrow: opts.title, headline: opts.title }]
+        ? [{ role: "cover", eyebrow: opts.title, headline: opts.title, imagePrompt: "fresh vegetables and grains on a bright kitchen counter" }]
         : format === "reel"
           ? [
-              { role: "cover", eyebrow: pt ? "Reel" : "Reel", headline: opts.title },
-              { role: "body", headline: pt ? "O ciclo tem pico e queda." : "The cycle peaks, then fades." },
-              { role: "body", headline: pt ? "A fome pode mudar no dia 4–5." : "Hunger can shift on day 4–5." },
-              { role: "body", headline: pt ? "Isso costuma ser esperado." : "This is often expected." },
+              { role: "cover", eyebrow: pt ? "Reel" : "Reel", headline: opts.title, imagePrompt: "warm bowl of oats with blueberries on a wooden table" },
+              { role: "body", headline: pt ? "O ciclo tem pico e queda." : "The cycle peaks, then fades.", imagePrompt: "glass of water beside fresh herbs on a sunlit surface" },
+              { role: "body", headline: pt ? "A fome pode mudar no dia 4–5." : "Hunger can shift on day 4–5.", imagePrompt: "sliced avocado and whole grain bread arranged neatly" },
+              { role: "body", headline: pt ? "Isso costuma ser esperado." : "This is often expected.", imagePrompt: "calm morning kitchen scene with a mug of tea" },
             ]
           : [
-              { role: "cover", eyebrow: brand.pillars[0]?.name ?? "Tip", headline: opts.title },
+              { role: "cover", eyebrow: brand.pillars[0]?.name ?? "Tip", headline: opts.title, imagePrompt: "colorful fresh produce arranged on a bright wooden board" },
               {
                 role: "body",
                 eyebrow: pt ? "O ciclo" : "The cycle",
@@ -137,6 +137,7 @@ class MockProvider implements LlmProvider {
                 body: pt
                   ? "A supressão do apetite não é constante na semana."
                   : "Appetite suppression isn't flat across the week.",
+                imagePrompt: "sliced citrus fruit and herbs on a marble surface",
               },
               {
                 role: "body",
@@ -145,12 +146,14 @@ class MockProvider implements LlmProvider {
                 body: pt
                   ? "Costuma ser esperado quando o efeito cai — não é falta de força de vontade."
                   : "Often expected as the effect dips — not a willpower failure.",
+                imagePrompt: "whole grain crackers and hummus on a linen cloth",
               },
               {
                 role: "cta",
                 headline: pt
                   ? "Veja onde você está no ciclo. Gastric IQ — grátis para sempre."
                   : "See where you are in your cycle. Gastric IQ — free forever.",
+                imagePrompt: "warm kitchen window light on a clean countertop with greenery",
               },
             ];
 

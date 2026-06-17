@@ -19,6 +19,7 @@ export const draftSlideSchema = z.object({
   eyebrow: z.string().nullable().optional(),
   headline: z.string().nullable().optional(),
   body: z.string().nullable().optional(),
+  imagePrompt: z.string().nullable().optional(),
 });
 export const draftResponseSchema = z.object({
   caption: z.string(),

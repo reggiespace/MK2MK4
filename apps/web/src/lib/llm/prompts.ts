@@ -57,6 +57,6 @@ Produce:
   - For "reel": 3-6 body slides as on-screen scene text (headline per scene), plus a "voiceover" field with the full spoken narration.
 
 Respond as JSON matching:
-{ "caption", "hashtags": [], "recommendedFormat", "formatRationale", "slides": [ { "role": "cover|body|cta", "eyebrow", "headline", "body" } ], "voiceover" }`,
+{ "caption", "hashtags": [], "recommendedFormat", "formatRationale", "slides": [ { "role": "cover|body|cta", "eyebrow", "headline", "body", "imagePrompt": "short literal scene description for a background photo — food, ingredients, calm lifestyle objects; no people's bodies, no medical content, no text" } ], "voiceover" }`,
   };
 }
