@@ -74,3 +74,54 @@ def generate_background(
     except Exception as exc:  # never break the pipeline
         log.error("fal image generation failed: %s", exc)
         return None
+
+
+MOTION_PROMPT = (
+    "Subtle cinematic motion: very slow camera push-in and gentle parallax. "
+    "Keep the scene calm and natural; minimal movement, no morphing."
+)
+
+
+def _fal_upload(data: bytes, content_type: str) -> str:
+    import fal_client
+    return fal_client.upload(data, content_type)
+
+
+def _video_url(result: dict) -> str:
+    """Seedance returns output.video_url; others return video.url. Handle both."""
+    out = result.get("output") or {}
+    if out.get("video_url"):
+        return out["video_url"]
+    video = result.get("video") or {}
+    if video.get("url"):
+        return video["url"]
+    raise KeyError("no video url in fal result")
+
+
+def _fal_video(image_url: str, model: str, prompt: str) -> bytes:
+    import fal_client
+    result = fal_client.subscribe(
+        model,
+        arguments={
+            "image_url": image_url, "prompt": prompt,
+            "duration": "5", "resolution": "720p",
+        },
+    )
+    return _download(_video_url(result))
+
+
+def animate_background(
+    image_bytes: bytes,
+    art_direction: str,
+    size: tuple[int, int],
+    api_key: str | None,
+) -> bytes | None:
+    """Animate a still background into an MP4 clip. None on failure/no key."""
+    if not api_key:
+        return None
+    try:
+        url = _fal_upload(image_bytes, "image/png")
+        return _fal_video(url, get_settings().fal_video_model, MOTION_PROMPT)
+    except Exception as exc:
+        log.error("fal image-to-video failed: %s", exc)
+        return None
