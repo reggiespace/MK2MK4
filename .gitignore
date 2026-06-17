@@ -1,0 +1,44 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next.js
+apps/web/.next/
+apps/web/out/
+apps/web/next-env.d.ts
+
+# production
+dist/
+build/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+apps/worker/.venv/
+*.egg-info/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# prisma
+apps/web/prisma/*.db
+apps/web/src/generated/
+
+# media output (local object storage)
+storage/
+assets/brands/*.png
+assets/fonts/*.ttf
+assets/fonts/*.otf
+
+# brainstorming companion
+.superpowers/
+
+# os / editor
+.DS_Store
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json

@@ -1,0 +1,24 @@
+[project]
+name = "giq-media-worker"
+version = "0.1.0"
+description = "Gastric IQ Social Content Studio — media generation worker (Pillow templates, ffmpeg reels, fal.ai, ElevenLabs)."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "pydantic>=2.9",
+    "python-dotenv>=1.0",
+    "httpx>=0.27",
+    "pillow>=11.0",
+    "elevenlabs>=1.9",
+]
+
+[project.optional-dependencies]
+dev = ["ruff>=0.7"]
+
+[tool.uvicorn]
+host = "0.0.0.0"
+port = 8000
+
+[tool.ruff]
+line-length = 100

@@ -1,0 +1,15 @@
+{
+  "name": "gastric-iq-social-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gastric IQ Social Content Studio — generate, review, and schedule social posts for Gastric IQ (US) and Gastric IQ Brasil.",
+  "packageManager": "pnpm@11.7.0",
+  "scripts": {
+    "dev": "pnpm --filter @giq/web dev",
+    "build": "pnpm --filter @giq/web build",
+    "lint": "pnpm -r lint",
+    "db:migrate": "pnpm --filter @giq/web prisma migrate dev",
+    "db:seed": "pnpm --filter @giq/web db:seed",
+    "worker:dev": "bash apps/worker/scripts/dev.sh"
+  }
+}

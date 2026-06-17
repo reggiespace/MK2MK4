@@ -1,0 +1,32 @@
+import os
+from functools import lru_cache
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+class Settings:
+    """Worker configuration read from the environment."""
+
+    fal_key: str | None = os.getenv("FAL_KEY") or None
+    elevenlabs_api_key: str | None = os.getenv("ELEVENLABS_API_KEY") or None
+    shared_secret: str = os.getenv("WORKER_SHARED_SECRET", "")
+    storage_dir: str = os.getenv("STORAGE_DIR", "./storage")
+
+    # Brand voices keyed by "<REGION>_<GENDER>" (e.g. "BR_FEMALE", "US_MALE").
+    elevenlabs_voices: dict[str, str] = {
+        key: val
+        for key, val in {
+            "BR_MALE": os.getenv("ELEVENLABS_VOICE_ID_BR_MALE"),
+            "BR_FEMALE": os.getenv("ELEVENLABS_VOICE_ID_BR_FEMALE"),
+            "US_MALE": os.getenv("ELEVENLABS_VOICE_ID_US_MALE"),
+            "US_FEMALE": os.getenv("ELEVENLABS_VOICE_ID_US_FEMALE"),
+        }.items()
+        if val
+    }
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

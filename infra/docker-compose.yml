@@ -1,0 +1,97 @@
+# Gastric IQ Social Content Studio — full stack for dokploy / local dev.
+# Local dev: `docker compose -f infra/docker-compose.yml up -d postgres redis`
+# Full stack: `docker compose -f infra/docker-compose.yml up --build`
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-giq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-giq_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-giq_studio}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-giq}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.worker
+    restart: unless-stopped
+    environment:
+      FAL_KEY: ${FAL_KEY}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY}
+      ELEVENLABS_VOICE_ID_BR_MALE: ${ELEVENLABS_VOICE_ID_BR_MALE}
+      ELEVENLABS_VOICE_ID_BR_FEMALE: ${ELEVENLABS_VOICE_ID_BR_FEMALE}
+      ELEVENLABS_VOICE_ID_US_MALE: ${ELEVENLABS_VOICE_ID_US_MALE}
+      ELEVENLABS_VOICE_ID_US_FEMALE: ${ELEVENLABS_VOICE_ID_US_FEMALE}
+      WORKER_SHARED_SECRET: ${WORKER_SHARED_SECRET}
+      STORAGE_DIR: /data/storage
+      WEB_BASE_URL: http://web:3000
+      PUBLIC_MEDIA_BASE_URL: ${PUBLIC_MEDIA_BASE_URL:-http://localhost:3000/media}
+    volumes:
+      - mediadata:/data/storage
+    expose:
+      - "8000"
+    # Not published to the host in production — internal Docker network only.
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-giq}:${POSTGRES_PASSWORD:-giq_dev_password}@postgres:5432/${POSTGRES_DB:-giq_studio}
+      REDIS_URL: redis://redis:6379
+      SESSION_SECRET: ${SESSION_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY}
+      ELEVENLABS_VOICE_ID_BR_MALE: ${ELEVENLABS_VOICE_ID_BR_MALE}
+      ELEVENLABS_VOICE_ID_BR_FEMALE: ${ELEVENLABS_VOICE_ID_BR_FEMALE}
+      ELEVENLABS_VOICE_ID_US_MALE: ${ELEVENLABS_VOICE_ID_US_MALE}
+      ELEVENLABS_VOICE_ID_US_FEMALE: ${ELEVENLABS_VOICE_ID_US_FEMALE}
+      BUFFER_API_KEY: ${BUFFER_API_KEY}
+      BUFFER_ORG_ID: ${BUFFER_ORG_ID}
+      ZERNIO_API_KEY: ${ZERNIO_API_KEY}
+      ZERNIO_BASE_URL: ${ZERNIO_BASE_URL}
+      WORKER_BASE_URL: http://worker:8000
+      WORKER_SHARED_SECRET: ${WORKER_SHARED_SECRET}
+      STORAGE_DIR: /data/storage
+      PUBLIC_MEDIA_BASE_URL: ${PUBLIC_MEDIA_BASE_URL}
+    volumes:
+      - mediadata:/data/storage
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  redisdata:
+  mediadata:

@@ -1,0 +1,21 @@
+# Gastric IQ media worker — Python + ffmpeg + bundled brand fonts/logos
+FROM python:3.12-slim
+
+# ffmpeg for reel assembly; fontconfig for Pillow text rendering
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg fontconfig \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY apps/worker/pyproject.toml ./pyproject.toml
+RUN pip install --no-cache-dir -e .
+
+COPY apps/worker/app ./app
+# Brand logos + fonts (downloaded/copied during build prep)
+COPY assets ./assets
+
+ENV STORAGE_DIR=/data/storage
+ENV ASSETS_ROOT=/app/assets
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

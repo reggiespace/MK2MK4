@@ -1,0 +1,39 @@
+import { z } from "zod";
+
+export const formatEnum = z.enum(["single", "carousel", "reel"]);
+export const slideRoleEnum = z.enum(["cover", "body", "cta"]);
+
+export const ideaSchema = z.object({
+  title: z.string(),
+  angle: z.string(),
+  recommendedFormat: formatEnum,
+  pillarName: z.string().nullable().optional(),
+});
+export const ideasResponseSchema = z.object({
+  ideas: z.array(ideaSchema).min(1),
+});
+export type Idea = z.infer<typeof ideaSchema>;
+
+export const draftSlideSchema = z.object({
+  role: slideRoleEnum,
+  eyebrow: z.string().nullable().optional(),
+  headline: z.string().nullable().optional(),
+  body: z.string().nullable().optional(),
+});
+export const draftResponseSchema = z.object({
+  caption: z.string(),
+  hashtags: z.array(z.string()).default([]),
+  recommendedFormat: formatEnum,
+  formatRationale: z.string(),
+  slides: z.array(draftSlideSchema).min(1),
+  /** Narration script for reels (omitted for single/carousel). */
+  voiceover: z.string().nullable().optional(),
+});
+export type DraftResponse = z.infer<typeof draftResponseSchema>;
+
+export interface BrandContext {
+  name: string;
+  locale: "en" | "pt_BR";
+  toneGuide: string;
+  pillars: { name: string; description: string }[];
+}

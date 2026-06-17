@@ -1,0 +1,17 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm 11: build-script approval (replaces the deprecated onlyBuiltDependencies list).
+# All entries are well-known, legitimate native/build-step packages our stack needs:
+#   prisma/@prisma/engines — query+migration engine binaries
+#   sharp                  — Next.js image optimization
+#   esbuild                — bundler used by tsx/Next
+#   msgpackr-extract, unrs-resolver — optional native perf accelerators
+allowBuilds:
+  "@prisma/engines": true
+  prisma: true
+  sharp: true
+  esbuild: true
+  msgpackr-extract: true
+  unrs-resolver: true

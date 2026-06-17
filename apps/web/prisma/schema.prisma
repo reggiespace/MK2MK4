@@ -1,0 +1,252 @@
+// Gastric IQ Social Content Studio — data model (Phase 1)
+// Prisma 7: new `prisma-client` generator (explicit output) + driver adapter at runtime.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Auth — single operator (no public signup)
+// ---------------------------------------------------------------------------
+model Operator {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Brands & brand kits — the routing key for language, kit, voice, publisher
+// ---------------------------------------------------------------------------
+enum Locale {
+  en
+  pt_BR
+}
+
+enum VoiceGender {
+  male
+  female
+}
+
+enum Publisher {
+  buffer
+  zernio
+}
+
+model Brand {
+  id        String   @id @default(cuid())
+  key       String   @unique // gastric-us | gastric-br
+  name      String
+  locale    Locale
+  publisher Publisher
+  channels  Json // [{ network: "facebook"|"instagram", channelId: string, label?: string }]
+  createdAt DateTime @default(now())
+
+  brandKit BrandKit?
+  pillars  Pillar[]
+  ideas    Idea[]
+  pieces   ContentPiece[]
+}
+
+model BrandKit {
+  id        String  @id @default(cuid())
+  brandId   String  @unique
+  brand     Brand   @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  logoPath  String // path under assets/brands
+  // Vessel palette tokens (hex)
+  tokens    Json // { moss, slate, brass, cream, ink, darkBg, darkFg, ... }
+  fonts     Json // { display: "Spectral", body: "Albert Sans", mono: "IBM Plex Mono" }
+  defaultSkin Skin  @default(mark_forward)
+  toneGuide String  @db.Text
+  voiceId   String // ElevenLabs voice id for this locale
+}
+
+// ---------------------------------------------------------------------------
+// Pillars & ideas
+// ---------------------------------------------------------------------------
+model Pillar {
+  id          String @id @default(cuid())
+  brandId     String
+  brand       Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  name        String
+  description String @db.Text
+
+  ideas Idea[]
+
+  @@unique([brandId, name])
+}
+
+enum Format {
+  single
+  carousel
+  reel
+}
+
+enum IdeaStatus {
+  suggested
+  selected
+  used
+  dismissed
+}
+
+model Idea {
+  id                String     @id @default(cuid())
+  brandId           String
+  brand             Brand      @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  pillarId          String?
+  pillar            Pillar?    @relation(fields: [pillarId], references: [id], onDelete: SetNull)
+  title             String
+  angle             String     @db.Text
+  recommendedFormat Format
+  insightsContext   String?    @db.Text // Phase 2 hook: research/analytics summary
+  status            IdeaStatus @default(suggested)
+  createdAt         DateTime   @default(now())
+
+  pieces ContentPiece[]
+}
+
+// ---------------------------------------------------------------------------
+// Content pieces, slides, media
+// ---------------------------------------------------------------------------
+enum Skin {
+  light
+  dark
+  mark_forward
+}
+
+enum PieceStatus {
+  draft
+  rendering
+  review
+  scheduled
+  published
+  failed
+}
+
+model ContentPiece {
+  id          String      @id @default(cuid())
+  brandId     String
+  brand       Brand       @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  ideaId      String?
+  idea        Idea?       @relation(fields: [ideaId], references: [id], onDelete: SetNull)
+  format      Format
+  caption     String      @db.Text
+  hashtags    String[]    @default([])
+  status      PieceStatus @default(draft)
+  costCents   Int         @default(0)
+  formatRationale String? @db.Text
+  voiceover   String?     @db.Text // reel narration script
+  voiceGender VoiceGender? // reel voiceover gender; null → female default
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  slides         Slide[]
+  mediaAssets    MediaAsset[]
+  scheduledPosts ScheduledPost[]
+  renderJobs     RenderJob[]
+}
+
+enum SlideRole {
+  cover
+  body
+  cta
+}
+
+model Slide {
+  id            String     @id @default(cuid())
+  pieceId       String
+  piece         ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  index         Int
+  role          SlideRole
+  skin          Skin
+  eyebrow       String?
+  headline      String?
+  body          String?    @db.Text
+  mediaAssetId  String?
+  mediaAsset    MediaAsset? @relation("SlideAsset", fields: [mediaAssetId], references: [id], onDelete: SetNull)
+
+  @@unique([pieceId, index])
+}
+
+enum AssetType {
+  image
+  video
+  audio
+}
+
+enum Engine {
+  template
+  fal
+  elevenlabs
+}
+
+model MediaAsset {
+  id         String       @id @default(cuid())
+  pieceId    String
+  piece      ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  type       AssetType
+  url        String
+  engine     Engine
+  prompt     String?      @db.Text
+  costCents  Int          @default(0)
+  meta       Json? // { width, height, durationMs, ... }
+  createdAt  DateTime     @default(now())
+
+  slides Slide[] @relation("SlideAsset")
+}
+
+// ---------------------------------------------------------------------------
+// Rendering jobs (worker) & scheduling/publishing
+// ---------------------------------------------------------------------------
+enum JobKind {
+  image
+  carousel
+  reel
+}
+
+enum JobStatus {
+  queued
+  running
+  done
+  failed
+}
+
+model RenderJob {
+  id        String    @id @default(cuid())
+  pieceId   String
+  piece     ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  kind      JobKind
+  status    JobStatus @default(queued)
+  progress  Int       @default(0)
+  workerJobId String?
+  error     String?   @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+enum PostStatus {
+  pending
+  scheduled
+  published
+  failed
+}
+
+model ScheduledPost {
+  id             String     @id @default(cuid())
+  pieceId        String
+  piece          ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  channel        String // channelId from Brand.channels
+  network        String // facebook | instagram
+  scheduledAt    DateTime
+  provider       Publisher
+  providerPostId String?
+  status         PostStatus @default(pending)
+  idempotencyKey String     @unique
+  error          String?    @db.Text
+  createdAt      DateTime   @default(now())
+}
