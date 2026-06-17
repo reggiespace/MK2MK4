@@ -8,6 +8,7 @@ const patchSchema = z.object({
   hashtags: z.array(z.string()).optional(),
   status: z.enum(["draft", "review", "scheduled", "published", "failed"]).optional(),
   voiceGender: z.enum(["male", "female"]).nullable().optional(),
+  motion: z.boolean().optional(),
 });
 
 export async function GET(

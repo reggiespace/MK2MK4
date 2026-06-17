@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { ScheduleModal } from "./schedule-modal";
 
@@ -25,6 +25,7 @@ type Piece = {
   status: string;
   voiceover: string | null;
   voiceGender: "male" | "female" | null;
+  motion: boolean;
   formatRationale: string | null;
   costCents: number;
   slides: Slide[];
@@ -63,10 +64,10 @@ const SKIN_CONFIG: Record<string, SkinConfig> = {
     scrim: "linear-gradient(to top, rgba(26,34,48,0.08) 0%, transparent 60%)",
   },
   dark: {
-    bg: "linear-gradient(160deg, #0E141B 0%, #1A2A3A 100%)",
+    bg: "#0E141B",
     color: "#E5DECC",
-    accent: "#B89251",
-    scrim: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%)",
+    accent: "#94AE8A",
+    scrim: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 35%)",
   },
   mark_forward: {
     bg: "linear-gradient(135deg, #3B5A78 0%, #5C7556 100%)",
@@ -137,6 +138,7 @@ export function PieceReview({ piece: initial, brandChannels }: { piece: Piece; b
   const [error, setError] = useState("");
   const [captionSaved, setCaptionSaved] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
+  const [motion, setMotionState] = useState(initial.motion);
 
   const runClaimsCheck = useCallback(async () => {
     setChecking(true);
@@ -208,6 +210,22 @@ export function PieceReview({ piece: initial, brandChannels }: { piece: Piece; b
     [piece.id],
   );
 
+  const setMotion = useCallback(
+    async (value: boolean) => {
+      setMotionState(value);
+      try {
+        await fetch(`/api/pieces/${piece.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ motion: value }),
+        });
+      } catch {
+        // non-critical
+      }
+    },
+    [piece.id],
+  );
+
   const saveCaption = useCallback(async () => {
     try {
       await fetch(`/api/pieces/${piece.id}`, {
@@ -221,6 +239,36 @@ export function PieceReview({ piece: initial, brandChannels }: { piece: Piece; b
       // non-critical
     }
   }, [piece.id, caption]);
+
+  useEffect(() => {
+    const status = piece.renderJobs[0]?.status;
+    if (status !== "queued" && status !== "running") return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/pieces/${piece.id}/render`);
+        const data = await res.json();
+        if (!res.ok || !data.jobs?.length) return;
+        const jobs: { id: string; status: string; progress: number }[] = data.jobs;
+        setPiece((p) => ({ ...p, renderJobs: jobs }));
+
+        if (jobs[0].status === "done") {
+          clearInterval(interval);
+          const pieceRes = await fetch(`/api/pieces/${piece.id}`);
+          const pieceData = await pieceRes.json();
+          if (pieceRes.ok && pieceData.piece) {
+            setPiece(pieceData.piece);
+          }
+        } else if (jobs[0].status === "failed") {
+          clearInterval(interval);
+        }
+      } catch {
+        // non-critical
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [piece.id, piece.renderJobs]);
 
   const latestJob = piece.renderJobs[0];
 
@@ -238,7 +286,7 @@ export function PieceReview({ piece: initial, brandChannels }: { piece: Piece; b
     <div className="page">
       <div className="page-header">
         <div>
-          <Link href="/ideate" className="back-link">← Back</Link>
+          <Link href="/pieces" className="back-link">← Back</Link>
           <h1 className="page-title">{piece.idea?.title ?? "Draft"}</h1>
           {piece.idea?.pillar && (
             <p className="muted">{piece.idea.pillar.name}</p>
@@ -325,6 +373,11 @@ export function PieceReview({ piece: initial, brandChannels }: { piece: Piece; b
             ) : (
               <p className="muted">No render started yet.</p>
             )}
+            {latestJob && (latestJob.status === "queued" || latestJob.status === "running") && (
+              <div className="progress-bar">
+                <div className="progress-fill" style={{ width: `${latestJob.progress}%` }} />
+              </div>
+            )}
             <button
               type="button"
               className="btn sm"
@@ -358,6 +411,17 @@ export function PieceReview({ piece: initial, brandChannels }: { piece: Piece; b
                     );
                   })}
                 </div>
+              </div>
+              <div className="motion-toggle">
+                <label className="toggle-label">
+                  <input
+                    type="checkbox"
+                    checked={motion}
+                    onChange={(e) => setMotion(e.target.checked)}
+                  />
+                  {" "}Animate (AI motion)
+                </label>
+                <p className="muted sm">Costs more and takes a few minutes.</p>
               </div>
               {piece.voiceover && (
                 <>
