@@ -15,7 +15,7 @@ from .renderer.vessel import render_slide, PORTRAIT_SIZE
 from .renderer.reel import render_reel
 from .renderer.imagery import generate_background, piece_seed
 from .storage import save_asset
-from .quality import probe_image, probe_video, MediaQualityError
+from .quality import probe_image, probe_video
 
 logging.basicConfig(
     level=logging.INFO,
