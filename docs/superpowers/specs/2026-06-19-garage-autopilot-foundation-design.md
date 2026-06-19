@@ -111,21 +111,32 @@ callers (render jobs, callback) are unaffected.
    - BR: IG 3–4×/wk, FB 2–3×/wk.
    - US: IG 4×/wk, FB 3×/wk, TikTok 2×/wk.
    - Reels → IG (+ TikTok where the channel exists); carousels/single → IG + FB.
-2. **Context (research seam)** — `getLocalContext(brand, date)` returns event
-   hints (local feriados/sports/events). **Minimal stub in this slice** (returns
-   an empty or trivially-derived context); the full researcher and the
-   "suggest content" affordance plug in here later. Result is written to
-   `Idea.insightsContext`.
-3. **Ideate** — reuse the ideas-suggest logic to create an `Idea`
-   (`status = selected`) for the chosen pillar/format/context.
-4. **Generate piece** — reuse the pieces-create logic: caption + first comment +
-   slides (carousel/single) or reel spec (scenes + voiceover), localized per
-   brand locale, via OpenAI. All generator output still passes the claims gate.
+2. **Context (research seam)** — `getResearch(brand, date)` returns a research
+   analysis: event hints (local feriados/sports/events) plus, later, competitor
+   and own-analytics signals. **Minimal stub in this slice** (returns an empty or
+   trivially-derived analysis); the full research/competitor/analytics brain
+   plugs in here later. Result is written to `Idea.insightsContext`.
+3. **Story brief (writer seam)** — `composeStory({ research, pillar, brand })`
+   receives the research analysis and today's pillar and writes *the story we
+   want to tell* in this post: a short narrative brief (angle, key message,
+   beats, CTA intent) that the generator then renders into concrete copy and
+   slides. This is a distinct, named step — not folded into generation — so the
+   "writer" can grow independently of the renderer/caption logic. **Implemented
+   minimally now** (an OpenAI call that turns research+pillar into a structured
+   brief), stored on the `Idea` (`angle` + a new `storyBrief Json?`). The full
+   researcher feeds this step without changing its interface.
+4. **Generate piece** — reuse the pieces-create logic, now driven by the story
+   brief: caption + first comment + slides (carousel/single) or reel spec
+   (scenes + voiceover), localized per brand locale, via OpenAI. All generator
+   output still passes the claims gate.
 5. **Render** — enqueue via the existing render route; worker renders → uploads
    to Garage → callbacks with the public URL.
 6. **Claims-check** — run the existing deterministic gate (plus the optional LLM
    judge if configured). Pass → piece becomes `review`; fail → `blocked` with
    reasons stored.
+
+The pipeline is therefore **research → writer → generate → render → host →
+lint**, with research and writer as explicit, independently-evolvable steps.
 
 **Idempotency:** dedupe by `(brandId, runDate, pillar)`. A `ContentRun` row
 groups a day's drafts, holds the dedupe key, and records per-step status for
@@ -167,13 +178,36 @@ Minimal, additive:
   the review panel.
 - **`Cadence`** — seeded config: `{ id, brandId, weekday (0–6), pillar, format,
   network[] }`, so cadence is tunable without code changes.
+- **`Idea.storyBrief Json?`** — the writer step's structured narrative brief
+  (angle, key message, beats, CTA intent), persisted so the review UI can show
+  the story behind a piece and the writer can be re-run independently.
 
 Seed updates: per-brand cadence rows reflecting the brief §13 cadences.
 
+## Future-proofing seams (not built in this slice)
+
+These are explicitly designed-for but deferred; the work below must not paint
+them into a corner.
+
+- **Research / competitor brain + analytics ingestion** — plugs into
+  `getResearch(brand, date)` (step 2) without changing its callers. It enriches
+  the analysis written to `Idea.insightsContext`, which the writer already
+  consumes. No interface change required when it lands.
+- **Channel dashboard** — a read-only view of per-channel KPIs (posts,
+  followers, likes, comments, reach). Both publisher adapters' providers expose
+  analytics (Buffer + Zernio MCP analytics tools); the dashboard is a new
+  read-side surface that does not touch the pipeline. Leave the publisher
+  adapter interface able to grow a `getChannelStats()` method later.
+- **Writer step depth** — `composeStory` is built minimally now but is its own
+  named step (above), so it can later incorporate richer research, A/B angle
+  selection, or a multi-pass outline→draft flow without disturbing generation.
+
 ## Error handling
 
-- **Host step:** non-200 / wrong content-type on the public-URL verify →
-  asset/piece marked `failed` with the reason; never advances to publishable.
+- **Host step:** non-200 / wrong content-type on the public-URL verify, or a
+  failed media probe (missing stream, zero duration, blank/too-small image,
+  silent audio where a voiceover was requested) → asset/piece marked `failed`
+  with the reason; never advances to publishable.
 - **Orchestrator step failures:** recorded on the `ContentRun` (per-step status
   + error); a failed step does not abort other brands/pillars in the same run.
 - **Claims fail:** `blocked` + reasons; never schedules.
@@ -190,6 +224,12 @@ Seed updates: per-brand cadence rows reflecting the brief §13 cadences.
   stand-in; a full `daily-run` with a mock LLM provider and a mock worker that
   produces a `review` draft into the queue; a deliberately non-compliant caption
   landing `blocked` and never scheduling.
+- **Content integrity:** unit tests for caption/first-comment length limits and
+  on-slide text-fit (overflow → wrap or flag, never crop).
+- **Media quality:** worker-side checks that a rendered reel has both video and
+  audio streams at 1080×1920 with non-zero duration, a requested voiceover
+  yields non-silent audio, and images are non-blank at target dimensions; the
+  host verify rejects empty/broken assets.
 
 ## Acceptance criteria (this slice)
 
@@ -203,6 +243,18 @@ Seed updates: per-brand cadence rows reflecting the brief §13 cadences.
    first comment, and claims results; Approve schedules via the existing route
    (respecting the Buffer ≤10 cap); Edit+re-lint and Discard work.
 5. A cron sidecar in docker-compose triggers `daily-run` on schedule on dokploy.
+6. **Content integrity** — generated copy is complete, never truncated: captions,
+   first comments, and on-slide text fit their fields/frames with no clipped or
+   cut-off characters, and caption length stays within each platform's limit.
+   On-slide text that would overflow is wrapped or the piece is flagged, never
+   silently cropped.
+7. **Media quality** — every produced asset is renderable and professional:
+   images are non-blank at target resolution; reels carry both a video and an
+   audio stream at 1080×1920 with audible voiceover and visible (uncut) text;
+   audio is present and non-silent where a voiceover was requested. The host
+   step's verify probes the asset (e.g. `ffprobe` for streams/duration, size/
+   dimension checks for images) and fails the piece rather than hosting a
+   broken or empty asset.
 
 ## Rollout / git
 
