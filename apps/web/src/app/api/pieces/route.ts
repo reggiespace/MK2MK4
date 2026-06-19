@@ -87,6 +87,7 @@ export async function POST(req: Request) {
         ideaId: ideaId ?? null,
         format: draft.recommendedFormat,
         caption: draft.caption,
+        firstComment: draft.firstComment ?? null,
         hashtags: draft.hashtags,
         formatRationale: draft.formatRationale,
         voiceover: draft.voiceover ?? null,
