@@ -46,15 +46,21 @@ def upload_and_verify(key: str, data: bytes) -> str:
         raise RuntimeError("S3 storage selected but MEDIA_S3_BUCKET/ENDPOINT unset")
     ct = content_type_for(key)
     client = _client()
-    client.put_object(
-        Bucket=s.s3_bucket, Key=key, Body=data,
-        ContentType=ct, ACL="public-read",
-    )
+    try:
+        client.put_object(
+            Bucket=s.s3_bucket, Key=key, Body=data,
+            ContentType=ct, ACL="public-read",
+        )
+    except Exception as exc:
+        raise RuntimeError(f"S3 put_object failed for key={key}: {exc}") from exc
     url = build_public_url(
         endpoint=s.s3_endpoint, bucket=s.s3_bucket, key=key,
         public_base=s.s3_public_base_url,
     )
-    resp = httpx.get(url, timeout=15, follow_redirects=True)
+    try:
+        resp = httpx.get(url, timeout=15, follow_redirects=True)
+    except httpx.HTTPError as exc:
+        raise RuntimeError(f"public URL verify request failed for {url}: {exc}") from exc
     if resp.status_code != 200:
         raise RuntimeError(f"public URL verify failed: {resp.status_code} for {url}")
     got_ct = resp.headers.get("content-type", "")
