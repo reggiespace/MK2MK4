@@ -15,6 +15,7 @@ from .renderer.vessel import render_slide, PORTRAIT_SIZE
 from .renderer.reel import render_reel
 from .renderer.imagery import generate_background, piece_seed
 from .storage import save_asset
+from .quality import probe_image, probe_video, MediaQualityError
 
 logging.basicConfig(
     level=logging.INFO,
@@ -135,9 +136,10 @@ def _render_image_bg(req: RenderRequest) -> None:
         engine = "fal" if bg is not None else "template"
         log.info("image rendered skin=%s engine=%s size=%d bytes", slide.skin, engine, len(png))
 
+        meta = probe_image(png, min_w=1000, min_h=1000)
         path = f"pieces/{req.pieceId}/image_{slide.index}.png"
         url = save_asset(path, png)
-        asset = {"url": url, "type": "image", "engine": engine, "slideIndex": slide.index, "prompt": slide.imagePrompt}
+        asset = {"url": url, "type": "image", "engine": engine, "slideIndex": slide.index, "prompt": slide.imagePrompt, "meta": meta}
         jobs.update(job_id, status="done", progress=100, result={"assets": [asset]})
         log.info("image done job=%s url=%s", job_id, url)
         _callback(job_id, req.pieceId, [asset])
@@ -167,9 +169,11 @@ def _render_reel_bg(req: RenderRequest) -> None:
             progress_callback=progress_cb,
             motion=req.motion,
         )
+        require_audio = bool(req.voiceover and get_settings().elevenlabs_api_key)
+        meta = probe_video(mp4, require_audio=require_audio)
         path = f"pieces/{req.pieceId}/reel.mp4"
         url = save_asset(path, mp4)
-        assets = [{"url": url, "type": "video", "engine": "template"}]
+        assets = [{"url": url, "type": "video", "engine": "template", "meta": meta}]
         jobs.update(job_id, status="done", progress=100, result={"assets": assets})
         log.info("reel done job=%s url=%s size=%d bytes", job_id, url, len(mp4))
         _callback(job_id, req.pieceId, assets)
@@ -198,10 +202,11 @@ def _render_carousel_bg(req: RenderRequest) -> None:
                 background_image=bg,
                 size=PORTRAIT_SIZE,
             )
+            meta = probe_image(png, min_w=1000, min_h=1000)
             path = f"pieces/{req.pieceId}/slide_{slide.index}.png"
             url = save_asset(path, png)
             engine = "fal" if bg is not None else "template"
-            assets.append({"url": url, "type": "image", "engine": engine, "slideIndex": slide.index, "prompt": slide.imagePrompt})
+            assets.append({"url": url, "type": "image", "engine": engine, "slideIndex": slide.index, "prompt": slide.imagePrompt, "meta": meta})
             pct = int(10 + 85 * (i + 1) / total)
             log.info("carousel slide %d/%d done job=%s", i + 1, total, job_id)
             jobs.update(job_id, progress=pct)
