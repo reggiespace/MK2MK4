@@ -38,25 +38,50 @@ Respond as JSON: { "ideas": [ { "title", "angle", "recommendedFormat", "pillarNa
 
 export function draftPrompt(
   brand: BrandContext,
-  opts: { title: string; angle: string; format?: string },
+  opts: { title: string; angle: string; format?: string; story?: import("./types").StoryBrief },
 ): { system: string; user: string } {
+  const storyBlock = opts.story
+    ? `\nStory to tell: ${opts.story.story}\nKey message: ${opts.story.keyMessage}\nBeats: ${opts.story.beats.join(" → ")}\nCTA intent: ${opts.story.ctaIntent}\n`
+    : "";
   return {
     system: brandPreamble(brand),
     user: `Write a complete post for this idea:
 Title: ${opts.title}
 Angle: ${opts.angle}
-${opts.format ? `Preferred format: ${opts.format}` : ""}
+${opts.format ? `Preferred format: ${opts.format}` : ""}${storyBlock}
 
 Produce:
-- caption: the post caption (with light, tasteful emoji where natural), value-first, no medical claims.
-- hashtags: 4-8 relevant hashtags (no leading # needed).
-- recommendedFormat: single | carousel | reel (confirm or improve on the preferred format) + formatRationale (one sentence).
+- caption: link-free caption (light tasteful emoji), value-first, no medical claims. End with a nudge, not a URL (EN "Try it free — links in the first comment 👇" / PT "É grátis pra testar — links no primeiro comentário 👇").
+- firstComment: BOTH destinations + one post-specific question, exactly:
+  "<EN: Everything's free to try 👇 / PT: Tudo grátis pra testar 👇>
+  🌐 Web — gastric-iq.com
+  📲 Android — play.google.com/store/apps/details?id=ca.reggiespace.gastric_iq
+  <one short engagement question in the post's language>"
+- hashtags: 4-8 relevant hashtags (no leading #).
+- recommendedFormat: single | carousel | reel + formatRationale (one sentence).
 - slides: ordered slides.
-  - For "carousel": 1 cover (eyebrow + short headline), 2-4 body slides (eyebrow + headline + 1-2 sentence body), 1 cta slide (headline = call to action).
-  - For "single": exactly 1 cover slide (eyebrow + headline).
-  - For "reel": 3-6 body slides as on-screen scene text (headline per scene), plus a "voiceover" field with the full spoken narration.
+  - "carousel": 1 cover (eyebrow + short headline), 2-4 body (eyebrow + headline + 1-2 sentence body), 1 cta (headline = call to action).
+  - "single": exactly 1 cover (eyebrow + headline).
+  - "reel": 3-6 body slides (headline per scene) + a "voiceover" field with the full narration.
 
 Respond as JSON matching:
-{ "caption", "hashtags": [], "recommendedFormat", "formatRationale", "slides": [ { "role": "cover|body|cta", "eyebrow", "headline", "body", "imagePrompt": "short literal scene description for a background photo — food, ingredients, calm lifestyle objects; no people's bodies, no medical content, no text" } ], "voiceover" }`,
+{ "caption", "firstComment", "hashtags": [], "recommendedFormat", "formatRationale", "slides": [ { "role": "cover|body|cta", "eyebrow", "headline", "body", "imagePrompt": "short literal scene description for a background photo — food, ingredients, calm lifestyle objects; no people's bodies, no medical content, no text" } ], "voiceover" }`,
+  };
+}
+
+export function storyPrompt(
+  brand: BrandContext,
+  opts: { pillarName: string; research?: string; title?: string; angle?: string },
+): { system: string; user: string } {
+  return {
+    system: brandPreamble(brand),
+    user: `You are the writer. Decide the single story this post should tell today.
+Pillar: "${opts.pillarName}".
+${opts.research ? `Research / local context to weave in where natural:\n${opts.research}` : "No special local context today."}
+${opts.title ? `Working title: ${opts.title}` : ""}
+${opts.angle ? `Working angle: ${opts.angle}` : ""}
+
+Respond as JSON:
+{ "story": "1-2 sentences naming the narrative", "keyMessage": "the one thing the viewer should remember", "beats": ["ordered beat", "..."], "ctaIntent": "what we want them to do, framed as process not outcome" }`,
   };
 }
