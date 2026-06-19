@@ -51,6 +51,8 @@ model Brand {
   pillars  Pillar[]
   ideas    Idea[]
   pieces   ContentPiece[]
+  runs     ContentRun[]
+  cadences Cadence[]
 }
 
 model BrandKit {
@@ -105,6 +107,7 @@ model Idea {
   angle             String     @db.Text
   recommendedFormat Format
   insightsContext   String?    @db.Text // Phase 2 hook: research/analytics summary
+  storyBrief        Json? // writer-step narrative: { story, keyMessage, beats[], ctaIntent }
   status            IdeaStatus @default(suggested)
   createdAt         DateTime   @default(now())
 
@@ -130,6 +133,7 @@ enum PieceStatus {
   draft
   rendering
   review
+  blocked
   scheduled
   published
   failed
@@ -143,6 +147,10 @@ model ContentPiece {
   idea        Idea?       @relation(fields: [ideaId], references: [id], onDelete: SetNull)
   format      Format
   caption     String      @db.Text
+  firstComment String?    @db.Text // links + engagement question, link-free caption
+  claims      Json? // last claims-check result snapshot for the review panel
+  runId       String?
+  run         ContentRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
   hashtags    String[]    @default([])
   status      PieceStatus @default(draft)
   costCents   Int         @default(0)
@@ -258,4 +266,38 @@ model ScheduledPost {
   idempotencyKey String     @unique
   error          String?    @db.Text
   createdAt      DateTime   @default(now())
+}
+
+enum RunStatus {
+  running
+  complete
+  failed
+}
+
+model ContentRun {
+  id        String    @id @default(cuid())
+  brandId   String
+  brand     Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  runDate   DateTime  @db.Date
+  pillar    String
+  format    Format
+  status    RunStatus @default(running)
+  error     String?   @db.Text
+  createdAt DateTime  @default(now())
+
+  pieces ContentPiece[]
+
+  @@unique([brandId, runDate, pillar])
+}
+
+model Cadence {
+  id       String   @id @default(cuid())
+  brandId  String
+  brand    Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  weekday  Int // 0=Sunday .. 6=Saturday
+  pillar   String
+  format   Format
+  networks String[] // ['instagram','facebook'] | ['instagram']
+
+  @@unique([brandId, weekday])
 }
