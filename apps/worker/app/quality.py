@@ -17,7 +17,10 @@ def probe_image(data: bytes, *, min_w: int, min_h: int, min_stddev: float = 3.0)
     """Validate an image is non-blank and at least min_w x min_h. Returns meta."""
     if not data:
         raise MediaQualityError("image is empty")
-    img = Image.open(io.BytesIO(data)).convert("RGB")
+    try:
+        img = Image.open(io.BytesIO(data)).convert("RGB")
+    except (Image.UnidentifiedImageError, OSError) as exc:
+        raise MediaQualityError(f"image could not be decoded: {exc}") from exc
     w, h = img.size
     if w < min_w or h < min_h:
         raise MediaQualityError(f"image too small: {w}x{h} < {min_w}x{min_h}")
@@ -34,12 +37,18 @@ def probe_image(data: bytes, *, min_w: int, min_h: int, min_stddev: float = 3.0)
     return {"width": w, "height": h}
 
 def _ffprobe(path: Path) -> dict[str, Any]:
-    res = subprocess.run(
-        ["ffprobe", "-v", "quiet", "-print_format", "json",
-         "-show_format", "-show_streams", str(path)],
-        check=True, capture_output=True,
-    )
-    return json.loads(res.stdout or "{}")
+    try:
+        res = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-print_format", "json",
+             "-show_format", "-show_streams", str(path)],
+            check=True, capture_output=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        raise MediaQualityError(f"ffprobe failed on input: {exc}") from exc
+    try:
+        return json.loads(res.stdout or "{}")
+    except json.JSONDecodeError as exc:
+        raise MediaQualityError(f"ffprobe returned invalid JSON: {exc}") from exc
 
 def probe_video(data: bytes, *, require_audio: bool = True) -> dict[str, Any]:
     """Validate a video has a video stream (and audio if required) and non-zero
