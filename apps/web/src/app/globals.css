@@ -424,7 +424,7 @@ button.ghost {
   border: 1px solid var(--border);
 }
 .slide-preview {
-  aspect-ratio: 9 / 16;
+  aspect-ratio: 4 / 5;
   position: relative;
   overflow: hidden;
   display: flex;

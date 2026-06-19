@@ -1,12 +1,12 @@
 #!/bin/bash
-# Quick-start script for Gastric IQ Social Studio
+# Restart script for Gastric IQ Social Studio (preserves data, reloads env)
 
 set -e
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$REPO_ROOT/.env"
 
-echo "🚀 Starting Gastric IQ Social Content Studio..."
+echo "🔄 Restarting Gastric IQ Social Content Studio..."
 echo "📁 Working directory: $REPO_ROOT"
 
 # Check if .env exists
@@ -21,9 +21,14 @@ set -a
 source "$ENV_FILE"
 set +a
 
-# Start containers with proper env file loading (use absolute path)
-# Note: docker-compose may warn about unset variables below, but --env-file ensures
-# all variables are actually loaded into the containers. These warnings are harmless.
+# Restart containers (down + up, keeps volumes/data)
+echo "⏹️  Stopping containers..."
+docker compose \
+  --env-file "$ENV_FILE" \
+  -f "$REPO_ROOT/infra/docker-compose.yml" \
+  down
+
+echo "🚀 Starting containers..."
 docker compose \
   --env-file "$ENV_FILE" \
   -f "$REPO_ROOT/infra/docker-compose.yml" \
@@ -41,7 +46,3 @@ echo "🌐 Web app: http://localhost:3000"
 echo "⚙️  Worker API: http://localhost:8000"
 echo "📊 Database: localhost:5432"
 echo "🔴 Redis: localhost:6379"
-echo ""
-echo "📝 Login with:"
-echo "   Email: $(grep OPERATOR_EMAIL "$ENV_FILE" | cut -d= -f2)"
-echo "   Password: $(grep OPERATOR_PASSWORD "$ENV_FILE" | cut -d= -f2)"

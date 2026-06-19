@@ -25,15 +25,13 @@ ENV NODE_ENV=production
 COPY --from=build /app/apps/web/.next/standalone ./
 COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build /app/apps/web/public ./apps/web/public
-# Prisma CLI + adapter needed at runtime for entrypoint migrations
-COPY --from=build /app/apps/web/node_modules/prisma ./apps/web/node_modules/prisma
-COPY --from=build /app/apps/web/node_modules/@prisma ./apps/web/node_modules/@prisma
+# Runtime deps for entrypoint: migrations runner (pg) + operator init (bcryptjs) + prisma schema
 COPY --from=build /app/apps/web/node_modules/bcryptjs ./apps/web/node_modules/bcryptjs
 COPY --from=build /app/apps/web/prisma ./apps/web/prisma
-RUN mkdir -p apps/web/node_modules/.bin && \
-    ln -sf ../prisma/build/index.js apps/web/node_modules/.bin/prisma && \
-    chmod +x apps/web/node_modules/prisma/build/index.js
+# Install pg for run-migrations.js (pnpm symlinks don't survive multi-stage copy)
+RUN npm install --prefix /migrations-deps pg@8 --save 2>/dev/null
 COPY infra/init-operator.js /init-operator.js
+COPY infra/run-migrations.js /run-migrations.js
 COPY infra/entrypoint-web.sh /entrypoint.sh
 RUN chmod +x /init-operator.js /entrypoint.sh
 EXPOSE 3000

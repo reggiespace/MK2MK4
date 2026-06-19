@@ -12,7 +12,7 @@ const bodySchema = z.object({
       type: z.enum(["image", "video", "audio"]),
       engine: z.string().optional(),
       slideIndex: z.number().optional(),
-      prompt: z.string().optional(),
+      prompt: z.string().nullish(),
       costCents: z.number().optional(),
     }),
   ),

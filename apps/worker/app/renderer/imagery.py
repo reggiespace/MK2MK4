@@ -46,7 +46,7 @@ def _fal_image(prompt: str, model: str, size: tuple[int, int], seed: int | None)
     args: dict = {"prompt": prompt, "image_size": {"width": w, "height": h}, "num_images": 1}
     if seed is not None:
         args["seed"] = seed
-    result = fal_client.subscribe(model, arguments=args)
+    result = fal_client.subscribe(model, arguments=args, client_timeout=300)
     return _download(result["images"][0]["url"])
 
 
@@ -106,6 +106,7 @@ def _fal_video(image_url: str, model: str, prompt: str) -> bytes:
             "image_url": image_url, "prompt": prompt,
             "duration": "5", "resolution": "720p",
         },
+        client_timeout=600,
     )
     return _download(_video_url(result))
 
