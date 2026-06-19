@@ -87,8 +87,33 @@ async function seedBrand(opts: {
   return brand;
 }
 
+// Weekly cadence per brand (brief §13). weekday: 0=Sun..6=Sat.
+// Reels → instagram only (BR has no TikTok channel here); static → ig+fb.
+const CADENCE_US: { weekday: number; pillar: string; format: "single" | "carousel" | "reel"; networks: string[] }[] = [
+  { weekday: 1, pillar: "Medication-cycle education", format: "carousel", networks: ["instagram", "facebook"] },
+  { weekday: 2, pillar: "Side-effect readiness (without fear)", format: "reel", networks: ["instagram"] },
+  { weekday: 3, pillar: "Protein & lean mass", format: "single", networks: ["instagram", "facebook"] },
+  { weekday: 4, pillar: "Bariatric guidance", format: "carousel", networks: ["instagram", "facebook"] },
+  { weekday: 5, pillar: "Trust & privacy", format: "reel", networks: ["instagram"] },
+];
+const CADENCE_BR: typeof CADENCE_US = [
+  { weekday: 1, pillar: "Educação sobre o ciclo da medicação", format: "carousel", networks: ["instagram", "facebook"] },
+  { weekday: 3, pillar: "Preparo para efeitos colaterais (sem medo)", format: "reel", networks: ["instagram"] },
+  { weekday: 5, pillar: "Proteína e massa magra", format: "single", networks: ["instagram", "facebook"] },
+];
+
+async function seedCadence(brandId: string, rows: typeof CADENCE_US) {
+  for (const r of rows) {
+    await prisma.cadence.upsert({
+      where: { brandId_weekday: { brandId, weekday: r.weekday } },
+      update: { pillar: r.pillar, format: r.format, networks: r.networks },
+      create: { brandId, weekday: r.weekday, pillar: r.pillar, format: r.format, networks: r.networks },
+    });
+  }
+}
+
 async function main() {
-  await seedBrand({
+  const us = await seedBrand({
     key: "gastric-us",
     name: "Gastric IQ",
     locale: "en",
@@ -96,7 +121,7 @@ async function main() {
     tone: TONE_EN,
     pillars: PILLARS_EN,
   });
-  await seedBrand({
+  const br = await seedBrand({
     key: "gastric-br",
     name: "Gastric IQ Brasil",
     locale: "pt_BR",
@@ -104,7 +129,9 @@ async function main() {
     tone: TONE_PT,
     pillars: PILLARS_PT,
   });
-  console.log("Seed complete: 2 brands, 2 brand kits, 10 pillars.");
+  await seedCadence(us.id, CADENCE_US);
+  await seedCadence(br.id, CADENCE_BR);
+  console.log("Seed complete: 2 brands, 2 brand kits, 10 pillars, cadence rows.");
 }
 
 main()
