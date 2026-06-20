@@ -1537,13 +1537,99 @@ export interface ScheduleOptions {
 
 And the same `...(opts.firstComment ? { platformSpecificData: { firstComment: opts.firstComment } } : {})` line in the `publishNow` body and in `dryRun`'s returned object.
 
-- [ ] **Step 3: Buffer — leave first comment deferred but explicit.** Open
-`buffer.ts`; at the top of `schedule` and `publishNow`, add a one-line note so
-the deferral is visible (no behavior change — EN first comment is a later slice):
+- [ ] **Step 3: Buffer — send firstComment via per-network metadata, and fix
+the mutation to match Buffer's real GraphQL schema.** Buffer's schema
+(confirmed via `introspect_schema`) does NOT take a flat first-comment field;
+each network's post-metadata type carries its own `firstComment`:
+`PostInputMetaData.instagram.firstComment` / `.facebook.firstComment` (also
+`.linkedin`, unused here since `ScheduleOptions.network` is only
+`"facebook" | "instagram"`). Separately, the current `gql` calls in
+`buffer.ts` are already wrong against the real schema — they send
+`input: PostInput!` (the real `PostInput` is `{ id: PostId! }`, used only by
+the `post` query) instead of `CreatePostInput!`, and read back
+`post { id scheduledAt }` where the real field is `post { id dueAt }` behind a
+`PostActionSuccess` union member. Fix both while wiring first comment.
+
+Replace `schedule` and `publishNow` in `buffer.ts`:
 
 ```ts
-    // NOTE: Buffer's simple create API doesn't expose first comment; EN
-    // first-comment is deferred to a GraphQL-based slice (spec §scope).
+  private assetInput(url: string) {
+    const isVideo = /\.(mp4|mov|m4v)$/i.test(url);
+    return isVideo ? { video: { url } } : { image: { url } };
+  }
+
+  private metadataFor(opts: ScheduleOptions | Omit<ScheduleOptions, "scheduledAt">) {
+    if (!opts.firstComment) return undefined;
+    if (opts.network === "instagram") return { instagram: { type: "post", firstComment: opts.firstComment } };
+    if (opts.network === "facebook") return { facebook: { type: "post", firstComment: opts.firstComment } };
+    return undefined;
+  }
+
+  private async createPost(input: Record<string, unknown>) {
+    const data = await gql(
+      `mutation CreatePost($input: CreatePostInput!) {
+        createPost(input: $input) {
+          __typename
+          ... on PostActionSuccess { post { id dueAt } }
+          ... on InvalidInputError { message }
+          ... on UnauthorizedError { message }
+          ... on NotFoundError { message }
+          ... on LimitReachedError { message }
+          ... on RestProxyError { message code }
+          ... on UnexpectedError { message }
+        }
+      }`,
+      { input },
+    );
+    const result = data.createPost;
+    if (result.__typename !== "PostActionSuccess") {
+      throw new Error(`Buffer createPost failed (${result.__typename}): ${result.message}`);
+    }
+    return result.post;
+  }
+
+  async schedule(opts: ScheduleOptions): Promise<PublishResult> {
+    const post = await this.createPost({
+      channelId: opts.channelId,
+      text: [opts.caption, ...opts.hashtags].join("\n\n"),
+      assets: opts.mediaUrls.map((u) => this.assetInput(u)),
+      mode: "customScheduled",
+      schedulingType: "automatic",
+      dueAt: opts.scheduledAt.toISOString(),
+      metadata: this.metadataFor(opts),
+    });
+    return { providerPostId: post.id, scheduledAt: new Date(post.dueAt) };
+  }
+
+  async publishNow(opts: Omit<ScheduleOptions, "scheduledAt">): Promise<PublishResult> {
+    const post = await this.createPost({
+      channelId: opts.channelId,
+      text: [opts.caption, ...opts.hashtags].join("\n\n"),
+      assets: opts.mediaUrls.map((u) => this.assetInput(u)),
+      mode: "shareNow",
+      schedulingType: "automatic",
+      metadata: this.metadataFor(opts),
+    });
+    return { providerPostId: post.id, scheduledAt: new Date(post.dueAt) };
+  }
+```
+
+Drop the now-unused `idempotencyKey` field from both bodies — `CreatePostInput` has no
+such field; Buffer dedupes on its own side. Update `dryRun` to mirror the new
+shape (`assets`, `metadata`) instead of `mediaUrls`/no metadata, e.g.:
+
+```ts
+  async dryRun(opts: ScheduleOptions): Promise<Record<string, unknown>> {
+    return {
+      provider: "buffer",
+      channelId: opts.channelId,
+      network: opts.network,
+      scheduledAt: opts.scheduledAt.toISOString(),
+      text: [opts.caption, ...opts.hashtags].join("\n\n"),
+      assets: opts.mediaUrls.map((u) => this.assetInput(u)),
+      metadata: this.metadataFor(opts),
+    };
+  }
 ```
 
 - [ ] **Step 4: Typecheck & commit**
@@ -1553,7 +1639,7 @@ Expected: no errors.
 
 ```bash
 git add apps/web/src/lib/publishers/types.ts apps/web/src/lib/publishers/zernio.ts apps/web/src/lib/publishers/buffer.ts
-git commit -m "feat(publish): thread firstComment to Zernio; document Buffer deferral"
+git commit -m "feat(publish): thread firstComment to Zernio + Buffer; fix Buffer mutation shape"
 ```
 
 ### Task E2: Pass firstComment from the schedule route
