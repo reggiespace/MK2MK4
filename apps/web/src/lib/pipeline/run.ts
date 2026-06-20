@@ -8,7 +8,7 @@ import { pickCadence, runDateUTC, type CadenceRow } from "./cadence";
 import { captionWithinLimit } from "./limits";
 import type { BrandContext } from "@/lib/llm/types";
 import type { Skin } from "@/generated/prisma/enums";
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 
 export interface PipelineBrand {
   id: string;
@@ -51,9 +51,20 @@ export async function runDailyForBrand(
   });
   if (existing) return { skipped: true, reason: "already-run", runId: existing.id };
 
-  const run = await prisma.contentRun.create({
-    data: { brandId: brand.id, runDate, pillar: cadence.pillar, format: cadence.format, status: "running" },
-  });
+  let run;
+  try {
+    run = await prisma.contentRun.create({
+      data: { brandId: brand.id, runDate, pillar: cadence.pillar, format: cadence.format, status: "running" },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      const concurrent = await prisma.contentRun.findUnique({
+        where: { brandId_runDate_pillar: { brandId: brand.id, runDate, pillar: cadence.pillar } },
+      });
+      return { skipped: true, reason: "already-run", runId: concurrent?.id };
+    }
+    throw err;
+  }
 
   try {
     const llm = getLlmProvider();

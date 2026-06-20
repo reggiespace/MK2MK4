@@ -278,10 +278,15 @@ export function PieceReview({ piece: initial, brandChannels }: { piece: Piece; b
 
   const latestJob = piece.renderJobs[0];
 
-  const storyBrief = piece.idea?.storyBrief as
-    | { story: string; keyMessage: string; beats: string[]; ctaIntent: string }
-    | null
-    | undefined;
+  const rawStoryBrief = piece.idea?.storyBrief;
+  const storyBrief =
+    rawStoryBrief &&
+    typeof rawStoryBrief === "object" &&
+    typeof (rawStoryBrief as Record<string, unknown>).story === "string" &&
+    typeof (rawStoryBrief as Record<string, unknown>).keyMessage === "string" &&
+    Array.isArray((rawStoryBrief as Record<string, unknown>).beats)
+      ? (rawStoryBrief as { story: string; keyMessage: string; beats: string[]; ctaIntent: string })
+      : null;
 
   // Build slide index → rendered image URL map (carousel/image only).
   const slideImageUrls = new Map<number, string>();

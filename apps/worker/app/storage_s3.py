@@ -24,19 +24,24 @@ def build_public_url(*, endpoint: str, bucket: str, key: str, public_base: str |
         return f"{public_base.rstrip('/')}/{key.lstrip('/')}"
     return f"{endpoint.rstrip('/')}/{bucket}/{key.lstrip('/')}"
 
-def _client():
-    import boto3
-    from botocore.config import Config
+_client_cache = None
 
-    s = get_settings()
-    return boto3.client(
-        "s3",
-        endpoint_url=s.s3_endpoint,
-        region_name=s.s3_region,
-        aws_access_key_id=s.aws_access_key_id,
-        aws_secret_access_key=s.aws_secret_access_key,
-        config=Config(s3={"addressing_style": "path"}),
-    )
+def _client():
+    global _client_cache
+    if _client_cache is None:
+        import boto3
+        from botocore.config import Config
+
+        s = get_settings()
+        _client_cache = boto3.client(
+            "s3",
+            endpoint_url=s.s3_endpoint,
+            region_name=s.s3_region,
+            aws_access_key_id=s.aws_access_key_id,
+            aws_secret_access_key=s.aws_secret_access_key,
+            config=Config(s3={"addressing_style": "path"}),
+        )
+    return _client_cache
 
 def upload_and_verify(key: str, data: bytes) -> str:
     """PUT object public-read, then GET its public URL to confirm 200 +

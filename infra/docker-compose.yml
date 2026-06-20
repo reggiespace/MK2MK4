@@ -99,17 +99,17 @@ services:
       - "3000:3000"
 
   scheduler:
-    image: alpine:3.20
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.scheduler
     depends_on:
       - web
     environment:
       WEB_BASE_URL: "http://web:3000"
-      CRON_SECRET: "${CRON_SECRET}"
+      CRON_SECRET: "${CRON_SECRET:?CRON_SECRET must be set for the scheduler to authenticate}"
     volumes:
       - ./cron/run-daily.sh:/scripts/run-daily.sh:ro
       - ./cron/crontab:/etc/crontabs/root:ro
-    command: >
-      sh -c "apk add --no-cache curl >/dev/null && crond -f -l 8"
     restart: unless-stopped
 
 volumes:

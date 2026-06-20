@@ -43,7 +43,13 @@ export default async function QueuePage() {
                   <h3>{p.brand.name}</h3>
                   {media ? (
                     media.type === "video" ? (
-                      <video src={media.url} muted className="slide-video-preview" />
+                      <video
+                        src={media.url}
+                        muted
+                        controls
+                        playsInline
+                        className="slide-video-preview"
+                      />
                     ) : (
                       <img
                         src={media.url}
