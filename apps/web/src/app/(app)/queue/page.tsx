@@ -10,7 +10,6 @@ export default async function QueuePage() {
     include: {
       mediaAssets: { select: { url: true, type: true } },
       brand: { select: { name: true, locale: true } },
-      slides: { orderBy: { index: "asc" }, take: 1 },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -44,9 +43,13 @@ export default async function QueuePage() {
                   <h3>{p.brand.name}</h3>
                   {media ? (
                     media.type === "video" ? (
-                      <video src={media.url} controls muted className="slide-video-preview" />
+                      <video src={media.url} muted className="slide-video-preview" />
                     ) : (
-                      <img src={media.url} alt="" className="slide-rendered-img" />
+                      <img
+                        src={media.url}
+                        alt={`${p.brand.name} ${p.format} draft`}
+                        className="slide-rendered-img"
+                      />
                     )
                   ) : (
                     <p className="muted">no media yet</p>
