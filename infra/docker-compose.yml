@@ -91,6 +91,20 @@ services:
     ports:
       - "3000:3000"
 
+  scheduler:
+    image: alpine:3.20
+    depends_on:
+      - web
+    environment:
+      WEB_BASE_URL: "http://web:3000"
+      CRON_SECRET: "${CRON_SECRET}"
+    volumes:
+      - ./cron/run-daily.sh:/scripts/run-daily.sh:ro
+      - ./cron/crontab:/etc/crontabs/root:ro
+    command: >
+      sh -c "apk add --no-cache curl >/dev/null && chmod +x /scripts/run-daily.sh && crond -f -l 8"
+    restart: unless-stopped
+
 volumes:
   pgdata:
   redisdata:
