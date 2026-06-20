@@ -7,6 +7,7 @@ import { getResearch } from "./research";
 import { pickCadence, runDateUTC, type CadenceRow } from "./cadence";
 import type { BrandContext } from "@/lib/llm/types";
 import type { Skin } from "@/generated/prisma/enums";
+import type { Prisma } from "@/generated/prisma/client";
 
 export interface PipelineBrand {
   id: string;
@@ -75,7 +76,7 @@ export async function runDailyForBrand(
         angle: story.story,
         recommendedFormat: cadence.format,
         insightsContext: research.summary ?? null,
-        storyBrief: JSON.parse(JSON.stringify(story)),
+        storyBrief: story as unknown as Prisma.InputJsonValue,
         status: "selected",
       },
     });
@@ -101,7 +102,7 @@ export async function runDailyForBrand(
         hashtags: draft.hashtags,
         formatRationale: draft.formatRationale,
         voiceover: draft.voiceover ?? null,
-        claims: JSON.parse(JSON.stringify(claims)),
+        claims: claims as unknown as Prisma.InputJsonValue,
         status: claims.canSchedule ? "draft" : "blocked",
         slides: {
           create: draft.slides.map((s, i) => ({
