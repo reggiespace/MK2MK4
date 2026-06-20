@@ -289,6 +289,19 @@ button.ghost {
 .badge-scheduled { background: #d8ecd6; color: var(--moss); }
 .badge-published { background: var(--moss); color: white; }
 .badge-failed  { background: #f0d6d4; color: #a03c36; }
+.badge-blocked { background: #f0d6d4; color: #a03c36; }
+
+/* ── Queue screen ───────────────────────────────────────────────── */
+.queue-card-badges { display: flex; gap: 0.4rem; margin-bottom: 0.5rem; }
+.queue-caption {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-top: 0.5rem;
+}
 
 /* ── Piece list (dashboard) ──────────────────────────────────────── */
 .piece-list { display: flex; flex-direction: column; gap: 0.5rem; }
