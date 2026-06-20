@@ -5,6 +5,7 @@ import { getLlmProvider } from "@/lib/llm/provider";
 import { checkClaims } from "@/lib/claims/check";
 import { getResearch } from "./research";
 import { pickCadence, runDateUTC, type CadenceRow } from "./cadence";
+import { captionWithinLimit } from "./limits";
 import type { BrandContext } from "@/lib/llm/types";
 import type { Skin } from "@/generated/prisma/enums";
 import type { Prisma } from "@/generated/prisma/client";
@@ -90,6 +91,8 @@ export async function runDailyForBrand(
     });
     const fullText = [draft.caption, ...draft.slides.map((s) => s.headline ?? "")].join(" ");
     const claims = checkClaims(fullText);
+    const lengthOk = captionWithinLimit(draft.caption, cadence.networks).ok;
+    const blocked = !claims.canSchedule || !lengthOk;
 
     const piece = await prisma.contentPiece.create({
       data: {
@@ -103,7 +106,7 @@ export async function runDailyForBrand(
         formatRationale: draft.formatRationale,
         voiceover: draft.voiceover ?? null,
         claims: claims as unknown as Prisma.InputJsonValue,
-        status: claims.canSchedule ? "draft" : "blocked",
+        status: blocked ? "blocked" : "draft",
         slides: {
           create: draft.slides.map((s, i) => ({
             index: i,
@@ -120,7 +123,7 @@ export async function runDailyForBrand(
     });
     await prisma.idea.update({ where: { id: idea.id }, data: { status: "used" } });
 
-    if (!claims.canSchedule) {
+    if (blocked) {
       await prisma.contentRun.update({ where: { id: run.id }, data: { status: "complete" } });
       return { skipped: false, runId: run.id, pieceId: piece.id, blocked: true };
     }
