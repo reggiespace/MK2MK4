@@ -133,6 +133,17 @@ const WARN_RULES: Rule[] = [
 
 const ALL_RULES = [...BLOCK_RULES, ...WARN_RULES];
 
+/** Join a caption + slide headlines/bodies into the text the claims gate should scan. */
+export function fullTextForClaims(
+  caption: string,
+  slides: { headline?: string | null; body?: string | null }[],
+): string {
+  const slideText = slides
+    .map((s) => [s.headline, s.body].filter(Boolean).join(" "))
+    .join(" ");
+  return [caption, slideText].filter(Boolean).join(" ");
+}
+
 /** Run the claims check over arbitrary post text (caption + slide text joined). */
 export function checkClaims(text: string): ClaimsResult {
   const findings: ClaimFinding[] = [];

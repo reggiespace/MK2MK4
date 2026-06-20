@@ -2,7 +2,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { getLlmProvider } from "@/lib/llm/provider";
-import { checkClaims } from "@/lib/claims/check";
+import { checkClaims, fullTextForClaims } from "@/lib/claims/check";
 import { getResearch } from "./research";
 import { pickCadence, runDateUTC, type CadenceRow } from "./cadence";
 import { captionWithinLimit } from "./limits";
@@ -89,7 +89,7 @@ export async function runDailyForBrand(
       format: cadence.format,
       story,
     });
-    const fullText = [draft.caption, ...draft.slides.map((s) => s.headline ?? "")].join(" ");
+    const fullText = fullTextForClaims(draft.caption, draft.slides);
     const claims = checkClaims(fullText);
     const lengthOk = captionWithinLimit(draft.caption, cadence.networks).ok;
     const blocked = !claims.canSchedule || !lengthOk;

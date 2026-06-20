@@ -1,1 +1,1 @@
-0 8 * * * /scripts/run-daily.sh >> /var/log/cron.log 2>&1
+0 8 * * * sh /scripts/run-daily.sh >> /var/log/cron.log 2>&1

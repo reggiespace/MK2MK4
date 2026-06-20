@@ -63,7 +63,7 @@ def upload_and_verify(key: str, data: bytes) -> str:
         raise RuntimeError(f"public URL verify request failed for {url}: {exc}") from exc
     if resp.status_code != 200:
         raise RuntimeError(f"public URL verify failed: {resp.status_code} for {url}")
-    got_ct = resp.headers.get("content-type", "")
-    if ct.split("/")[0] not in got_ct:
+    got_ct = resp.headers.get("content-type", "").split(";")[0].strip()
+    if got_ct != ct:
         raise RuntimeError(f"content-type mismatch: expected {ct}, got {got_ct!r}")
     return url

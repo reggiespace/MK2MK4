@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { guard, badRequest } from "@/lib/api";
-import { checkClaims, applyAutoFixes } from "@/lib/claims/check";
+import { checkClaims, applyAutoFixes, fullTextForClaims } from "@/lib/claims/check";
 
 export async function POST(
   _req: Request,
@@ -17,11 +17,7 @@ export async function POST(
   });
   if (!piece) return badRequest("Unknown piece.");
 
-  // Concatenate all text for the check.
-  const slideText = piece.slides
-    .map((s) => [s.headline, s.body].filter(Boolean).join(" "))
-    .join(" ");
-  const fullText = [piece.caption, slideText].filter(Boolean).join(" ");
+  const fullText = fullTextForClaims(piece.caption, piece.slides);
 
   const result = checkClaims(fullText);
   const fixed = applyAutoFixes(fullText);

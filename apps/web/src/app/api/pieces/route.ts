@@ -28,6 +28,9 @@ export async function GET(req: Request) {
   const runDate = searchParams.get("runDate"); // YYYY-MM-DD (UTC)
   const cursor = searchParams.get("cursor");
 
+  if (runDate && !/^\d{4}-\d{2}-\d{2}$/.test(runDate)) {
+    return badRequest("runDate must be in YYYY-MM-DD format.");
+  }
   const runFilter = runDate
     ? { run: { is: { runDate: new Date(`${runDate}T00:00:00.000Z`) } } }
     : {};

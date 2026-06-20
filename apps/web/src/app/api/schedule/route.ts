@@ -4,7 +4,7 @@ import { nanoid } from "nanoid";
 import { prisma } from "@/lib/db";
 import { guard, badRequest, serverError } from "@/lib/api";
 import { getPublisher } from "@/lib/publishers";
-import { checkClaims } from "@/lib/claims/check";
+import { checkClaims, fullTextForClaims } from "@/lib/claims/check";
 import type { Prisma } from "@/generated/prisma/client";
 
 const bodySchema = z.object({
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   if (!piece) return badRequest("Unknown piece.");
 
   // Claims-check gate — block if there are unresolved blocks.
-  const fullText = [piece.caption, ...piece.slides.map((s) => s.headline ?? "")].join(" ");
+  const fullText = fullTextForClaims(piece.caption, piece.slides);
   const claims = checkClaims(fullText);
   await prisma.contentPiece.update({
     where: { id: pieceId },

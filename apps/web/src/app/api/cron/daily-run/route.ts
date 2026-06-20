@@ -7,10 +7,15 @@ import { enqueueRender } from "@/lib/pipeline/enqueue-render";
 
 export async function POST(req: Request) {
   const secret = env.cronSecret();
-  if (secret) {
-    if (req.headers.get("x-cron-secret") !== secret) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "CRON_SECRET is not configured." },
+        { status: 500 },
+      );
     }
+  } else if (req.headers.get("x-cron-secret") !== secret) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const when = new Date();
