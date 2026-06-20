@@ -49,6 +49,7 @@ export class ZernioPublisher implements Publisher {
         mediaUrls: opts.mediaUrls,
         scheduledAt: opts.scheduledAt.toISOString(),
         idempotencyKey: opts.idempotencyKey,
+        ...(opts.firstComment ? { platformSpecificData: { firstComment: opts.firstComment } } : {}),
       }),
     });
     return {
@@ -66,6 +67,7 @@ export class ZernioPublisher implements Publisher {
         caption: [opts.caption, ...opts.hashtags].join("\n\n"),
         mediaUrls: opts.mediaUrls,
         idempotencyKey: opts.idempotencyKey,
+        ...(opts.firstComment ? { platformSpecificData: { firstComment: opts.firstComment } } : {}),
       }),
     });
     return {
@@ -83,6 +85,7 @@ export class ZernioPublisher implements Publisher {
       mediaUrls: opts.mediaUrls,
       scheduledAt: opts.scheduledAt.toISOString(),
       idempotencyKey: opts.idempotencyKey,
+      ...(opts.firstComment ? { platformSpecificData: { firstComment: opts.firstComment } } : {}),
     };
   }
 }
