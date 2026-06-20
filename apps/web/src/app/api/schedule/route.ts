@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { guard, badRequest, serverError } from "@/lib/api";
 import { getPublisher } from "@/lib/publishers";
 import { checkClaims } from "@/lib/claims/check";
+import type { Prisma } from "@/generated/prisma/client";
 
 const bodySchema = z.object({
   pieceId: z.string(),
@@ -36,6 +37,10 @@ export async function POST(req: Request) {
   // Claims-check gate — block if there are unresolved blocks.
   const fullText = [piece.caption, ...piece.slides.map((s) => s.headline ?? "")].join(" ");
   const claims = checkClaims(fullText);
+  await prisma.contentPiece.update({
+    where: { id: pieceId },
+    data: { claims: claims as unknown as Prisma.InputJsonValue },
+  });
   if (!claims.canSchedule) {
     return NextResponse.json(
       {
@@ -52,6 +57,7 @@ export async function POST(req: Request) {
 
   const opts = {
     caption: piece.caption,
+    firstComment: piece.firstComment ?? undefined,
     hashtags: piece.hashtags,
     mediaUrls,
     format: piece.format as "single" | "carousel" | "reel",
