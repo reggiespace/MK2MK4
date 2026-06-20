@@ -106,7 +106,6 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const pieceId = searchParams.get("pieceId");
-  const publisher = getPublisher("buffer");
 
   if (!pieceId) return badRequest("pieceId required for best-time lookup.");
 
