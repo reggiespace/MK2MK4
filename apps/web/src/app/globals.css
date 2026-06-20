@@ -549,6 +549,15 @@ button.ghost {
   border-radius: 0.5rem;
   padding: 0.75rem;
   color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.queue-first-comment {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--muted);
+  white-space: pre-wrap;
+  margin-top: 0.5rem;
 }
 
 .caption-textarea { min-height: 140px; }

@@ -93,6 +93,10 @@ services:
       WORKER_SHARED_SECRET: ${WORKER_SHARED_SECRET}
       STORAGE_DIR: /data/storage
       PUBLIC_MEDIA_BASE_URL: ${PUBLIC_MEDIA_BASE_URL}
+      # Must match the scheduler's CRON_SECRET — the daily-run route hard-fails
+      # (500) in production when this is unset, so the scheduler could never
+      # authenticate without it.
+      CRON_SECRET: ${CRON_SECRET:-}
     volumes:
       - mediadata:/data/storage
     ports:

@@ -61,7 +61,9 @@ export default async function QueuePage() {
                     <p className="muted">no media yet</p>
                   )}
                   <p className="queue-caption">{p.caption}</p>
-                  {p.firstComment ? <p className="muted">{p.firstComment}</p> : null}
+                  {p.firstComment ? (
+                    <p className="queue-first-comment">{p.firstComment}</p>
+                  ) : null}
                 </Link>
               );
             })}
