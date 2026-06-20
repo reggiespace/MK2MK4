@@ -109,7 +109,7 @@ services:
       - ./cron/run-daily.sh:/scripts/run-daily.sh:ro
       - ./cron/crontab:/etc/crontabs/root:ro
     command: >
-      sh -c "apk add --no-cache curl >/dev/null && chmod +x /scripts/run-daily.sh && crond -f -l 8"
+      sh -c "apk add --no-cache curl >/dev/null && crond -f -l 8"
     restart: unless-stopped
 
 volumes:
