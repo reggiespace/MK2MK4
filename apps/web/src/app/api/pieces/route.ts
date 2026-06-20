@@ -25,15 +25,22 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const brandId = searchParams.get("brandId");
   const status = searchParams.get("status");
+  const runDate = searchParams.get("runDate"); // YYYY-MM-DD (UTC)
   const cursor = searchParams.get("cursor");
+
+  const runFilter = runDate
+    ? { run: { is: { runDate: new Date(`${runDate}T00:00:00.000Z`) } } }
+    : {};
 
   const pieces = await prisma.contentPiece.findMany({
     where: {
       ...(brandId ? { brandId } : {}),
       ...(status ? { status: status as never } : {}),
+      ...runFilter,
     },
     include: {
       slides: { orderBy: { index: "asc" }, take: 1 },
+      mediaAssets: { select: { url: true, type: true } },
       idea: { select: { title: true } },
       brand: { select: { name: true, locale: true } },
     },
