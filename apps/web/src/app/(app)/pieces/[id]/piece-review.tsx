@@ -27,11 +27,17 @@ type Piece = {
   voiceGender: "male" | "female" | null;
   motion: boolean;
   formatRationale: string | null;
+  firstComment: string | null;
   costCents: number;
   slides: Slide[];
   mediaAssets: { id: string; url: string; type: string }[];
   renderJobs: { id: string; status: string; progress: number }[];
-  idea: { title: string; angle: string; pillar: { name: string } | null } | null;
+  idea: {
+    title: string;
+    angle: string;
+    pillar: { name: string } | null;
+    storyBrief: unknown;
+  } | null;
   brand: { id: string; name: string; locale: string; publisher: string };
 };
 
@@ -272,6 +278,11 @@ export function PieceReview({ piece: initial, brandChannels }: { piece: Piece; b
 
   const latestJob = piece.renderJobs[0];
 
+  const storyBrief = piece.idea?.storyBrief as
+    | { story: string; keyMessage: string; beats: string[]; ctaIntent: string }
+    | null
+    | undefined;
+
   // Build slide index → rendered image URL map (carousel/image only).
   const slideImageUrls = new Map<number, string>();
   for (const slide of piece.slides) {
@@ -488,6 +499,24 @@ export function PieceReview({ piece: initial, brandChannels }: { piece: Piece; b
             <div className="rationale">
               <p className="eyebrow">Format rationale</p>
               <p className="muted">{piece.formatRationale}</p>
+            </div>
+          )}
+
+          {storyBrief && (
+            <div className="story-brief">
+              <p className="eyebrow">Story</p>
+              <p className="voiceover-text">{storyBrief.story}</p>
+              <p className="muted sm"><strong>Key message:</strong> {storyBrief.keyMessage}</p>
+              {storyBrief.beats.length > 0 && (
+                <p className="muted sm">{storyBrief.beats.join(" → ")}</p>
+              )}
+            </div>
+          )}
+
+          {piece.firstComment && (
+            <div className="first-comment">
+              <p className="eyebrow">First comment</p>
+              <p className="voiceover-text">{piece.firstComment}</p>
             </div>
           )}
 

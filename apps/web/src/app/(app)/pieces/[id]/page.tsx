@@ -14,7 +14,7 @@ export default async function PiecePage({
       slides: { orderBy: { index: "asc" } },
       mediaAssets: true,
       renderJobs: { orderBy: { createdAt: "desc" }, take: 1 },
-      idea: { select: { title: true, angle: true, pillar: { select: { name: true } } } },
+      idea: { select: { title: true, angle: true, storyBrief: true, pillar: { select: { name: true } } } },
       brand: { select: { id: true, name: true, locale: true, publisher: true, channels: true } },
     },
   });
