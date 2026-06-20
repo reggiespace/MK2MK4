@@ -49,6 +49,13 @@ services:
       STORAGE_DIR: /data/storage
       WEB_BASE_URL: http://web:3000
       PUBLIC_MEDIA_BASE_URL: ${PUBLIC_MEDIA_BASE_URL:-http://localhost:3000/media}
+      STORAGE_BACKEND: "${STORAGE_BACKEND:-local}"
+      MEDIA_S3_BUCKET: "${MEDIA_S3_BUCKET:-}"
+      MEDIA_S3_REGION: "${MEDIA_S3_REGION:-garage}"
+      MEDIA_S3_ENDPOINT: "${MEDIA_S3_ENDPOINT:-}"
+      MEDIA_PUBLIC_BASE_URL: "${MEDIA_PUBLIC_BASE_URL:-}"
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID:-}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY:-}"
     volumes:
       - mediadata:/data/storage
     expose:
