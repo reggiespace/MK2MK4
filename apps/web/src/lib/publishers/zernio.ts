@@ -1,6 +1,7 @@
 import "server-only";
 import { env } from "@/lib/env";
 import type { Publisher, ScheduleOptions, PublishResult } from "./types";
+import { composePostText } from "./compose";
 
 async function zernioFetch(path: string, options: RequestInit = {}) {
   const key = env.zernioApiKey();
@@ -45,7 +46,7 @@ export class ZernioPublisher implements Publisher {
       body: JSON.stringify({
         accountId: opts.channelId,
         network: opts.network,
-        caption: [opts.caption, ...opts.hashtags].join("\n\n"),
+        caption: composePostText(opts.caption, opts.hashtags),
         mediaUrls: opts.mediaUrls,
         scheduledAt: opts.scheduledAt.toISOString(),
         idempotencyKey: opts.idempotencyKey,
@@ -64,7 +65,7 @@ export class ZernioPublisher implements Publisher {
       body: JSON.stringify({
         accountId: opts.channelId,
         network: opts.network,
-        caption: [opts.caption, ...opts.hashtags].join("\n\n"),
+        caption: composePostText(opts.caption, opts.hashtags),
         mediaUrls: opts.mediaUrls,
         idempotencyKey: opts.idempotencyKey,
         ...(opts.firstComment ? { platformSpecificData: { firstComment: opts.firstComment } } : {}),
@@ -81,7 +82,7 @@ export class ZernioPublisher implements Publisher {
       provider: "zernio",
       accountId: opts.channelId,
       network: opts.network,
-      caption: [opts.caption, ...opts.hashtags].join("\n\n"),
+      caption: composePostText(opts.caption, opts.hashtags),
       mediaUrls: opts.mediaUrls,
       scheduledAt: opts.scheduledAt.toISOString(),
       idempotencyKey: opts.idempotencyKey,

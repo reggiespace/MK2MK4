@@ -1,6 +1,7 @@
 import "server-only";
 import { env } from "@/lib/env";
 import type { Publisher, ScheduleOptions, PublishResult } from "./types";
+import { composePostText } from "./compose";
 
 const BUFFER_API = "https://api.bufferapp.com/1";
 const BUFFER_GRAPHQL = "https://graph.buffer.com/graphql";
@@ -86,7 +87,7 @@ export class BufferPublisher implements Publisher {
   async schedule(opts: ScheduleOptions): Promise<PublishResult> {
     const post = await this.createPost({
       channelId: opts.channelId,
-      text: [opts.caption, ...opts.hashtags].join("\n\n"),
+      text: composePostText(opts.caption, opts.hashtags),
       assets: opts.mediaUrls.map((u) => this.assetInput(u)),
       mode: "customScheduled",
       schedulingType: "automatic",
@@ -99,7 +100,7 @@ export class BufferPublisher implements Publisher {
   async publishNow(opts: Omit<ScheduleOptions, "scheduledAt">): Promise<PublishResult> {
     const post = await this.createPost({
       channelId: opts.channelId,
-      text: [opts.caption, ...opts.hashtags].join("\n\n"),
+      text: composePostText(opts.caption, opts.hashtags),
       assets: opts.mediaUrls.map((u) => this.assetInput(u)),
       mode: "shareNow",
       schedulingType: "automatic",
@@ -114,7 +115,7 @@ export class BufferPublisher implements Publisher {
       channelId: opts.channelId,
       network: opts.network,
       scheduledAt: opts.scheduledAt.toISOString(),
-      text: [opts.caption, ...opts.hashtags].join("\n\n"),
+      text: composePostText(opts.caption, opts.hashtags),
       assets: opts.mediaUrls.map((u) => this.assetInput(u)),
       metadata: this.metadataFor(opts),
     };

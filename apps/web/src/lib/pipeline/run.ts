@@ -6,6 +6,7 @@ import { checkClaims, fullTextForClaims } from "@/lib/claims/check";
 import { getResearch } from "./research";
 import { pickCadence, runDateUTC, type CadenceRow } from "./cadence";
 import { captionWithinLimit } from "./limits";
+import { composePostText } from "@/lib/publishers/compose";
 import type { BrandContext } from "@/lib/llm/types";
 import type { Skin } from "@/generated/prisma/enums";
 import { Prisma } from "@/generated/prisma/client";
@@ -102,7 +103,10 @@ export async function runDailyForBrand(
     });
     const fullText = fullTextForClaims(draft.caption, draft.slides);
     const claims = checkClaims(fullText);
-    const lengthOk = captionWithinLimit(draft.caption, cadence.networks).ok;
+    // Gate the exact text publishers will send (caption + hashtags), not the
+    // bare caption — hashtags can push a passing caption over a platform limit.
+    const postText = composePostText(draft.caption, draft.hashtags);
+    const lengthOk = captionWithinLimit(postText, cadence.networks).ok;
     const blocked = !claims.canSchedule || !lengthOk;
 
     const piece = await prisma.contentPiece.create({
