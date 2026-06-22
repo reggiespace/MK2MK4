@@ -133,6 +133,17 @@ const WARN_RULES: Rule[] = [
 
 const ALL_RULES = [...BLOCK_RULES, ...WARN_RULES];
 
+/** Join a caption + slide headlines/bodies into the text the claims gate should scan. */
+export function fullTextForClaims(
+  caption: string,
+  slides: { headline?: string | null; body?: string | null }[],
+): string {
+  const slideText = slides
+    .map((s) => [s.headline, s.body].filter(Boolean).join(" "))
+    .join(" ");
+  return [caption, slideText].filter(Boolean).join(" ");
+}
+
 /** Run the claims check over arbitrary post text (caption + slide text joined). */
 export function checkClaims(text: string): ClaimsResult {
   const findings: ClaimFinding[] = [];
@@ -141,28 +152,32 @@ export function checkClaims(text: string): ClaimsResult {
     const m = rule.pattern.exec(text);
     if (m) {
       const matched = m[0];
-      findings.push({
+      // Only set optional keys when present — keeping `undefined` out of the
+      // object keeps it a valid JSON value when persisted to a Prisma Json column.
+      const finding: ClaimFinding = {
         id: rule.id,
         level: rule.level,
         message: rule.message,
         match: matched,
-        suggestion: rule.suggestion,
-        autoFix: rule.fix ? { find: matched, replace: rule.fix(matched) } : undefined,
-      });
+      };
+      if (rule.suggestion !== undefined) finding.suggestion = rule.suggestion;
+      if (rule.fix) finding.autoFix = { find: matched, replace: rule.fix(matched) };
+      findings.push(finding);
     }
   }
 
   // Informational pass: confirm safe qualifier when gastric load is mentioned.
   if (/gastric\s+load|stomach\s+(fullness|load)/i.test(text)) {
     const safe = /model[-\s]?estimated/i.test(text);
-    findings.push({
+    const finding: ClaimFinding = {
       id: "gastric-qualifier",
       level: safe ? "pass" : "warn",
       message: safe
         ? 'Uses "model-estimated" qualifier for gastric load.'
         : 'Mentions gastric load without the "model-estimated" qualifier.',
-      suggestion: safe ? undefined : 'Add "model-estimated".',
-    });
+    };
+    if (!safe) finding.suggestion = 'Add "model-estimated".';
+    findings.push(finding);
   }
 
   if (!/\b(missed|failed|cheated|bad day)\b/i.test(text)) {

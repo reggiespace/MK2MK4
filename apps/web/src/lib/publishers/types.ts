@@ -1,5 +1,6 @@
 export interface ScheduleOptions {
   caption: string;
+  firstComment?: string;
   hashtags: string[];
   mediaUrls: string[];
   format: "single" | "carousel" | "reel";

@@ -1,13 +1,15 @@
 import "server-only";
 import OpenAI from "openai";
 import { env } from "@/lib/env";
-import { ideasPrompt, draftPrompt } from "./prompts";
+import { ideasPrompt, draftPrompt, storyPrompt } from "./prompts";
 import {
   draftResponseSchema,
   ideasResponseSchema,
+  storyBriefSchema,
   type BrandContext,
   type DraftResponse,
   type Idea,
+  type StoryBrief,
 } from "./types";
 
 export interface LlmProvider {
@@ -16,9 +18,13 @@ export interface LlmProvider {
     brand: BrandContext,
     opts: { count: number; pillarName?: string; brief?: string },
   ): Promise<Idea[]>;
+  composeStory(
+    brand: BrandContext,
+    opts: { pillarName: string; research?: string; title?: string; angle?: string },
+  ): Promise<StoryBrief>;
   draft(
     brand: BrandContext,
-    opts: { title: string; angle: string; format?: string },
+    opts: { title: string; angle: string; format?: string; story?: StoryBrief },
   ): Promise<DraftResponse>;
 }
 
@@ -57,9 +63,18 @@ class OpenAiProvider implements LlmProvider {
     return ideasResponseSchema.parse(raw).ideas;
   }
 
+  async composeStory(
+    brand: BrandContext,
+    opts: { pillarName: string; research?: string; title?: string; angle?: string },
+  ): Promise<StoryBrief> {
+    const { system, user } = storyPrompt(brand, opts);
+    const raw = await this.json(system, user);
+    return storyBriefSchema.parse(raw);
+  }
+
   async draft(
     brand: BrandContext,
-    opts: { title: string; angle: string; format?: string },
+    opts: { title: string; angle: string; format?: string; story?: StoryBrief },
   ): Promise<DraftResponse> {
     const { system, user } = draftPrompt(brand, opts);
     const raw = await this.json(system, user);
@@ -105,9 +120,26 @@ class MockProvider implements LlmProvider {
     return ideas;
   }
 
+  async composeStory(
+    brand: BrandContext,
+    opts: { pillarName: string; research?: string; title?: string; angle?: string },
+  ): Promise<StoryBrief> {
+    const pt = brand.locale === "pt_BR";
+    return {
+      story: pt
+        ? `Explicar com calma o tema "${opts.pillarName}".`
+        : `Calmly explain "${opts.pillarName}".`,
+      keyMessage: pt
+        ? "O ciclo tem pico e queda — com base nos seus registros."
+        : "The cycle peaks then fades — based on your logged data.",
+      beats: pt ? ["pico", "queda", "tranquilizar"] : ["peak", "fade", "reassure"],
+      ctaIntent: pt ? "Convidar a ver o próprio ciclo no app." : "Invite them to see their cycle in-app.",
+    };
+  }
+
   async draft(
     brand: BrandContext,
-    opts: { title: string; angle: string; format?: string },
+    opts: { title: string; angle: string; format?: string; story?: StoryBrief },
   ): Promise<DraftResponse> {
     const pt = brand.locale === "pt_BR";
     const format = (opts.format as DraftResponse["recommendedFormat"]) ?? "carousel";
@@ -165,6 +197,9 @@ class MockProvider implements LlmProvider {
         ? "Conteúdo educativo em etapas funciona melhor neste formato."
         : "Step-by-step educational content performs best in this format.",
       slides,
+      firstComment: pt
+        ? "Tudo grátis pra testar 👇\n🌐 Web — gastric-iq.com\n📲 Android — play.google.com/store/apps/details?id=ca.reggiespace.gastric_iq\nQual fase do ciclo você está sentindo hoje?"
+        : "Everything's free to try 👇\n🌐 Web — gastric-iq.com\n📲 Android — play.google.com/store/apps/details?id=ca.reggiespace.gastric_iq\nWhere are you in your cycle today?",
       voiceover:
         format === "reel"
           ? pt

@@ -39,32 +39,34 @@ enum Publisher {
 }
 
 model Brand {
-  id        String   @id @default(cuid())
-  key       String   @unique // gastric-us | gastric-br
+  id        String    @id @default(cuid())
+  key       String    @unique // gastric-us | gastric-br
   name      String
   locale    Locale
   publisher Publisher
   channels  Json // [{ network: "facebook"|"instagram", channelId: string, label?: string }]
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   brandKit BrandKit?
   pillars  Pillar[]
   ideas    Idea[]
   pieces   ContentPiece[]
+  runs     ContentRun[]
+  cadences Cadence[]
 }
 
 model BrandKit {
-  id        String  @id @default(cuid())
-  brandId   String  @unique
-  brand     Brand   @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  logoPath  String // path under assets/brands
+  id           String       @id @default(cuid())
+  brandId      String       @unique
+  brand        Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  logoPath     String // path under assets/brands
   // Vessel palette tokens (hex)
-  tokens    Json // { moss, slate, brass, cream, ink, darkBg, darkFg, ... }
-  fonts     Json // { display: "Spectral", body: "Albert Sans", mono: "IBM Plex Mono" }
-  defaultSkin Skin  @default(mark_forward)
+  tokens       Json // { moss, slate, brass, cream, ink, darkBg, darkFg, ... }
+  fonts        Json // { display: "Spectral", body: "Albert Sans", mono: "IBM Plex Mono" }
+  defaultSkin  Skin         @default(mark_forward)
   artDirection ArtDirection @default(warm_lifestyle)
-  toneGuide String  @db.Text
-  voiceId   String // ElevenLabs voice id for this locale
+  toneGuide    String       @db.Text
+  voiceId      String // ElevenLabs voice id for this locale
 }
 
 // ---------------------------------------------------------------------------
@@ -105,6 +107,7 @@ model Idea {
   angle             String     @db.Text
   recommendedFormat Format
   insightsContext   String?    @db.Text // Phase 2 hook: research/analytics summary
+  storyBrief        Json? // writer-step narrative: { story, keyMessage, beats[], ctaIntent }
   status            IdeaStatus @default(suggested)
   createdAt         DateTime   @default(now())
 
@@ -130,28 +133,33 @@ enum PieceStatus {
   draft
   rendering
   review
+  blocked
   scheduled
   published
   failed
 }
 
 model ContentPiece {
-  id          String      @id @default(cuid())
-  brandId     String
-  brand       Brand       @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  ideaId      String?
-  idea        Idea?       @relation(fields: [ideaId], references: [id], onDelete: SetNull)
-  format      Format
-  caption     String      @db.Text
-  hashtags    String[]    @default([])
-  status      PieceStatus @default(draft)
-  costCents   Int         @default(0)
-  formatRationale String? @db.Text
-  voiceover   String?     @db.Text // reel narration script
-  voiceGender VoiceGender? // reel voiceover gender; null → female default
-  motion      Boolean     @default(false) // reel AI motion (image-to-video) opt-in
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id              String       @id @default(cuid())
+  brandId         String
+  brand           Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  ideaId          String?
+  idea            Idea?        @relation(fields: [ideaId], references: [id], onDelete: SetNull)
+  format          Format
+  caption         String       @db.Text
+  firstComment    String?      @db.Text // links + engagement question, link-free caption
+  claims          Json? // last claims-check result snapshot for the review panel
+  runId           String?
+  run             ContentRun?  @relation(fields: [runId], references: [id], onDelete: SetNull)
+  hashtags        String[]     @default([])
+  status          PieceStatus  @default(draft)
+  costCents       Int          @default(0)
+  formatRationale String?      @db.Text
+  voiceover       String?      @db.Text // reel narration script
+  voiceGender     VoiceGender? // reel voiceover gender; null → female default
+  motion          Boolean      @default(false) // reel AI motion (image-to-video) opt-in
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   slides         Slide[]
   mediaAssets    MediaAsset[]
@@ -166,18 +174,18 @@ enum SlideRole {
 }
 
 model Slide {
-  id            String     @id @default(cuid())
-  pieceId       String
-  piece         ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
-  index         Int
-  role          SlideRole
-  skin          Skin
-  eyebrow       String?
-  headline      String?
-  body          String?    @db.Text
-  imagePrompt   String?    @db.Text // literal scene description for fal.ai
-  mediaAssetId  String?
-  mediaAsset    MediaAsset? @relation("SlideAsset", fields: [mediaAssetId], references: [id], onDelete: SetNull)
+  id           String       @id @default(cuid())
+  pieceId      String
+  piece        ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  index        Int
+  role         SlideRole
+  skin         Skin
+  eyebrow      String?
+  headline     String?
+  body         String?      @db.Text
+  imagePrompt  String?      @db.Text // literal scene description for fal.ai
+  mediaAssetId String?
+  mediaAsset   MediaAsset?  @relation("SlideAsset", fields: [mediaAssetId], references: [id], onDelete: SetNull)
 
   @@unique([pieceId, index])
 }
@@ -195,16 +203,16 @@ enum Engine {
 }
 
 model MediaAsset {
-  id         String       @id @default(cuid())
-  pieceId    String
-  piece      ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
-  type       AssetType
-  url        String
-  engine     Engine
-  prompt     String?      @db.Text
-  costCents  Int          @default(0)
-  meta       Json? // { width, height, durationMs, ... }
-  createdAt  DateTime     @default(now())
+  id        String       @id @default(cuid())
+  pieceId   String
+  piece     ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  type      AssetType
+  url       String
+  engine    Engine
+  prompt    String?      @db.Text
+  costCents Int          @default(0)
+  meta      Json? // { width, height, durationMs, ... }
+  createdAt DateTime     @default(now())
 
   slides Slide[] @relation("SlideAsset")
 }
@@ -226,16 +234,16 @@ enum JobStatus {
 }
 
 model RenderJob {
-  id        String    @id @default(cuid())
-  pieceId   String
-  piece     ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
-  kind      JobKind
-  status    JobStatus @default(queued)
-  progress  Int       @default(0)
+  id          String       @id @default(cuid())
+  pieceId     String
+  piece       ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  kind        JobKind
+  status      JobStatus    @default(queued)
+  progress    Int          @default(0)
   workerJobId String?
-  error     String?   @db.Text
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  error       String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 enum PostStatus {
@@ -246,7 +254,7 @@ enum PostStatus {
 }
 
 model ScheduledPost {
-  id             String     @id @default(cuid())
+  id             String       @id @default(cuid())
   pieceId        String
   piece          ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
   channel        String // channelId from Brand.channels
@@ -254,8 +262,42 @@ model ScheduledPost {
   scheduledAt    DateTime
   provider       Publisher
   providerPostId String?
-  status         PostStatus @default(pending)
-  idempotencyKey String     @unique
-  error          String?    @db.Text
-  createdAt      DateTime   @default(now())
+  status         PostStatus   @default(pending)
+  idempotencyKey String       @unique
+  error          String?      @db.Text
+  createdAt      DateTime     @default(now())
+}
+
+enum RunStatus {
+  running
+  complete
+  failed
+}
+
+model ContentRun {
+  id        String    @id @default(cuid())
+  brandId   String
+  brand     Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  runDate   DateTime  @db.Date
+  pillar    String
+  format    Format
+  status    RunStatus @default(running)
+  error     String?   @db.Text
+  createdAt DateTime  @default(now())
+
+  pieces ContentPiece[]
+
+  @@unique([brandId, runDate, pillar])
+}
+
+model Cadence {
+  id       String   @id @default(cuid())
+  brandId  String
+  brand    Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  weekday  Int // 0=Sunday .. 6=Saturday
+  pillar   String
+  format   Format
+  networks String[] // ['instagram','facebook'] | ['instagram']
+
+  @@unique([brandId, weekday])
 }

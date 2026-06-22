@@ -49,6 +49,13 @@ services:
       STORAGE_DIR: /data/storage
       WEB_BASE_URL: http://web:3000
       PUBLIC_MEDIA_BASE_URL: ${PUBLIC_MEDIA_BASE_URL:-http://localhost:3000/media}
+      STORAGE_BACKEND: "${STORAGE_BACKEND:-local}"
+      MEDIA_S3_BUCKET: "${MEDIA_S3_BUCKET:-}"
+      MEDIA_S3_REGION: "${MEDIA_S3_REGION:-garage}"
+      MEDIA_S3_ENDPOINT: "${MEDIA_S3_ENDPOINT:-}"
+      MEDIA_PUBLIC_BASE_URL: "${MEDIA_PUBLIC_BASE_URL:-}"
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID:-}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY:-}"
     volumes:
       - mediadata:/data/storage
     expose:
@@ -86,10 +93,28 @@ services:
       WORKER_SHARED_SECRET: ${WORKER_SHARED_SECRET}
       STORAGE_DIR: /data/storage
       PUBLIC_MEDIA_BASE_URL: ${PUBLIC_MEDIA_BASE_URL}
+      # Must match the scheduler's CRON_SECRET — the daily-run route hard-fails
+      # (500) in production when this is unset, so the scheduler could never
+      # authenticate without it.
+      CRON_SECRET: ${CRON_SECRET:-}
     volumes:
       - mediadata:/data/storage
     ports:
       - "3000:3000"
+
+  scheduler:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.scheduler
+    depends_on:
+      - web
+    environment:
+      WEB_BASE_URL: "http://web:3000"
+      CRON_SECRET: "${CRON_SECRET:?CRON_SECRET must be set for the scheduler to authenticate}"
+    volumes:
+      - ./cron/run-daily.sh:/scripts/run-daily.sh:ro
+      - ./cron/crontab:/etc/crontabs/root:ro
+    restart: unless-stopped
 
 volumes:
   pgdata:

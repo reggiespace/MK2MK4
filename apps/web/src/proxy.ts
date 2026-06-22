@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 // Lightweight UX guard. The real security boundary is `requireOperator()` on
 // every server-side data access; this just bounces unauthenticated navigation
 // to /login. Validates cookie presence only (not signature).
-const PUBLIC_PREFIXES = ["/login", "/api/auth", "/media", "/api/worker/callback"];
+const PUBLIC_PREFIXES = ["/login", "/api/auth", "/media", "/api/worker/callback", "/api/cron"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

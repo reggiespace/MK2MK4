@@ -41,6 +41,7 @@ export const env = {
 
   workerBaseUrl: () => optional("WORKER_BASE_URL") ?? "http://localhost:8000",
   workerSharedSecret: () => optional("WORKER_SHARED_SECRET"),
+  cronSecret: () => optional("CRON_SECRET"),
 
   storageDir: () => process.env.STORAGE_DIR ?? "./storage",
   publicMediaBaseUrl: () =>

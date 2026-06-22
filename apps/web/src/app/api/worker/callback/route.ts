@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
+import type { Prisma } from "@/generated/prisma/client";
 
 const bodySchema = z.object({
   jobId: z.string(),
@@ -14,6 +15,7 @@ const bodySchema = z.object({
       slideIndex: z.number().optional(),
       prompt: z.string().nullish(),
       costCents: z.number().optional(),
+      meta: z.record(z.string(), z.unknown()).optional(),
     }),
   ),
 });
@@ -58,6 +60,7 @@ export async function POST(req: Request) {
           engine: (a.engine as "template" | "fal" | "elevenlabs") ?? "template",
           prompt: a.prompt ?? null,
           costCents: a.costCents ?? 0,
+          meta: (a.meta as Prisma.InputJsonValue) ?? undefined,
         },
       }),
     ),
