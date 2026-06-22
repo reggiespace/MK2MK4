@@ -1,0 +1,11 @@
+# Local-dev only overrides — picked up automatically by `docker compose up`
+# when run from this directory. Dokploy deploys reference docker-compose.yml
+# directly by path and never load this file, so production stays tightened.
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
