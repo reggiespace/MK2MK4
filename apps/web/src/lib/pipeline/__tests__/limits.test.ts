@@ -18,7 +18,7 @@ describe("captionWithinLimit gates the composed post text", () => {
   it("blocks a caption that only exceeds the limit once hashtags are appended", () => {
     // Caption alone is exactly at the limit; hashtags + separators push it over.
     const caption = "x".repeat(IG_CAPTION_MAX);
-    const hashtags = ["#one", "#two"];
+    const hashtags = ["one", "two"];
     expect(captionWithinLimit(caption, ["instagram"]).ok).toBe(true);
     const composed = composePostText(caption, hashtags);
     expect(captionWithinLimit(composed, ["instagram"]).ok).toBe(false);

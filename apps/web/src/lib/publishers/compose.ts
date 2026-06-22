@@ -8,5 +8,6 @@
  * over a platform limit.
  */
 export function composePostText(caption: string, hashtags: string[]): string {
-  return [caption, ...hashtags].join("\n\n");
+  const tags = hashtags.map((tag) => (tag.startsWith("#") ? tag : `#${tag}`));
+  return [caption, ...tags].join("\n\n");
 }
