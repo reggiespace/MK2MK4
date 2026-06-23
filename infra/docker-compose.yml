@@ -60,6 +60,9 @@ services:
       - mediadata:/data/storage
     expose:
       - "8000"
+    networks:
+      - default
+      - garage
 
   web:
     build:
@@ -117,3 +120,9 @@ volumes:
   pgdata:
   redisdata:
   mediadata:
+
+networks:
+  default: {}
+  garage:
+    external: true
+    name: gastric-iq-social-media-garage-soixcp
