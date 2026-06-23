@@ -29,9 +29,6 @@ apps/web/src/generated/
 
 # media output (local object storage)
 storage/
-assets/brands/*.png
-assets/fonts/*.ttf
-assets/fonts/*.otf
 
 # brainstorming companion
 .superpowers/
