@@ -15,6 +15,9 @@ ENV CI=true
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY . .
+# prisma generate only needs DATABASE_URL to be present (no real connection is
+# made); the real value is injected at container runtime, not build time.
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
 RUN pnpm --filter @giq/web exec prisma generate
 RUN pnpm --filter @giq/web build
 
