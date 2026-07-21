@@ -137,6 +137,7 @@ def _render_image_bg(req: RenderRequest) -> None:
             handle=req.handle,
             slide_index=slide.index,
             slide_total=len(req.slides),
+            locale=req.locale,
         )
         jobs.update(job_id, progress=80)
         engine = "fal" if bg is not None else "template"
@@ -213,6 +214,7 @@ def _render_carousel_bg(req: RenderRequest) -> None:
                 handle=req.handle,
                 slide_index=slide.index,
                 slide_total=total,
+                locale=req.locale,
             )
             meta = probe_image(png, min_w=1000, min_h=1000)
             path = f"pieces/{req.pieceId}/slide_{slide.index}.png"
@@ -255,6 +257,7 @@ def _render_story_bg(req: RenderRequest) -> None:
                 handle=req.handle,
                 slide_index=slide.index,
                 slide_total=total,
+                locale=req.locale,
             )
             meta = probe_image(png, min_w=1000, min_h=1800)
             path = f"pieces/{req.pieceId}/story_{slide.index}.png"

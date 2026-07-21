@@ -1,14 +1,22 @@
 """Vessel design-system Pillow renderer.
 
-Renders slides to PNG. Two axes of control:
+Renders slides to PNG. Three axes of control:
 
   skin      — colour palette: light | dark | mark_forward
   template  — layout system:
-                classic          (legacy bottom-anchored text; kept for reels/tests)
+                classic          (legacy bottom-anchored text; kept for tests)
                 editorial_bold   (serif editorial: big headline, kicker rule, footer)
                 bold_highlight   (text-forward: knockout highlight on the punchline)
                 minimal_card     (calm, lots of whitespace, one idea per card)
                 photo_overlay    (lifestyle photo + scrim + refined type)
+  transparent — when True, the four designed templates draw on a see-through
+                canvas (bottom scrim only) instead of painting their own
+                background, so the AI-motion reel path can composite them
+                over an already-animated fal.ai video clip.
+
+CTA slides (role="cta") additionally get a fixed, renderer-owned link pill +
+compliance disclaimer (localized by `locale`) — never LLM-authored, since
+that copy is compliance-critical.
 
 Font loading looks for TTFs in assets/fonts/ relative to the monorepo root and
 falls back to Pillow's default when they are missing (dev mode).
@@ -354,18 +362,92 @@ def _designed_background(skin: str, size: tuple[int, int], background_image: byt
     return _apply_grain(img)
 
 
+def _base_canvas(template: str, skin: str, size: tuple[int, int],
+                 background_image: bytes | None, transparent: bool) -> Image.Image:
+    """Starting RGBA canvas for a designed template.
+
+    Opaque mode paints the template's own background (photo/gradient/flat).
+    Transparent mode (AI-motion reels) returns a see-through canvas with a
+    bottom scrim so type stays legible over arbitrary video underneath.
+    """
+    if transparent:
+        img = Image.new("RGBA", size, (0, 0, 0, 0))
+        return Image.alpha_composite(img, _text_scrim(size, 0.28, 225))
+    if template == "minimal_card":
+        tok = SKINS.get(skin, SKINS["dark"])
+        return _apply_grain(Image.new("RGB", size, tok["bg"]), strength=0.06).convert("RGBA")
+    if template == "photo_overlay":
+        img = _designed_background(skin, size, background_image, scrim=True)
+        return Image.alpha_composite(img.convert("RGBA"), _text_scrim(size, 0.45, 190))
+    # editorial_bold, bold_highlight
+    return _designed_background(skin, size, background_image, scrim=False).convert("RGBA")
+
+
+# ---------------------------------------------------------------------------
+# CTA footer: fixed, renderer-owned link pill + compliance disclaimer.
+# Never LLM-authored — this copy is compliance-critical and localized here.
+# ---------------------------------------------------------------------------
+CTA_COPY = {
+    "en": {
+        "pill": "Free on Google Play  ·  gastric-iq.com",
+        "disclaimer": "Educational — not medical advice.",
+    },
+    "pt_BR": {
+        "pill": "Grátis no Google Play  ·  gastric-iq.com",
+        "disclaimer": "Conteúdo educativo — não substitui orientação médica.",
+    },
+}
+
+
+def _cta_footer_metrics(draw: ImageDraw.ImageDraw, content_w: int, locale: str):
+    copy = CTA_COPY.get(locale, CTA_COPY["en"])
+    f_pill = _load_font("IBMPlexMono", int(content_w * 0.028))
+    f_disclaimer = _load_font("AlbertSans", int(content_w * 0.024))
+    pill_h = int(f_pill.size * 2.15)
+    lines = _wrap_text(copy["disclaimer"], f_disclaimer, content_w, draw)
+    line_h = int(_line_height(draw, f_disclaimer) * 1.4)
+    height = pill_h + int(pill_h * 0.45) + len(lines) * line_h
+    return copy, f_pill, f_disclaimer, pill_h, lines, line_h, height
+
+
+def _cta_footer_height(draw: ImageDraw.ImageDraw, content_w: int, locale: str) -> int:
+    return _cta_footer_metrics(draw, content_w, locale)[-1]
+
+
+def _draw_cta_footer(draw: ImageDraw.ImageDraw, pad: int, y: int, content_w: int, locale: str,
+                     fg: tuple, accent: tuple, muted: tuple) -> int:
+    """Draw the link pill + disclaimer top-down starting at y; returns new y."""
+    copy, f_pill, f_disclaimer, pill_h, lines, line_h, _ = _cta_footer_metrics(draw, content_w, locale)
+    pill_text = copy["pill"]
+    tw = draw.textlength(pill_text, font=f_pill)
+    pill_pad_x = 26
+    pill_w = int(tw) + pill_pad_x * 2
+    draw.rounded_rectangle([pad, y, pad + pill_w, y + pill_h], radius=pill_h // 2,
+                           outline=(*accent, 255), width=3)
+    draw.text((pad + pill_pad_x, y + (pill_h - f_pill.size) // 2 - 4), pill_text,
+             font=f_pill, fill=(*fg, 255))
+    y += pill_h + int(pill_h * 0.45)
+    for line in lines:
+        draw.text((pad, y), line, font=f_disclaimer, fill=(*muted, 220))
+        y += line_h
+    return y
+
+
 # ---------------------------------------------------------------------------
 # Template: editorial_bold
 # ---------------------------------------------------------------------------
-def _render_editorial_bold(skin, role, eyebrow, headline, body, logo_path, background_image,
-                           size, handle, slide_index, slide_total, is_story) -> Image.Image:
+def _render_editorial_bold(img, skin, role, eyebrow, headline, body, logo_path,
+                          size, handle, slide_index, slide_total, is_story,
+                          locale, overlay) -> None:
     tok = SKINS.get(skin, SKINS["dark"])
-    img = _designed_background(skin, size, background_image, scrim=False)
     draw = ImageDraw.Draw(img)
     w, h = size
     pad = int(w * 0.085)
     content_w = w - pad * 2
-    fg, accent, brass, muted = tok["fg"], tok["accent"], tok["brass"], tok["muted"]
+    if overlay:
+        fg, accent, brass, muted = (240, 236, 226), tok["accent"], tok["brass"], (205, 212, 216)
+    else:
+        fg, accent, brass, muted = tok["fg"], tok["accent"], tok["brass"], tok["muted"]
 
     f_kicker = _load_font("IBMPlexMono", 27)
     max_hsize = int(w * (0.098 if role == "cover" else 0.078))
@@ -413,32 +495,30 @@ def _render_editorial_bold(skin, role, eyebrow, headline, body, logo_path, backg
             draw.text((pad, y), line, font=f_body, fill=(*muted, 255))
             y += lh_body
 
-    # CTA role → accent arrow drawn as a shape (fonts may lack the glyph)
-    if role == "cta" and headline:
-        ay = y + int(h * 0.012)
-        alen = int(w * 0.11)
-        draw.line([(pad, ay), (pad + alen, ay)], fill=(*brass, 255), width=6)
-        draw.polygon([(pad + alen, ay - 16), (pad + alen + 26, ay), (pad + alen, ay + 16)],
-                     fill=(*brass, 255))
+    if role == "cta":
+        y += 20
+        _draw_cta_footer(draw, pad, y, content_w, locale, fg, accent, muted)
 
     _footer(img, draw, size, pad, handle, slide_index, slide_total, f_kicker, fg, muted)
-    return img
 
 
 # ---------------------------------------------------------------------------
 # Template: bold_highlight  (knockout highlight on the punchline)
 # ---------------------------------------------------------------------------
-def _render_bold_highlight(skin, role, eyebrow, headline, body, logo_path, background_image,
-                           size, handle, slide_index, slide_total, is_story) -> Image.Image:
+def _render_bold_highlight(img, skin, role, eyebrow, headline, body, logo_path,
+                          size, handle, slide_index, slide_total, is_story,
+                          locale, overlay) -> None:
     tok = SKINS.get(skin, SKINS["dark"])
-    img = _designed_background(skin, size, background_image, scrim=False)
     draw = ImageDraw.Draw(img)
     w, h = size
     pad = int(w * 0.08)
     content_w = w - pad * 2
-    fg, accent, brass, muted = tok["fg"], tok["accent"], tok["brass"], tok["muted"]
+    if overlay:
+        fg, accent, brass, muted = (240, 236, 226), tok["accent"], tok["brass"], (205, 212, 216)
+    else:
+        fg, accent, brass, muted = tok["fg"], tok["accent"], tok["brass"], tok["muted"]
     hi_bg = accent
-    hi_fg = tok["bg"]
+    hi_fg = (18, 22, 16) if overlay else tok["bg"]
 
     f_kicker = _load_font("IBMPlexMono", 27)
     max_hsize = int(w * (0.11 if role == "cover" else 0.092))
@@ -484,23 +564,29 @@ def _render_bold_highlight(skin, role, eyebrow, headline, body, logo_path, backg
             draw.text((pad, y), line, font=f_body, fill=(*muted, 255))
             y += int(_line_height(draw, f_body) * 1.45)
 
+    if role == "cta":
+        y += 20
+        _draw_cta_footer(draw, pad, y, content_w, locale, fg, accent, muted)
+
     _footer(img, draw, size, pad, handle, slide_index, slide_total, f_kicker, fg, muted)
-    return img
 
 
 # ---------------------------------------------------------------------------
 # Template: minimal_card
 # ---------------------------------------------------------------------------
-def _render_minimal_card(skin, role, eyebrow, headline, body, logo_path, background_image,
-                         size, handle, slide_index, slide_total, is_story) -> Image.Image:
+def _render_minimal_card(img, skin, role, eyebrow, headline, body, logo_path,
+                         size, handle, slide_index, slide_total, is_story,
+                         locale, overlay) -> None:
     tok = SKINS.get(skin, SKINS["dark"])
-    # flat, calm background (no gradient) with faint grain
-    img = _apply_grain(Image.new("RGB", size, tok["bg"]), strength=0.06)
     draw = ImageDraw.Draw(img)
     w, h = size
     pad = int(w * 0.11)
     content_w = w - pad * 2
-    fg, accent, muted = tok["fg"], tok["accent"], tok["muted"]
+    if overlay:
+        # over arbitrary video, force legible light ink regardless of skin
+        fg, accent, muted = (240, 236, 226), tok["accent"], (205, 212, 216)
+    else:
+        fg, accent, muted = tok["fg"], tok["accent"], tok["muted"]
 
     f_kicker = _load_font("IBMPlexMono", 25)
     max_hsize = int(w * (0.072 if role == "cover" else 0.06))
@@ -537,23 +623,24 @@ def _render_minimal_card(skin, role, eyebrow, headline, body, logo_path, backgro
             draw.text((pad, y), line, font=f_body, fill=(*muted, 255))
             y += lh_b
 
+    if role == "cta":
+        y += 20
+        _draw_cta_footer(draw, pad, y, content_w, locale, fg, accent, muted)
+
     # handle bottom-right only (minimal)
     fy = h - int(pad * 0.7)
     if handle:
         hw = _measure_tracked(draw, handle, f_kicker, 1.5)
         _draw_tracked(draw, (w - pad - int(hw), fy), handle, f_kicker, (*muted, 220), tracking=1.5)
-    return img
 
 
 # ---------------------------------------------------------------------------
 # Template: photo_overlay
 # ---------------------------------------------------------------------------
-def _render_photo_overlay(skin, role, eyebrow, headline, body, logo_path, background_image,
-                          size, handle, slide_index, slide_total, is_story) -> Image.Image:
+def _render_photo_overlay(img, skin, role, eyebrow, headline, body, logo_path,
+                          size, handle, slide_index, slide_total, is_story,
+                          locale, overlay) -> None:
     tok = SKINS.get(skin, SKINS["dark"])
-    img = _designed_background(skin, size, background_image, scrim=True)
-    # extra bottom scrim for legibility regardless of photo
-    img = Image.alpha_composite(img.convert("RGBA"), _text_scrim(size, 0.45, 190)).convert("RGB")
     draw = ImageDraw.Draw(img)
     w, h = size
     pad = int(w * 0.08)
@@ -590,6 +677,10 @@ def _render_photo_overlay(skin, role, eyebrow, headline, body, logo_path, backgr
         cw = _measure_tracked(draw, counter, f_kicker, 1.0)
         _draw_tracked(draw, (w - pad - int(cw), y), counter, f_kicker, (*muted, 220), tracking=1.0)
         y -= 24
+    if role == "cta":
+        y -= _cta_footer_height(draw, content_w, locale)
+        _draw_cta_footer(draw, pad, y, content_w, locale, fg, accent, muted)
+        y -= 20
     for line in reversed(body_lines):
         y -= lh_b
         draw.text((pad, y), line, font=f_body, fill=(*muted, 255))
@@ -602,8 +693,6 @@ def _render_photo_overlay(skin, role, eyebrow, headline, body, logo_path, backgr
         y -= int(h * 0.02)
         draw.rectangle([pad, y + 6, pad + 48, y + 10], fill=(*accent, 255))
         _draw_tracked(draw, (pad + 66, y - 6), eyebrow.upper(), f_kicker, (*accent, 255), tracking=3.0)
-
-    return img
 
 
 TEMPLATES = {
@@ -632,21 +721,28 @@ def render_slide(
     handle: str | None = None,
     slide_index: int = 0,
     slide_total: int = 1,
+    locale: str = "en",
 ) -> bytes:
     """Render a single slide to PNG bytes.
 
-    `template` selects the layout system. `classic` (default) and the
-    transparent reel-overlay path keep the legacy look; other templates use the
-    designed layouts and honour handle / slide counter / story progress bar.
+    `template` selects the layout system. `classic` (default) keeps the legacy
+    look regardless of `transparent`. The four designed templates support
+    both opaque frames (Ken Burns reels, carousels, stories, singles) and
+    `transparent=True` (AI-motion reels: composited over an animated fal.ai
+    clip) — in the latter they paint only a bottom scrim + type, not their
+    own background. `locale` selects the CTA card's fixed link-pill/
+    disclaimer copy for role="cta" slides.
     """
-    if transparent or template == "classic" or template not in TEMPLATES:
+    if template == "classic" or template not in TEMPLATES:
         img = _render_classic(skin, role, eyebrow, headline, body, logo_path,
                               background_image, transparent, size)
     else:
         is_story = size[1] >= 1700
-        img = TEMPLATES[template](
-            skin, role, eyebrow, headline, body, logo_path, background_image,
+        img = _base_canvas(template, skin, size, background_image, transparent)
+        TEMPLATES[template](
+            img, skin, role, eyebrow, headline, body, logo_path,
             size, handle, slide_index, slide_total, is_story,
+            locale, transparent,
         )
 
     out = io.BytesIO()

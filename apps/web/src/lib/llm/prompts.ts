@@ -62,7 +62,7 @@ Produce:
 - slides: ordered slides.
   - "carousel": 1 cover (eyebrow + short headline), 2-4 body (eyebrow + headline + 1-2 sentence body), 1 cta (headline = call to action).
   - "single": exactly 1 cover (eyebrow + headline).
-  - "reel": 3-6 body slides (headline per scene) + a "voiceover" field with the full narration.
+  - "reel": 1 cover (the hook — ≤8 words, must land instantly even with sound off, no throat-clearing), 2-4 body scenes (headline per scene, one idea each), 1 cta (headline = a specific engagement ask, e.g. "Send this to someone still counting calories" — never a generic "thoughts?") + a "voiceover" field with the full narration covering every scene.
   - "story": 1-3 full-screen frames (eyebrow + short headline, optional 1-sentence body); last frame is a cta.
 
 Respond as JSON matching:

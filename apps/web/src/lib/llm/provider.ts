@@ -174,6 +174,14 @@ class MockProvider implements LlmProvider {
               { role: "body", headline: pt ? "O ciclo tem pico e queda." : "The cycle peaks, then fades.", imagePrompt: "glass of water beside fresh herbs on a sunlit surface" },
               { role: "body", headline: pt ? "A fome pode mudar no dia 4–5." : "Hunger can shift on day 4–5.", imagePrompt: "sliced avocado and whole grain bread arranged neatly" },
               { role: "body", headline: pt ? "Isso costuma ser esperado." : "This is often expected.", imagePrompt: "calm morning kitchen scene with a mug of tea" },
+              {
+                role: "cta",
+                eyebrow: pt ? "Grátis pra sempre" : "Free forever",
+                headline: pt
+                  ? "Manda pra quem ainda tá só contando caloria."
+                  : "Send this to someone still counting calories.",
+                imagePrompt: "warm kitchen window light on a clean countertop with greenery",
+              },
             ]
           : [
               { role: "cover", eyebrow: brand.pillars[0]?.name ?? "Tip", headline: opts.title, imagePrompt: "colorful fresh produce arranged on a bright wooden board" },
