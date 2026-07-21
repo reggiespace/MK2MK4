@@ -3,9 +3,10 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { guard, badRequest, serverError } from "@/lib/api";
 import { env } from "@/lib/env";
+import { buildRenderPayload, renderKindFor } from "@/lib/pipeline/render-payload";
 
 const bodySchema = z.object({
-  kind: z.enum(["image", "carousel", "reel"]).optional(),
+  kind: z.enum(["image", "carousel", "reel", "story"]).optional(),
 });
 
 export async function POST(
@@ -29,8 +30,7 @@ export async function POST(
   if (!parsed.success) return badRequest("Invalid body.");
 
   // Map content format to render job kind (single image → "image").
-  const formatKind = piece.format === "single" ? "image" : piece.format;
-  const kind = parsed.data.kind ?? formatKind;
+  const kind = parsed.data.kind ?? renderKindFor(piece.format);
 
   // Create a render job record.
   const job = await prisma.renderJob.create({
@@ -42,32 +42,7 @@ export async function POST(
   const secret = env.workerSharedSecret();
 
   if (workerUrl) {
-    const payload = {
-      jobId: job.id,
-      pieceId: id,
-      kind,
-      slides: piece.slides.map((s) => ({
-        index: s.index,
-        role: s.role,
-        skin: s.skin,
-        eyebrow: s.eyebrow,
-        headline: s.headline,
-        body: s.body,
-        imagePrompt: s.imagePrompt,
-      })),
-      brandKit: {
-        logoPath: piece.brand.brandKit?.logoPath ?? "",
-        tokens: piece.brand.brandKit?.tokens,
-        fonts: piece.brand.brandKit?.fonts,
-        defaultSkin: piece.brand.brandKit?.defaultSkin,
-        artDirection: piece.brand.brandKit?.artDirection ?? "warm_lifestyle",
-        voiceId: piece.brand.brandKit?.voiceId ?? "",
-      },
-      voiceover: piece.voiceover,
-      locale: piece.brand.locale,
-      voiceGender: piece.voiceGender ?? "female",
-      motion: piece.motion,
-    };
+    const payload = buildRenderPayload(piece, job.id, kind);
 
     fetch(`${workerUrl}/render/${kind}`, {
       method: "POST",

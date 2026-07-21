@@ -60,6 +60,7 @@ async function seedBrand(opts: {
   tone: string;
   pillars: { name: string; description: string }[];
   channels: Channel[];
+  defaultTemplate: "classic" | "editorial_bold" | "bold_highlight" | "minimal_card" | "photo_overlay";
 }) {
   const brand = await prisma.brand.upsert({
     where: { key: opts.key },
@@ -80,13 +81,14 @@ async function seedBrand(opts: {
 
   await prisma.brandKit.upsert({
     where: { brandId: brand.id },
-    update: { tokens: VESSEL_TOKENS, fonts: FONTS, toneGuide: opts.tone },
+    update: { tokens: VESSEL_TOKENS, fonts: FONTS, toneGuide: opts.tone, defaultTemplate: opts.defaultTemplate },
     create: {
       brandId: brand.id,
       logoPath: "brands/logo-iq-transparent.png",
       tokens: VESSEL_TOKENS,
       fonts: FONTS,
       defaultSkin: "mark_forward",
+      defaultTemplate: opts.defaultTemplate,
       artDirection: "warm_lifestyle",
       toneGuide: opts.tone,
       voiceId: "", // TODO: set ElevenLabs voice id per locale
@@ -140,6 +142,7 @@ async function main() {
     tone: TONE_EN,
     pillars: PILLARS_EN,
     channels: channelsFromEnv("US"),
+    defaultTemplate: "bold_highlight",
   });
   const br = await seedBrand({
     key: "gastric-br",
@@ -149,6 +152,7 @@ async function main() {
     tone: TONE_PT,
     pillars: PILLARS_PT,
     channels: channelsFromEnv("BR"),
+    defaultTemplate: "bold_highlight",
   });
   await seedCadence(us.id, CADENCE_US);
   await seedCadence(br.id, CADENCE_BR);

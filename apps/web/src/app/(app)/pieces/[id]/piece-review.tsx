@@ -20,6 +20,7 @@ type Slide = {
 type Piece = {
   id: string;
   format: string;
+  template: string | null;
   caption: string;
   hashtags: string[];
   status: string;
@@ -38,8 +39,22 @@ type Piece = {
     pillar: { name: string } | null;
     storyBrief: unknown;
   } | null;
-  brand: { id: string; name: string; locale: string; publisher: string };
+  brand: {
+    id: string;
+    name: string;
+    locale: string;
+    publisher: string;
+    brandKit: { defaultTemplate: string } | null;
+  };
 };
+
+const TEMPLATE_OPTIONS: { value: string; label: string; hint: string }[] = [
+  { value: "bold_highlight", label: "Bold highlight", hint: "Knockout headline, high scroll-stop" },
+  { value: "editorial_bold", label: "Editorial", hint: "Serif headline, kicker rule" },
+  { value: "minimal_card", label: "Minimal", hint: "Calm, lots of whitespace" },
+  { value: "photo_overlay", label: "Photo overlay", hint: "Lifestyle photo + type" },
+  { value: "classic", label: "Classic", hint: "Original bottom-anchored layout" },
+];
 
 type ClaimsResult = {
   findings: { rule: string; level: string; text: string; autoFix?: string }[];
@@ -145,6 +160,28 @@ export function PieceReview({ piece: initial, brandChannels }: { piece: Piece; b
   const [captionSaved, setCaptionSaved] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
   const [motion, setMotionState] = useState(initial.motion);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+
+  const effectiveTemplate = piece.template ?? piece.brand.brandKit?.defaultTemplate ?? "bold_highlight";
+
+  const setTemplate = useCallback(
+    async (value: string) => {
+      setSavingTemplate(true);
+      setPiece((p) => ({ ...p, template: value }));
+      try {
+        await fetch(`/api/pieces/${piece.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ template: value }),
+        });
+      } catch {
+        // non-critical
+      } finally {
+        setSavingTemplate(false);
+      }
+    },
+    [piece.id],
+  );
 
   const runClaimsCheck = useCallback(async () => {
     setChecking(true);
@@ -375,6 +412,30 @@ export function PieceReview({ piece: initial, brandChannels }: { piece: Piece; b
                 />
               )}
             </>
+          )}
+
+          {/* Template picker (image-based formats only — reels have their own look) */}
+          {piece.format !== "reel" && (
+            <div className="template-section">
+              <p className="eyebrow">Template</p>
+              <div className="template-picker">
+                {TEMPLATE_OPTIONS.map((t) => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    className={`template-option ${effectiveTemplate === t.value ? "active" : ""}`}
+                    disabled={savingTemplate}
+                    onClick={() => setTemplate(t.value)}
+                    title={t.hint}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              {piece.mediaAssets.length > 0 && (
+                <p className="muted sm">Change template, then re-render to apply it to the media.</p>
+              )}
+            </div>
           )}
 
           {/* Render actions */}

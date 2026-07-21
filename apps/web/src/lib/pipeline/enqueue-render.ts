@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
+import { buildRenderPayload, renderKindFor } from "./render-payload";
 
 /**
  * Create a RenderJob for a content piece and dispatch it to the worker
@@ -20,7 +21,7 @@ export async function enqueueRender(pieceId: string): Promise<void> {
   if (!piece) throw new Error(`enqueueRender: unknown piece ${pieceId}`);
 
   // Map content format to render job kind (single image -> "image").
-  const kind = piece.format === "single" ? "image" : piece.format;
+  const kind = renderKindFor(piece.format);
 
   const job = await prisma.renderJob.create({
     data: { pieceId, kind, status: "queued" },
@@ -31,32 +32,7 @@ export async function enqueueRender(pieceId: string): Promise<void> {
   const secret = env.workerSharedSecret();
 
   if (workerUrl) {
-    const payload = {
-      jobId: job.id,
-      pieceId,
-      kind,
-      slides: piece.slides.map((s) => ({
-        index: s.index,
-        role: s.role,
-        skin: s.skin,
-        eyebrow: s.eyebrow,
-        headline: s.headline,
-        body: s.body,
-        imagePrompt: s.imagePrompt,
-      })),
-      brandKit: {
-        logoPath: piece.brand.brandKit?.logoPath ?? "",
-        tokens: piece.brand.brandKit?.tokens,
-        fonts: piece.brand.brandKit?.fonts,
-        defaultSkin: piece.brand.brandKit?.defaultSkin,
-        artDirection: piece.brand.brandKit?.artDirection ?? "warm_lifestyle",
-        voiceId: piece.brand.brandKit?.voiceId ?? "",
-      },
-      voiceover: piece.voiceover,
-      locale: piece.brand.locale,
-      voiceGender: piece.voiceGender ?? "female",
-      motion: piece.motion,
-    };
+    const payload = buildRenderPayload(piece, job.id, kind);
 
     fetch(`${workerUrl}/render/${kind}`, {
       method: "POST",

@@ -69,6 +69,8 @@ class RenderRequest(BaseModel):
     kind: str
     slides: list[SlideInput]
     brandKit: BrandKitInput
+    template: str = "bold_highlight"
+    handle: str | None = None
     voiceover: str | None = None
     locale: str = "en"
     voiceGender: str | None = None
@@ -131,6 +133,10 @@ def _render_image_bg(req: RenderRequest) -> None:
             logo_path=req.brandKit.logoPath,
             background_image=bg,
             size=PORTRAIT_SIZE,
+            template=req.template,
+            handle=req.handle,
+            slide_index=slide.index,
+            slide_total=len(req.slides),
         )
         jobs.update(job_id, progress=80)
         engine = "fal" if bg is not None else "template"
@@ -201,6 +207,10 @@ def _render_carousel_bg(req: RenderRequest) -> None:
                 logo_path=req.brandKit.logoPath,
                 background_image=bg,
                 size=PORTRAIT_SIZE,
+                template=req.template,
+                handle=req.handle,
+                slide_index=slide.index,
+                slide_total=total,
             )
             meta = probe_image(png, min_w=1000, min_h=1000)
             path = f"pieces/{req.pieceId}/slide_{slide.index}.png"
@@ -239,6 +249,10 @@ def _render_story_bg(req: RenderRequest) -> None:
                 logo_path=req.brandKit.logoPath,
                 background_image=bg,
                 size=STORY_SIZE,
+                template=req.template,
+                handle=req.handle,
+                slide_index=slide.index,
+                slide_total=total,
             )
             meta = probe_image(png, min_w=1000, min_h=1800)
             path = f"pieces/{req.pieceId}/story_{slide.index}.png"

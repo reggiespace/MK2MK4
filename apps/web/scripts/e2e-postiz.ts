@@ -10,6 +10,7 @@ import { prisma } from "../src/lib/db";
 import { loadBrand } from "../src/lib/brand";
 import { runDailyForBrand } from "../src/lib/pipeline/run";
 import { getPublisher, type PublisherKey, type PostFormat } from "../src/lib/publishers";
+import { buildRenderPayload, renderKindFor } from "../src/lib/pipeline/render-payload";
 
 const WORKER = process.env.WORKER_BASE_URL ?? "http://localhost:8000";
 const SECRET = process.env.WORKER_SHARED_SECRET ?? "";
@@ -27,30 +28,10 @@ async function renderViaWorker(pieceId: string): Promise<RenderedAsset[]> {
     include: { slides: { orderBy: { index: "asc" } }, brand: { include: { brandKit: true } } },
   });
   if (!piece) throw new Error("piece not found");
-  const kind = piece.format === "single" ? "image" : piece.format;
+  const kind = renderKindFor(piece.format);
 
   const job = await prisma.renderJob.create({ data: { pieceId, kind, status: "queued" } });
-  const payload = {
-    jobId: job.id,
-    pieceId,
-    kind,
-    slides: piece.slides.map((s) => ({
-      index: s.index, role: s.role, skin: s.skin,
-      eyebrow: s.eyebrow, headline: s.headline, body: s.body, imagePrompt: s.imagePrompt,
-    })),
-    brandKit: {
-      logoPath: piece.brand.brandKit?.logoPath ?? "",
-      tokens: piece.brand.brandKit?.tokens,
-      fonts: piece.brand.brandKit?.fonts,
-      defaultSkin: piece.brand.brandKit?.defaultSkin,
-      artDirection: piece.brand.brandKit?.artDirection ?? "warm_lifestyle",
-      voiceId: piece.brand.brandKit?.voiceId ?? "",
-    },
-    voiceover: piece.voiceover,
-    locale: piece.brand.locale,
-    voiceGender: piece.voiceGender ?? "female",
-    motion: piece.motion,
-  };
+  const payload = buildRenderPayload(piece, job.id, kind);
 
   const res = await fetch(`${WORKER}/render/${kind}`, {
     method: "POST",
