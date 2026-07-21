@@ -36,6 +36,7 @@ enum VoiceGender {
 enum Publisher {
   buffer
   zernio
+  postiz
 }
 
 model Brand {
@@ -64,6 +65,7 @@ model BrandKit {
   tokens       Json // { moss, slate, brass, cream, ink, darkBg, darkFg, ... }
   fonts        Json // { display: "Spectral", body: "Albert Sans", mono: "IBM Plex Mono" }
   defaultSkin  Skin         @default(mark_forward)
+  defaultTemplate Template  @default(bold_highlight)
   artDirection ArtDirection @default(warm_lifestyle)
   toneGuide    String       @db.Text
   voiceId      String // ElevenLabs voice id for this locale
@@ -88,6 +90,7 @@ enum Format {
   single
   carousel
   reel
+  story
 }
 
 enum IdeaStatus {
@@ -123,6 +126,14 @@ enum Skin {
   mark_forward
 }
 
+enum Template {
+  classic
+  editorial_bold
+  bold_highlight
+  minimal_card
+  photo_overlay
+}
+
 enum ArtDirection {
   warm_lifestyle
   editorial_illustration
@@ -146,6 +157,7 @@ model ContentPiece {
   ideaId          String?
   idea            Idea?        @relation(fields: [ideaId], references: [id], onDelete: SetNull)
   format          Format
+  template        Template? // per-piece override of the brand's defaultTemplate
   caption         String       @db.Text
   firstComment    String?      @db.Text // links + engagement question, link-free caption
   claims          Json? // last claims-check result snapshot for the review panel
@@ -224,6 +236,7 @@ enum JobKind {
   image
   carousel
   reel
+  story
 }
 
 enum JobStatus {

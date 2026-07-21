@@ -20,8 +20,17 @@ from .vessel import render_slide, PORTRAIT_SIZE
 from .imagery import generate_background, animate_background, piece_seed
 
 REEL_SIZE = (1080, 1920)
-SLIDE_DURATION_S = 4       # seconds per slide in the reel
 FADE_DURATION_S = 0.5      # cross-fade between slides
+
+# Per-role scene duration (2026 Instagram algorithm: the hook must be near-
+# instant — most drop-off happens in the first 3s — while a CTA needs an
+# extra beat to read the ask + link pill + disclaimer).
+ROLE_DURATION_S: dict[str, float] = {"cover": 2.5, "body": 4.0, "cta": 5.5}
+DEFAULT_DURATION_S = 4.0
+
+
+def _duration_for(role: str) -> float:
+    return ROLE_DURATION_S.get(role, DEFAULT_DURATION_S)
 
 # Per-locale fallback voice IDs (used only if no brand voice is configured)
 DEFAULT_VOICES: dict[str, str] = {
@@ -76,12 +85,13 @@ def _elevenlabs_tts(text: str, voice_id: str, api_key: str) -> bytes:
     return buf.getvalue()
 
 
-def _build_srt(slides: list[dict[str, Any]]) -> str:
+def _build_srt(slides: list[dict[str, Any]], durations: list[float]) -> str:
     """Build SRT subtitle file from slide headlines."""
     lines = []
-    for i, slide in enumerate(slides):
-        start = i * SLIDE_DURATION_S
-        end = start + SLIDE_DURATION_S
+    t = 0.0
+    for i, (slide, dur) in enumerate(zip(slides, durations)):
+        start, end = t, t + dur
+        t = end
         text = slide.get("headline") or slide.get("body") or ""
         if not text:
             continue
@@ -102,6 +112,7 @@ def _assemble(
     overlays: list[Path],
     audio_path: Path,
     motion: bool,
+    durations: list[float],
 ) -> bytes:
     """Assemble slide clips/frames + audio into MP4 and return bytes."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -114,7 +125,7 @@ def _assemble(
             filter_parts: list[str] = []
             inputs: list[str] = []
             for i, (clip_p, overlay_p) in enumerate(zip(clips, overlays)):
-                inputs += ["-t", str(SLIDE_DURATION_S), "-i", str(clip_p)]
+                inputs += ["-t", str(durations[i]), "-i", str(clip_p)]
                 inputs += ["-i", str(overlay_p)]
                 filter_parts.append(
                     f"[{i * 2}:v]scale=1080:1920:force_original_aspect_ratio=increase,"
@@ -126,26 +137,35 @@ def _assemble(
             filter_parts = []
             inputs = []
             for i, clip_p in enumerate(clips):
-                inputs += ["-loop", "1", "-t", str(SLIDE_DURATION_S + FADE_DURATION_S), "-i", str(clip_p)]
+                inputs += ["-loop", "1", "-t", str(durations[i] + FADE_DURATION_S), "-i", str(clip_p)]
                 filter_parts.append(
                     f"[{i}:v]scale=1080:1920:force_original_aspect_ratio=increase,"
                     f"crop=1080:1920,"
                     f"zoompan=z='min(zoom+0.0015,1.05)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
-                    f":d={int(SLIDE_DURATION_S * 25)}:fps=25:s=1080x1920[v{i}]"
+                    f":d={int(durations[i] * 25)}:fps=25:s=1080x1920[v{i}]"
                 )
 
-        # Cross-fade between slides
+        # Cross-fade between slides (offsets accumulate actual per-slide
+        # durations, so hook/body/cta scenes can each run a different length).
         if n > 1:
             xfade_chain = ""
             prev = "v0"
+            # Each chained xfade merges into a stream that's already been
+            # shortened by every prior fade, so the offset must subtract
+            # i*FADE (not just one FADE) — otherwise later transitions are
+            # told to start past the end of the (shrunken) merged stream,
+            # which ffmpeg resolves by dropping frames en masse and
+            # truncating the whole output far short of its real length.
+            cumulative = durations[0]
             for i in range(1, n):
-                offset = i * SLIDE_DURATION_S - FADE_DURATION_S
+                offset = cumulative - i * FADE_DURATION_S
                 out_label = f"xf{i}" if i < n - 1 else "vout"
                 xfade_chain += (
                     f";[{prev}][v{i}]xfade=transition=fade:duration={FADE_DURATION_S}"
                     f":offset={offset}[{out_label}]"
                 )
                 prev = out_label
+                cumulative += durations[i]
             filter_complex = ";".join(filter_parts) + xfade_chain
             video_map = "[vout]"
         else:
@@ -184,12 +204,16 @@ def render_reel(
     voice_gender: str | None = None,
     progress_callback: Any = None,
     motion: bool = False,
+    template: str = "bold_highlight",
+    handle: str | None = None,
 ) -> bytes:
     """Render a complete reel MP4 and return the bytes."""
     settings = get_settings()
     art_direction = brand_kit.get("artDirection", "warm_lifestyle")
     seed = piece_seed(piece_id)
     logo_path = brand_kit.get("logoPath")
+
+    durations = [_duration_for(s.get("role", "body")) for s in slides]
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
@@ -203,8 +227,8 @@ def render_reel(
             if progress_callback:
                 progress_callback(25)
         else:
-            # Silent placeholder: 1s of silence per slide
-            duration = len(slides) * SLIDE_DURATION_S
+            # Silent placeholder spanning the reel's actual (per-role) length
+            duration = sum(durations)
             subprocess.run(
                 ["ffmpeg", "-y", "-f", "lavfi", "-i",
                  f"aevalsrc=0:c=stereo:s=44100:d={duration}",
@@ -257,11 +281,19 @@ def render_reel(
                     logo_path=logo_path,
                     transparent=True,
                     size=REEL_SIZE,
+                    template=template,
+                    handle=handle,
+                    slide_index=i,
+                    slide_total=len(slides),
+                    locale=locale,
                 )
                 overlay_p = tmp_path / f"overlay_{i:02d}.png"
                 overlay_p.write_bytes(overlay_png)
                 slide_overlays.append(overlay_p)
             else:
+                # Ken Burns path: not transparent, renders the full opaque
+                # designed template (background painted by the template
+                # itself, not by an fal.ai clip).
                 png = render_slide(
                     skin=slide.get("skin", "dark"),
                     role=slide.get("role", "body"),
@@ -271,6 +303,11 @@ def render_reel(
                     logo_path=logo_path,
                     background_image=bg,
                     size=REEL_SIZE,
+                    template=template,
+                    handle=handle,
+                    slide_index=i,
+                    slide_total=len(slides),
+                    locale=locale,
                 )
                 p = tmp_path / f"slide_{i:02d}.png"
                 p.write_bytes(png)
@@ -280,7 +317,7 @@ def render_reel(
                 progress_callback(25 + int(55 * (i + 1) / len(slides)))
 
         # 5. Assemble
-        result = _assemble(slide_clips, slide_overlays, audio_path, motion)
+        result = _assemble(slide_clips, slide_overlays, audio_path, motion, durations)
         if progress_callback:
             progress_callback(100)
         return result

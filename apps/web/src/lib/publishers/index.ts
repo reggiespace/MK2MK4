@@ -1,11 +1,19 @@
 import "server-only";
-import type { Publisher } from "./types";
+import type { Publisher, PublisherKey } from "./types";
 import { BufferPublisher } from "./buffer";
 import { ZernioPublisher } from "./zernio";
+import { PostizPublisher } from "./postiz";
 
-export { type Publisher, type ScheduleOptions, type PublishResult } from "./types";
+export {
+  type Publisher,
+  type PublisherKey,
+  type PostFormat,
+  type ScheduleOptions,
+  type PublishResult,
+} from "./types";
 
-export function getPublisher(provider: "buffer" | "zernio"): Publisher {
+export function getPublisher(provider: PublisherKey): Publisher {
   if (provider === "buffer") return new BufferPublisher();
-  return new ZernioPublisher();
+  if (provider === "zernio") return new ZernioPublisher();
+  return new PostizPublisher();
 }

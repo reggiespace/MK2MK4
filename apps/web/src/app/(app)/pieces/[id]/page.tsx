@@ -15,7 +15,16 @@ export default async function PiecePage({
       mediaAssets: true,
       renderJobs: { orderBy: { createdAt: "desc" }, take: 1 },
       idea: { select: { title: true, angle: true, storyBrief: true, pillar: { select: { name: true } } } },
-      brand: { select: { id: true, name: true, locale: true, publisher: true, channels: true } },
+      brand: {
+        select: {
+          id: true,
+          name: true,
+          locale: true,
+          publisher: true,
+          channels: true,
+          brandKit: { select: { defaultTemplate: true } },
+        },
+      },
     },
   });
 

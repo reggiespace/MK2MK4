@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from .config import get_settings
 from . import jobs
-from .renderer.vessel import render_slide, PORTRAIT_SIZE
+from .renderer.vessel import render_slide, PORTRAIT_SIZE, STORY_SIZE
 from .renderer.reel import render_reel
 from .renderer.imagery import generate_background, piece_seed
 from .storage import save_asset
@@ -69,6 +69,8 @@ class RenderRequest(BaseModel):
     kind: str
     slides: list[SlideInput]
     brandKit: BrandKitInput
+    template: str = "bold_highlight"
+    handle: str | None = None
     voiceover: str | None = None
     locale: str = "en"
     voiceGender: str | None = None
@@ -131,6 +133,11 @@ def _render_image_bg(req: RenderRequest) -> None:
             logo_path=req.brandKit.logoPath,
             background_image=bg,
             size=PORTRAIT_SIZE,
+            template=req.template,
+            handle=req.handle,
+            slide_index=slide.index,
+            slide_total=len(req.slides),
+            locale=req.locale,
         )
         jobs.update(job_id, progress=80)
         engine = "fal" if bg is not None else "template"
@@ -168,6 +175,8 @@ def _render_reel_bg(req: RenderRequest) -> None:
             voice_gender=req.voiceGender,
             progress_callback=progress_cb,
             motion=req.motion,
+            template=req.template,
+            handle=req.handle,
         )
         require_audio = bool(req.voiceover and get_settings().elevenlabs_api_key)
         meta = probe_video(mp4, require_audio=require_audio)
@@ -201,6 +210,11 @@ def _render_carousel_bg(req: RenderRequest) -> None:
                 logo_path=req.brandKit.logoPath,
                 background_image=bg,
                 size=PORTRAIT_SIZE,
+                template=req.template,
+                handle=req.handle,
+                slide_index=slide.index,
+                slide_total=total,
+                locale=req.locale,
             )
             meta = probe_image(png, min_w=1000, min_h=1000)
             path = f"pieces/{req.pieceId}/slide_{slide.index}.png"
@@ -220,6 +234,49 @@ def _render_carousel_bg(req: RenderRequest) -> None:
         _callback(job_id, req.pieceId, [])
 
 
+def _render_story_bg(req: RenderRequest) -> None:
+    """Render static 1080x1920 story frames — one image per slide."""
+    job_id = req.jobId
+    log.info("story render start job=%s piece=%s slides=%d", job_id, req.pieceId, len(req.slides))
+    jobs.update(job_id, status="running", progress=5)
+    assets: list[dict[str, Any]] = []
+    try:
+        total = len(req.slides)
+        for i, slide in enumerate(req.slides):
+            bg = _bg_for_slide(slide, req.brandKit.artDirection, STORY_SIZE, req.pieceId)
+            png = render_slide(
+                skin=slide.skin,
+                role=slide.role,
+                eyebrow=slide.eyebrow,
+                headline=slide.headline,
+                body=slide.body,
+                logo_path=req.brandKit.logoPath,
+                background_image=bg,
+                size=STORY_SIZE,
+                template=req.template,
+                handle=req.handle,
+                slide_index=slide.index,
+                slide_total=total,
+                locale=req.locale,
+            )
+            meta = probe_image(png, min_w=1000, min_h=1800)
+            path = f"pieces/{req.pieceId}/story_{slide.index}.png"
+            url = save_asset(path, png)
+            engine = "fal" if bg is not None else "template"
+            assets.append({"url": url, "type": "image", "engine": engine, "slideIndex": slide.index, "prompt": slide.imagePrompt, "meta": meta})
+            pct = int(10 + 85 * (i + 1) / total)
+            log.info("story slide %d/%d done job=%s", i + 1, total, job_id)
+            jobs.update(job_id, progress=pct)
+
+        jobs.update(job_id, status="done", progress=100, result={"assets": assets})
+        log.info("story done job=%s assets=%d", job_id, len(assets))
+        _callback(job_id, req.pieceId, assets)
+    except Exception as exc:
+        log.exception("story render failed job=%s", job_id)
+        jobs.update(job_id, status="failed", error=str(exc))
+        _callback(job_id, req.pieceId, [])
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -235,7 +292,7 @@ def render(
     req: RenderRequest,
     background_tasks: BackgroundTasks,
 ) -> JobResponse:
-    if kind not in {"image", "carousel", "reel"}:
+    if kind not in {"image", "carousel", "reel", "story"}:
         raise HTTPException(status_code=400, detail=f"unknown render kind: {kind}")
 
     log.info("render request kind=%s piece=%s job=%s", kind, req.pieceId, req.jobId)
@@ -245,6 +302,8 @@ def render(
         fn = _render_image_bg
     elif kind == "carousel":
         fn = _render_carousel_bg
+    elif kind == "story":
+        fn = _render_story_bg
     else:
         fn = _render_reel_bg
 

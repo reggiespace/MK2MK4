@@ -11,7 +11,10 @@ const bodySchema = z.object({
   brandId: z.string().optional(),
   title: z.string().optional(),
   angle: z.string().optional(),
-  format: z.enum(["single", "carousel", "reel"]).optional(),
+  format: z.enum(["single", "carousel", "reel", "story"]).optional(),
+  template: z
+    .enum(["classic", "editorial_bold", "bold_highlight", "minimal_card", "photo_overlay"])
+    .optional(),
 });
 
 function skinForRole(_role: SlideRole, brandDefault: Skin): Skin {
@@ -96,6 +99,7 @@ export async function POST(req: Request) {
         brandId,
         ideaId: ideaId ?? null,
         format: draft.recommendedFormat,
+        template: input.template ?? null,
         caption: draft.caption,
         firstComment: draft.firstComment ?? null,
         hashtags: draft.hashtags,

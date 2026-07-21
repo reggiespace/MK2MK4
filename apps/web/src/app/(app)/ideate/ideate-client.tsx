@@ -19,6 +19,14 @@ type Idea = {
   recommendedFormat: string;
 };
 
+const TEMPLATE_OPTIONS: { value: string; label: string }[] = [
+  { value: "bold_highlight", label: "Bold highlight" },
+  { value: "editorial_bold", label: "Editorial" },
+  { value: "minimal_card", label: "Minimal" },
+  { value: "photo_overlay", label: "Photo overlay" },
+  { value: "classic", label: "Classic" },
+];
+
 export function IdeateClient({
   brands,
   defaultBrandId,
@@ -31,6 +39,7 @@ export function IdeateClient({
   const router = useRouter();
   const [brandId, setBrandId] = useState(defaultBrandId ?? brands[0]?.id ?? "");
   const [pillarId, setPillarId] = useState<string | undefined>();
+  const [template, setTemplate] = useState("bold_highlight");
   const [brief, setBrief] = useState("");
   const [count, setCount] = useState(5);
   const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
@@ -78,7 +87,7 @@ export function IdeateClient({
       const res = await fetch("/api/pieces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ideaId }),
+        body: JSON.stringify({ ideaId, template }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Draft failed");
@@ -145,6 +154,23 @@ export function IdeateClient({
           </div>
         </section>
       )}
+
+      {/* Template */}
+      <section className="section">
+        <p className="eyebrow">Template</p>
+        <div className="pill-group">
+          {TEMPLATE_OPTIONS.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              className={`pill ${template === t.value ? "active" : ""}`}
+              onClick={() => setTemplate(t.value)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </section>
 
       {/* Optional brief */}
       <section className="section">

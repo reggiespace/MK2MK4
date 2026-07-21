@@ -3,7 +3,7 @@ import { z } from "zod";
 import { nanoid } from "nanoid";
 import { prisma } from "@/lib/db";
 import { guard, badRequest, serverError } from "@/lib/api";
-import { getPublisher } from "@/lib/publishers";
+import { getPublisher, type PublisherKey, type PostFormat } from "@/lib/publishers";
 import { checkClaims, fullTextForClaims } from "@/lib/claims/check";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const publisher = getPublisher(piece.brand.publisher as "buffer" | "zernio");
+  const publisher = getPublisher(piece.brand.publisher as PublisherKey);
   const mediaUrls = piece.mediaAssets.map((a) => a.url);
   const idempotencyKey = nanoid();
 
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     firstComment: piece.firstComment ?? undefined,
     hashtags: piece.hashtags,
     mediaUrls,
-    format: piece.format as "single" | "carousel" | "reel",
+    format: piece.format as PostFormat,
     channelId,
     network,
     idempotencyKey,
@@ -87,7 +87,7 @@ export async function POST(req: Request) {
         channel: channelId,
         network,
         scheduledAt: scheduledAt ?? new Date(),
-        provider: piece.brand.publisher as "buffer" | "zernio",
+        provider: piece.brand.publisher as PublisherKey,
         providerPostId: result.providerPostId,
         status: scheduledAt ? "scheduled" : "published",
         idempotencyKey,
@@ -122,7 +122,7 @@ export async function GET(req: Request) {
   if (!piece) return badRequest("Unknown piece.");
 
   const channels = (piece.brand.channels as { network: string; channelId: string }[]) ?? [];
-  const pub = getPublisher(piece.brand.publisher as "buffer" | "zernio");
+  const pub = getPublisher(piece.brand.publisher as PublisherKey);
   const bestTimes = await Promise.all(
     channels.map(async (c) => ({
       channelId: c.channelId,

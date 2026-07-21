@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const formatEnum = z.enum(["single", "carousel", "reel"]);
+export const formatEnum = z.enum(["single", "carousel", "reel", "story"]);
 export const slideRoleEnum = z.enum(["cover", "body", "cta"]);
 
 export const ideaSchema = z.object({

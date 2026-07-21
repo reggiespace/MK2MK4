@@ -29,8 +29,8 @@ export function ideasPrompt(
     system: brandPreamble(brand),
     user: `Propose ${opts.count} fresh, specific post ideas. ${focus} ${brief}
 
-Each idea: a punchy title, a one-sentence angle, a recommended format (single | carousel | reel), and the pillar it belongs to.
-Reels suit step-by-step or "why this happens" explainers; carousels suit multi-point education; single images suit one strong stat or reframe.
+Each idea: a punchy title, a one-sentence angle, a recommended format (single | carousel | reel | story), and the pillar it belongs to.
+Reels suit step-by-step or "why this happens" explainers; carousels suit multi-point education; single images suit one strong stat or reframe; stories suit quick, timely reminders or a 1-3 frame tip.
 
 Respond as JSON: { "ideas": [ { "title", "angle", "recommendedFormat", "pillarName" } ] }`,
   };
@@ -58,11 +58,12 @@ Produce:
   📲 Android — play.google.com/store/apps/details?id=ca.reggiespace.gastric_iq
   <one short engagement question in the post's language>"
 - hashtags: 4-8 relevant hashtags (no leading #).
-- recommendedFormat: single | carousel | reel + formatRationale (one sentence).
+- recommendedFormat: single | carousel | reel | story + formatRationale (one sentence).
 - slides: ordered slides.
   - "carousel": 1 cover (eyebrow + short headline), 2-4 body (eyebrow + headline + 1-2 sentence body), 1 cta (headline = call to action).
   - "single": exactly 1 cover (eyebrow + headline).
-  - "reel": 3-6 body slides (headline per scene) + a "voiceover" field with the full narration.
+  - "reel": 1 cover (the hook — ≤8 words, must land instantly even with sound off, no throat-clearing), 2-4 body scenes (headline per scene, one idea each), 1 cta (headline = a specific engagement ask, e.g. "Send this to someone still counting calories" — never a generic "thoughts?") + a "voiceover" field with the full narration covering every scene.
+  - "story": 1-3 full-screen frames (eyebrow + short headline, optional 1-sentence body); last frame is a cta.
 
 Respond as JSON matching:
 { "caption", "firstComment", "hashtags": [], "recommendedFormat", "formatRationale", "slides": [ { "role": "cover|body|cta", "eyebrow", "headline", "body", "imagePrompt": "short literal scene description for a background photo — food, ingredients, calm lifestyle objects; no people's bodies, no medical content, no text" } ], "voiceover" }`,

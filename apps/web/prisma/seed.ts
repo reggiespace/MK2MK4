@@ -38,38 +38,57 @@ const PILLARS_PT = [
   { name: "Confiança e privacidade", description: "Uso claro de dados, exportação, exclusão e sem preços manipuladores." },
 ];
 
+type Channel = { network: "facebook" | "instagram"; channelId: string; label?: string };
+
+// Postiz integration ids per brand+network, sourced from env so real channel
+// ids never live in source. Fetch them from `GET /public/v1/integrations`
+// on your Postiz instance and set the vars in .env.
+function channelsFromEnv(prefix: string): Channel[] {
+  const fb = process.env[`POSTIZ_CHANNEL_${prefix}_FACEBOOK`] ?? "";
+  const ig = process.env[`POSTIZ_CHANNEL_${prefix}_INSTAGRAM`] ?? "";
+  return [
+    { network: "facebook", channelId: fb, label: fb ? undefined : "TODO: set POSTIZ_CHANNEL id" },
+    { network: "instagram", channelId: ig, label: ig ? undefined : "TODO: set POSTIZ_CHANNEL id" },
+  ];
+}
+
 async function seedBrand(opts: {
   key: string;
   name: string;
   locale: "en" | "pt_BR";
-  publisher: "buffer" | "zernio";
+  publisher: "buffer" | "zernio" | "postiz";
   tone: string;
   pillars: { name: string; description: string }[];
+  channels: Channel[];
+  defaultTemplate: "classic" | "editorial_bold" | "bold_highlight" | "minimal_card" | "photo_overlay";
 }) {
   const brand = await prisma.brand.upsert({
     where: { key: opts.key },
-    update: { name: opts.name, locale: opts.locale, publisher: opts.publisher },
+    update: {
+      name: opts.name,
+      locale: opts.locale,
+      publisher: opts.publisher,
+      channels: opts.channels,
+    },
     create: {
       key: opts.key,
       name: opts.name,
       locale: opts.locale,
       publisher: opts.publisher,
-      channels: [
-        { network: "facebook", channelId: "", label: "TODO: set channel id" },
-        { network: "instagram", channelId: "", label: "TODO: set channel id" },
-      ],
+      channels: opts.channels,
     },
   });
 
   await prisma.brandKit.upsert({
     where: { brandId: brand.id },
-    update: { tokens: VESSEL_TOKENS, fonts: FONTS, toneGuide: opts.tone },
+    update: { tokens: VESSEL_TOKENS, fonts: FONTS, toneGuide: opts.tone, defaultTemplate: opts.defaultTemplate },
     create: {
       brandId: brand.id,
       logoPath: "brands/logo-iq-transparent.png",
       tokens: VESSEL_TOKENS,
       fonts: FONTS,
       defaultSkin: "mark_forward",
+      defaultTemplate: opts.defaultTemplate,
       artDirection: "warm_lifestyle",
       toneGuide: opts.tone,
       voiceId: "", // TODO: set ElevenLabs voice id per locale
@@ -89,17 +108,19 @@ async function seedBrand(opts: {
 
 // Weekly cadence per brand (brief §13). weekday: 0=Sun..6=Sat.
 // Reels → instagram only (BR has no TikTok channel here); static → ig+fb.
-const CADENCE_US: { weekday: number; pillar: string; format: "single" | "carousel" | "reel"; networks: string[] }[] = [
+const CADENCE_US: { weekday: number; pillar: string; format: "single" | "carousel" | "reel" | "story"; networks: string[] }[] = [
   { weekday: 1, pillar: "Medication-cycle education", format: "carousel", networks: ["instagram", "facebook"] },
   { weekday: 2, pillar: "Side-effect readiness (without fear)", format: "reel", networks: ["instagram"] },
   { weekday: 3, pillar: "Protein & lean mass", format: "single", networks: ["instagram", "facebook"] },
   { weekday: 4, pillar: "Bariatric guidance", format: "carousel", networks: ["instagram", "facebook"] },
   { weekday: 5, pillar: "Trust & privacy", format: "reel", networks: ["instagram"] },
+  { weekday: 6, pillar: "Side-effect readiness (without fear)", format: "story", networks: ["instagram", "facebook"] },
 ];
 const CADENCE_BR: typeof CADENCE_US = [
   { weekday: 1, pillar: "Educação sobre o ciclo da medicação", format: "carousel", networks: ["instagram", "facebook"] },
   { weekday: 3, pillar: "Preparo para efeitos colaterais (sem medo)", format: "reel", networks: ["instagram"] },
   { weekday: 5, pillar: "Proteína e massa magra", format: "single", networks: ["instagram", "facebook"] },
+  { weekday: 6, pillar: "Preparo para efeitos colaterais (sem medo)", format: "story", networks: ["instagram", "facebook"] },
 ];
 
 async function seedCadence(brandId: string, rows: typeof CADENCE_US) {
@@ -117,17 +138,21 @@ async function main() {
     key: "gastric-us",
     name: "Gastric IQ",
     locale: "en",
-    publisher: "buffer",
+    publisher: "postiz",
     tone: TONE_EN,
     pillars: PILLARS_EN,
+    channels: channelsFromEnv("US"),
+    defaultTemplate: "bold_highlight",
   });
   const br = await seedBrand({
     key: "gastric-br",
     name: "Gastric IQ Brasil",
     locale: "pt_BR",
-    publisher: "zernio",
+    publisher: "postiz",
     tone: TONE_PT,
     pillars: PILLARS_PT,
+    channels: channelsFromEnv("BR"),
+    defaultTemplate: "bold_highlight",
   });
   await seedCadence(us.id, CADENCE_US);
   await seedCadence(br.id, CADENCE_BR);

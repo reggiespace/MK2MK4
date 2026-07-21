@@ -38,12 +38,26 @@ def _download(url: str) -> bytes:
     return httpx.get(url, timeout=60).content
 
 
+# All on-screen copy is drawn by the Vessel renderer (crisp, on-brand, and
+# editable); diffusion models render text as garbled nonsense, so every
+# generated background is instructed — at the API call itself, not just in
+# the LLM's prompt-writing instructions — to contain none.
+NO_TEXT_SUFFIX = (
+    ", no text, no words, no letters, no numbers, no typography, "
+    "no logos, no watermarks, no signage, no captions"
+)
+
+
 def _fal_image(prompt: str, model: str, size: tuple[int, int], seed: int | None) -> bytes:
     """Call fal.ai text-to-image and return PNG/JPEG bytes."""
     import fal_client
 
     w, h = size
-    args: dict = {"prompt": prompt, "image_size": {"width": w, "height": h}, "num_images": 1}
+    args: dict = {
+        "prompt": prompt + NO_TEXT_SUFFIX,
+        "image_size": {"width": w, "height": h},
+        "num_images": 1,
+    }
     if seed is not None:
         args["seed"] = seed
     result = fal_client.subscribe(model, arguments=args, client_timeout=300)

@@ -9,6 +9,10 @@ const patchSchema = z.object({
   status: z.enum(["draft", "review", "scheduled", "published", "failed"]).optional(),
   voiceGender: z.enum(["male", "female"]).nullable().optional(),
   motion: z.boolean().optional(),
+  template: z
+    .enum(["classic", "editorial_bold", "bold_highlight", "minimal_card", "photo_overlay"])
+    .nullable()
+    .optional(),
 });
 
 export async function GET(
@@ -26,7 +30,7 @@ export async function GET(
       mediaAssets: true,
       renderJobs: { orderBy: { createdAt: "desc" }, take: 1 },
       idea: { select: { title: true, angle: true, pillar: { select: { name: true } } } },
-      brand: { select: { name: true, locale: true } },
+      brand: { select: { name: true, locale: true, brandKit: { select: { defaultTemplate: true } } } },
     },
   });
 

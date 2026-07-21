@@ -3,7 +3,7 @@ import "server-only";
 export interface CadenceRow {
   weekday: number;
   pillar: string;
-  format: "single" | "carousel" | "reel";
+  format: "single" | "carousel" | "reel" | "story";
   networks: string[];
 }
 
