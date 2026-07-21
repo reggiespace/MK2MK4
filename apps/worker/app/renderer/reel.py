@@ -184,6 +184,8 @@ def render_reel(
     voice_gender: str | None = None,
     progress_callback: Any = None,
     motion: bool = False,
+    template: str = "bold_highlight",
+    handle: str | None = None,
 ) -> bytes:
     """Render a complete reel MP4 and return the bytes."""
     settings = get_settings()
@@ -262,6 +264,9 @@ def render_reel(
                 overlay_p.write_bytes(overlay_png)
                 slide_overlays.append(overlay_p)
             else:
+                # Ken Burns path: not transparent, so it renders the full
+                # designed template (motion overlays above stay classic —
+                # they composite onto an already-animated fal.ai clip).
                 png = render_slide(
                     skin=slide.get("skin", "dark"),
                     role=slide.get("role", "body"),
@@ -271,6 +276,10 @@ def render_reel(
                     logo_path=logo_path,
                     background_image=bg,
                     size=REEL_SIZE,
+                    template=template,
+                    handle=handle,
+                    slide_index=i,
+                    slide_total=len(slides),
                 )
                 p = tmp_path / f"slide_{i:02d}.png"
                 p.write_bytes(png)

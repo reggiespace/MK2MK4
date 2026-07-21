@@ -174,6 +174,8 @@ def _render_reel_bg(req: RenderRequest) -> None:
             voice_gender=req.voiceGender,
             progress_callback=progress_cb,
             motion=req.motion,
+            template=req.template,
+            handle=req.handle,
         )
         require_audio = bool(req.voiceover and get_settings().elevenlabs_api_key)
         meta = probe_video(mp4, require_audio=require_audio)
