@@ -1,13 +1,14 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import type { BrandContext } from "@/lib/llm/types";
+import type { PublisherKey } from "@/lib/publishers/types";
 
 export interface FullBrand {
   id: string;
   key: string;
   name: string;
   locale: "en" | "pt_BR";
-  publisher: "buffer" | "zernio";
+  publisher: PublisherKey;
   context: BrandContext;
 }
 

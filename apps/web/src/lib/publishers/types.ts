@@ -1,9 +1,13 @@
+export type PublisherKey = "buffer" | "zernio" | "postiz";
+
+export type PostFormat = "single" | "carousel" | "reel" | "story";
+
 export interface ScheduleOptions {
   caption: string;
   firstComment?: string;
   hashtags: string[];
   mediaUrls: string[];
-  format: "single" | "carousel" | "reel";
+  format: PostFormat;
   scheduledAt: Date;
   channelId: string;
   network: "facebook" | "instagram";

@@ -47,6 +47,7 @@ SKINS: dict[str, dict[str, Any]] = {
 # Canvas sizes
 SQUARE_SIZE = (1080, 1080)   # IG square
 PORTRAIT_SIZE = (1080, 1350)  # IG portrait / carousel
+STORY_SIZE = (1080, 1920)    # IG/FB story (9:16)
 
 ASSETS_ROOT = (
     Path(os.environ["ASSETS_ROOT"])

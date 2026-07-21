@@ -11,7 +11,7 @@ const bodySchema = z.object({
   brandId: z.string().optional(),
   title: z.string().optional(),
   angle: z.string().optional(),
-  format: z.enum(["single", "carousel", "reel"]).optional(),
+  format: z.enum(["single", "carousel", "reel", "story"]).optional(),
 });
 
 function skinForRole(_role: SlideRole, brandDefault: Skin): Skin {

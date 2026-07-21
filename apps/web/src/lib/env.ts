@@ -39,6 +39,12 @@ export const env = {
   zernioApiKey: () => optional("ZERNIO_API_KEY"),
   zernioBaseUrl: () => process.env.ZERNIO_BASE_URL ?? "https://api.zernio.com",
 
+  postizApiKey: () => optional("POSTIZ_API_KEY"),
+  // Postiz backend base URL (the public API lives at `${base}/public/v1`).
+  // For a single-domain self-hosted deploy the backend is proxied under /api.
+  postizBaseUrl: () =>
+    (process.env.POSTIZ_BASE_URL ?? "https://postiz.reggiespace.ca/api").replace(/\/+$/, ""),
+
   workerBaseUrl: () => optional("WORKER_BASE_URL") ?? "http://localhost:8000",
   workerSharedSecret: () => optional("WORKER_SHARED_SECRET"),
   cronSecret: () => optional("CRON_SECRET"),
@@ -62,5 +68,6 @@ export function integrationStatus() {
     ),
     buffer: Boolean(optional("BUFFER_API_KEY")),
     zernio: Boolean(optional("ZERNIO_API_KEY")),
+    postiz: Boolean(optional("POSTIZ_API_KEY")),
   };
 }

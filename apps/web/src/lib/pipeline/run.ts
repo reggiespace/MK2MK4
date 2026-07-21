@@ -7,6 +7,7 @@ import { getResearch } from "./research";
 import { pickCadence, runDateUTC, type CadenceRow } from "./cadence";
 import { captionWithinLimit } from "./limits";
 import { composePostText } from "@/lib/publishers/compose";
+import type { PublisherKey } from "@/lib/publishers/types";
 import type { BrandContext } from "@/lib/llm/types";
 import type { Skin } from "@/generated/prisma/enums";
 import { Prisma } from "@/generated/prisma/client";
@@ -15,7 +16,7 @@ export interface PipelineBrand {
   id: string;
   name: string;
   locale: "en" | "pt_BR";
-  publisher: "buffer" | "zernio";
+  publisher: PublisherKey;
   context: BrandContext;
   defaultSkin: Skin;
 }

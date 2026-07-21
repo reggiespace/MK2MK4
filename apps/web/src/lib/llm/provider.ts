@@ -153,7 +153,22 @@ class MockProvider implements LlmProvider {
     const slides: DraftResponse["slides"] =
       format === "single"
         ? [{ role: "cover", eyebrow: opts.title, headline: opts.title, imagePrompt: "fresh vegetables and grains on a bright kitchen counter" }]
-        : format === "reel"
+        : format === "story"
+          ? [
+              { role: "cover", eyebrow: pt ? "Lembrete" : "Reminder", headline: opts.title, imagePrompt: "soft morning light over a calm kitchen counter" },
+              {
+                role: "body",
+                headline: pt ? "A fome pode voltar no dia 4–5." : "Food noise can return on day 4–5.",
+                body: pt ? "Costuma ser esperado — com base nos seus registros." : "Often expected — based on your logged data.",
+                imagePrompt: "glass of water and fresh herbs on a sunlit surface",
+              },
+              {
+                role: "cta",
+                headline: pt ? "Veja seu ciclo no Gastric IQ." : "See your cycle in Gastric IQ.",
+                imagePrompt: "warm kitchen window light on a clean countertop with greenery",
+              },
+            ]
+          : format === "reel"
           ? [
               { role: "cover", eyebrow: pt ? "Reel" : "Reel", headline: opts.title, imagePrompt: "warm bowl of oats with blueberries on a wooden table" },
               { role: "body", headline: pt ? "O ciclo tem pico e queda." : "The cycle peaks, then fades.", imagePrompt: "glass of water beside fresh herbs on a sunlit surface" },

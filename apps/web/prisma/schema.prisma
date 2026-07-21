@@ -36,6 +36,7 @@ enum VoiceGender {
 enum Publisher {
   buffer
   zernio
+  postiz
 }
 
 model Brand {
@@ -88,6 +89,7 @@ enum Format {
   single
   carousel
   reel
+  story
 }
 
 enum IdeaStatus {
@@ -224,6 +226,7 @@ enum JobKind {
   image
   carousel
   reel
+  story
 }
 
 enum JobStatus {
