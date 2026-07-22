@@ -221,8 +221,8 @@ class MockProvider implements LlmProvider {
         : "Step-by-step educational content performs best in this format.",
       slides,
       firstComment: pt
-        ? "Tudo grátis pra testar 👇\n🌐 Web — gastric-iq.com\n📲 Android — play.google.com/store/apps/details?id=ca.reggiespace.gastric_iq\nQual fase do ciclo você está sentindo hoje?"
-        : "Everything's free to try 👇\n🌐 Web — gastric-iq.com\n📲 Android — play.google.com/store/apps/details?id=ca.reggiespace.gastric_iq\nWhere are you in your cycle today?",
+        ? "Tudo grátis pra testar 👇\n📲 gastric-iq.com/app\nQual fase do ciclo você está sentindo hoje?"
+        : "Everything's free to try 👇\n📲 gastric-iq.com/app\nWhere are you in your cycle today?",
       voiceover:
         format === "reel"
           ? pt

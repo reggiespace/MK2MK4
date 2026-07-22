@@ -51,11 +51,10 @@ Angle: ${opts.angle}
 ${opts.format ? `Preferred format: ${opts.format}` : ""}${storyBlock}
 
 Produce:
-- caption: link-free caption (light tasteful emoji), value-first, no medical claims. End with a nudge, not a URL (EN "Try it free — links in the first comment 👇" / PT "É grátis pra testar — links no primeiro comentário 👇").
-- firstComment: BOTH destinations + one post-specific question, exactly:
+- caption: link-free caption (light tasteful emoji), value-first, no medical claims. End with a nudge, not a URL (EN "Try it free — link in the first comment 👇" / PT "É grátis pra testar — link no primeiro comentário 👇").
+- firstComment: the app link + one post-specific question, exactly:
   "<EN: Everything's free to try 👇 / PT: Tudo grátis pra testar 👇>
-  🌐 Web — gastric-iq.com
-  📲 Android — play.google.com/store/apps/details?id=ca.reggiespace.gastric_iq
+  📲 gastric-iq.com/app
   <one short engagement question in the post's language>"
 - hashtags: 4-8 relevant hashtags (no leading #).
 - recommendedFormat: single | carousel | reel | story + formatRationale (one sentence).
