@@ -115,7 +115,7 @@ export async function runDailyForBrand(
         brandId: brand.id,
         ideaId: idea.id,
         runId: run.id,
-        format: draft.recommendedFormat,
+        format: cadence.format,
         caption: draft.caption,
         firstComment: draft.firstComment ?? null,
         hashtags: draft.hashtags,
