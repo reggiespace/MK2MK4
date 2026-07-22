@@ -146,6 +146,35 @@ earlier selections.
   No new distinct "approve" action — "Schedule" remains the approval step, matching
   current behavior.
 
+### 5. Archive for abandoned pieces
+
+- `PieceStatus` (Prisma) gains `archived`. Allowed transitions: `draft`, `review`,
+  `blocked`, or `failed` → `archived`, triggered by a button on the pieces list
+  (`pieces/page.tsx`) and the review screen (`piece-review.tsx`). `scheduled` and
+  `published` pieces cannot be archived through this action — they feed the
+  recent-publication memory in section 6 instead.
+- Archiving is a soft, reversible status change only — no hard-delete action is
+  added. Archived pieces drop out of the default pieces list query but remain
+  queryable via the existing `?status=` filter pattern already used in
+  `pieces/page.tsx:9`.
+- `Idea.status` already has a `dismissed` value for ideas abandoned before drafting;
+  this is unrelated and unchanged — no new UI needed there.
+
+### 6. Recent-publication memory (avoid repeating ideas)
+
+- New query, e.g. `getRecentPublications(brandId, limit=20)`, returning the last 20
+  `scheduled`/`published` `ContentPiece` rows per brand as a lightweight summary
+  (title/angle/caption excerpt — not full content), a bounded and cheap query rather
+  than an ever-growing history table.
+- Wired into `POST /api/ideas/suggest`: this summary is passed into
+  `llm.suggestIdeas()` as context, reusing the existing `insightsContext` concept
+  already present on `Idea` (`schema.prisma:112`, previously an unused Phase 2 hook)
+  rather than inventing a parallel mechanism, so AI-suggested topics explicitly avoid
+  repeating recent angles/titles.
+- Scope is intentionally narrow: this only informs the AI-suggest path (wizard step
+  4's "ask AI to suggest one"). A user-typed manual brief gets no repetition
+  check — out of scope, no similarity-warning UI added.
+
 ## Open questions / future work
 
 - Reel template registry is intentionally small (3-4 structures) for this phase;
