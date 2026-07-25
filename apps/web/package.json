@@ -9,7 +9,6 @@
     "lint": "eslint",
     "prisma": "prisma",
     "db:seed": "tsx prisma/seed.ts",
-    "create:operator": "tsx scripts/create-operator.ts",
     "test": "vitest run"
   },
   "dependencies": {

@@ -1,11 +1,11 @@
 #!/bin/bash
-# Stop script for Gastric IQ Social Studio (preserves data)
+# Stop script for ReggieSpace Social Studio (preserves data)
 
 set -e
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "⏹️  Stopping Gastric IQ Social Content Studio..."
+echo "⏹️  Stopping ReggieSpace Social Studio..."
 echo "📁 Working directory: $REPO_ROOT"
 
 docker compose \

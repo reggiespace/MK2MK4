@@ -1,8 +1,8 @@
 {
-  "name": "gastric-iq-social-studio",
+  "name": "reggiespace-social-studio",
   "version": "0.1.0",
   "private": true,
-  "description": "Gastric IQ Social Content Studio — generate, review, and schedule social posts for Gastric IQ (US) and Gastric IQ Brasil.",
+  "description": "ReggieSpace Social Studio — create, review, and schedule social content from manifest-driven templates.",
   "packageManager": "pnpm@11.7.0",
   "scripts": {
     "dev": "pnpm --filter @giq/web dev",

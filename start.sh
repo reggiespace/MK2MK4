@@ -1,12 +1,12 @@
 #!/bin/bash
-# Quick-start script for Gastric IQ Social Studio
+# Quick-start script for ReggieSpace Social Studio
 
 set -e
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$REPO_ROOT/.env"
 
-echo "🚀 Starting Gastric IQ Social Content Studio..."
+echo "🚀 Starting ReggieSpace Social Studio..."
 echo "📁 Working directory: $REPO_ROOT"
 
 # Check if .env exists

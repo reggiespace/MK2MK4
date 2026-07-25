@@ -1,12 +1,12 @@
 #!/bin/bash
-# Restart script for Gastric IQ Social Studio (preserves data, reloads env)
+# Restart script for ReggieSpace Social Studio (preserves data, reloads env)
 
 set -e
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$REPO_ROOT/.env"
 
-echo "🔄 Restarting Gastric IQ Social Content Studio..."
+echo "🔄 Restarting ReggieSpace Social Studio..."
 echo "📁 Working directory: $REPO_ROOT"
 
 # Check if .env exists
