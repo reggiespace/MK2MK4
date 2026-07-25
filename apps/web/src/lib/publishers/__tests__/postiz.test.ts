@@ -1,14 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-vi.mock("@/lib/env", () => ({
-  env: {
-    postizApiKey: () => "test-key",
-    postizBaseUrl: () => "https://postiz.example.com/api",
-  },
-}));
-
 import { PostizPublisher } from "@/lib/publishers/postiz";
 import type { ScheduleOptions } from "@/lib/publishers/types";
+
+const CREDENTIALS = { apiKey: "test-key", baseUrl: "https://postiz.example.com/api" };
 
 const baseOpts: ScheduleOptions = {
   caption: "Peak then fade.",
@@ -45,7 +40,7 @@ describe("PostizPublisher", () => {
 
   it("uploads each media url, then creates a scheduled post referencing the upload ids", async () => {
     const { calls, fetchMock } = mockFetchSequence();
-    const pub = new PostizPublisher();
+    const pub = new PostizPublisher(CREDENTIALS);
 
     const result = await pub.schedule(baseOpts);
 
@@ -73,7 +68,7 @@ describe("PostizPublisher", () => {
 
   it("publishNow sends type=now with a current date", async () => {
     const { calls } = mockFetchSequence();
-    const pub = new PostizPublisher();
+    const pub = new PostizPublisher(CREDENTIALS);
     const { scheduledAt: _omit, ...nowOpts } = baseOpts;
 
     await pub.publishNow(nowOpts);
@@ -85,7 +80,7 @@ describe("PostizPublisher", () => {
 
   it("stories carry no caption/hashtags and signal post_type=story", async () => {
     const { calls } = mockFetchSequence();
-    const pub = new PostizPublisher();
+    const pub = new PostizPublisher(CREDENTIALS);
 
     await pub.schedule({ ...baseOpts, format: "story", firstComment: "come say hi" });
 
@@ -99,7 +94,7 @@ describe("PostizPublisher", () => {
   it("dryRun builds the payload without hitting the network", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
-    const pub = new PostizPublisher();
+    const pub = new PostizPublisher(CREDENTIALS);
 
     const payload = await pub.dryRun(baseOpts);
 

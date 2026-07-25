@@ -1,18 +1,18 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, type AuthContext } from "@/lib/session";
 
-/** Returns the operator session or a 401 response. Usage:
- *  const auth = await guard(); if (auth instanceof NextResponse) return auth;
+/**
+ * Route-handler auth guard. Usage:
+ *   const auth = await guard();
+ *   if (auth instanceof NextResponse) return auth;
  */
-export async function guard(): Promise<
-  { operatorId: string } | NextResponse
-> {
+export async function guard(): Promise<AuthContext | NextResponse> {
   const session = await getSession();
-  if (!session.operatorId) {
+  if (!session.userId || !session.workspaceId || !session.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  return { operatorId: session.operatorId };
+  return { userId: session.userId, workspaceId: session.workspaceId, email: session.email };
 }
 
 export function badRequest(message: string) {
