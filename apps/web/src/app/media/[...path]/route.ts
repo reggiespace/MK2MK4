@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { env } from "@/lib/env";
+import { resolveStoragePath } from "@/lib/storage";
 
 const MIME: Record<string, string> = {
   ".png": "image/png",
@@ -17,9 +17,11 @@ export async function GET(
   { params }: { params: Promise<{ path: string[] }> },
 ) {
   const { path: segments } = await params;
-  // Prevent path traversal.
-  const relative = segments.join("/").replace(/\.\./g, "");
-  const filePath = path.join(env.storageDir(), relative);
+  // Resolve against the storage root and reject anything that escapes it.
+  const filePath = resolveStoragePath(segments.join("/"));
+  if (!filePath) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
   const ext = path.extname(filePath).toLowerCase();
 
   try {
