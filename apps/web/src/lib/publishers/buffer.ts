@@ -7,7 +7,6 @@ import type {
 } from "./types";
 import { composePostText } from "./compose";
 
-const BUFFER_API = "https://api.bufferapp.com/1";
 const BUFFER_GRAPHQL = "https://graph.buffer.com/graphql";
 
 /** Credentials are injected per workspace; this class never reads env. */

@@ -55,6 +55,24 @@ const sans = (size: number, weight = 400, ex?: CSSProperties): CSSProperties => 
 
 const p2 = (n: number) => String(n).padStart(2, "0");
 
+/**
+ * Fit guardrail for the dominant single-token slots (`statValue`, `bigWord`).
+ *
+ * These render as one unbreakable word at a very large size, so a value near
+ * the manifest's character budget overflows the frame instead of wrapping —
+ * "willpower" at 56px is wider than a reel's safe box. Shrink the type to fit
+ * rather than let published art spill, in the same spirit as the accent
+ * guardrail: the value is always safe, nothing needs hand-tuning per slide.
+ *
+ * 0.55em is a workable average advance for Spectral at weights 700–800.
+ */
+function fitToWidth(text: string, baseSize: number, availableWidth: number): number {
+  const chars = text.trim().length;
+  if (!chars) return baseSize;
+  const needed = availableWidth / (chars * 0.55);
+  return Math.max(12, Math.min(baseSize, needed));
+}
+
 // ── field accessors (tolerate any persisted shape) ──────────────────────────
 const txt = (v: unknown): string => (typeof v === "string" ? v : "");
 const img = (v: unknown): ImageValue | null => (isImageValue(v as never) ? (v as ImageValue) : null);
@@ -118,21 +136,25 @@ function ImgFill({ image }: { image: ImageValue | null }) {
   );
 }
 
-export function Slide({ slide, index, total, ctx }: SlideProps) {
-  const style = ctx.style;
-  const man = getManifest(style);
-  const { w, h } = man.base;
-  const kind = man.kinds[slide.kind];
-  const g = ground(kind?.ground ?? "light");
-  const f = slide.f ?? {};
-  const acc = ctx.accent;
-  const brand = ctx.brand;
-  const handle = ctx.handle;
-  const pad = style === "reel" || style === "story" ? 18 : 26;
-  const counter = `${p2(index + 1)}/${p2(total)}`;
-  const k = slide.kind;
-
-  const Root = ({ children, extra }: { children: ReactNode; extra?: CSSProperties }) => (
+/**
+ * Slide chrome, defined at module scope. Declaring these inside `Slide` would
+ * create a fresh component type on every render, remounting the whole slide on
+ * each keystroke in the editor.
+ */
+function SlideRoot({
+  w,
+  h,
+  g,
+  extra,
+  children,
+}: {
+  w: number;
+  h: number;
+  g: { bg: string; fg: string };
+  extra?: CSSProperties;
+  children: ReactNode;
+}) {
+  return (
     <div
       style={{
         position: "relative",
@@ -148,10 +170,29 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
       {children}
     </div>
   );
+}
 
-  const Inset = ({ children }: { children: ReactNode }) => (
-    <div style={{ position: "absolute", inset: `${pad}px`, display: "flex", flexDirection: "column" }}>{children}</div>
+function SlideInset({ pad, children }: { pad: number; children: ReactNode }) {
+  return (
+    <div style={{ position: "absolute", inset: `${pad}px`, display: "flex", flexDirection: "column" }}>
+      {children}
+    </div>
   );
+}
+
+export function Slide({ slide, index, total, ctx }: SlideProps) {
+  const style = ctx.style;
+  const man = getManifest(style);
+  const { w, h } = man.base;
+  const kind = man.kinds[slide.kind];
+  const g = ground(kind?.ground ?? "light");
+  const f = slide.f ?? {};
+  const acc = ctx.accent;
+  const brand = ctx.brand;
+  const handle = ctx.handle;
+  const pad = style === "reel" || style === "story" ? 18 : 26;
+  const counter = `${p2(index + 1)}/${p2(total)}`;
+  const k = slide.kind;
 
   const cHdr = (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -191,8 +232,8 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   // ── CAROUSEL ──────────────────────────────────────────────────────────────
   if (k === "1a-knockout") {
     return (
-      <Root>
-        <Inset>
+      <SlideRoot w={w} h={h} g={g}>
+        <SlideInset pad={pad}>
           {cHdr}
           <div style={{ marginTop: "auto" }}>
             {txt(f.kicker) ? <div style={mn(8, { color: acc, marginBottom: "10px" })}>{txt(f.kicker)}</div> : null}
@@ -211,15 +252,15 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
             {dots}
             <span style={sans(9, 600, { color: "#f4efe0" })}>Swipe →</span>
           </div>
-        </Inset>
-      </Root>
+        </SlideInset>
+      </SlideRoot>
     );
   }
 
   if (k === "1b-editorial") {
     return (
-      <Root>
-        <Inset>
+      <SlideRoot w={w} h={h} g={g}>
+        <SlideInset pad={pad}>
           <div
             style={{
               display: "flex",
@@ -241,22 +282,30 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
             <span style={sf(11, 700)}>{brand}</span>
             <span style={sans(9, 600, { color: g.sub })}>Swipe →</span>
           </div>
-        </Inset>
-      </Root>
+        </SlideInset>
+      </SlideRoot>
     );
   }
 
   if (k === "1c-bigstat" || k === "1a-stat") {
     const ac = safeOn(acc, g.base);
     return (
-      <Root>
-        <Inset>
+      <SlideRoot w={w} h={h} g={g}>
+        <SlideInset pad={pad}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={mn(8, { color: ac })}>{txt(f.kicker)}</span>
             <span style={mn(8, { color: "rgba(244,239,224,.7)" })}>{style === "single" ? brand : counter}</span>
           </div>
           <div style={{ margin: "auto 0" }}>
-            <div style={sf(94, 800, { lineHeight: 0.8, letterSpacing: "-.03em", color: ac })}>{txt(f.statValue)}</div>
+            <div
+              style={sf(fitToWidth(txt(f.statValue), 94, w - pad * 2), 800, {
+                lineHeight: 0.8,
+                letterSpacing: "-.03em",
+                color: ac,
+              })}
+            >
+              {txt(f.statValue)}
+            </div>
             <h2 style={sf(20, 700, { margin: "12px 0 0", lineHeight: 1.08, maxWidth: "17ch" })}>{txt(f.statLine)}</h2>
           </div>
           <div
@@ -274,16 +323,16 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
             </span>
             <span style={sf(10, 700)}>{brand}</span>
           </div>
-        </Inset>
-      </Root>
+        </SlideInset>
+      </SlideRoot>
     );
   }
 
   if (k === "1d-quote" || (style === "single" && k === "1b-quote")) {
     const ac = safeOn(acc, g.base);
     return (
-      <Root>
-        <Inset>
+      <SlideRoot w={w} h={h} g={g}>
+        <SlideInset pad={pad}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={mn(8, { color: ac })}>{txt(f.kicker)}</span>
             <span style={mn(8, { color: "rgba(244,239,224,.7)" })}>{style === "single" ? brand : counter}</span>
@@ -310,15 +359,15 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
             <span style={sf(10, 700)}>{brand}</span>
             <span style={sans(9, 600, { color: "rgba(244,239,224,.85)" })}>Swipe →</span>
           </div>
-        </Inset>
-      </Root>
+        </SlideInset>
+      </SlideRoot>
     );
   }
 
   if (k === "2a-point") {
     return (
-      <Root>
-        <Inset>
+      <SlideRoot w={w} h={h} g={g}>
+        <SlideInset pad={pad}>
           {cHdr}
           {bar("43%")}
           <div style={{ margin: "auto 0" }}>
@@ -332,15 +381,15 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
             ) : null}
           </div>
           {swipe}
-        </Inset>
-      </Root>
+        </SlideInset>
+      </SlideRoot>
     );
   }
 
   if (k === "2b-stat") {
     return (
-      <Root>
-        <Inset>
+      <SlideRoot w={w} h={h} g={g}>
+        <SlideInset pad={pad}>
           {cHdr}
           {bar("57%")}
           <div
@@ -353,19 +402,26 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
             }}
           >
             {txt(f.label) ? <div style={mn(8, { color: acc, marginBottom: "8px" })}>{txt(f.label)}</div> : null}
-            <div style={sf(60, 800, { lineHeight: 0.82, letterSpacing: "-.02em" })}>{txt(f.statValue)}</div>
+            <div
+              style={sf(fitToWidth(txt(f.statValue), 60, w - pad * 2 - 40), 800, {
+                lineHeight: 0.82,
+                letterSpacing: "-.02em",
+              })}
+            >
+              {txt(f.statValue)}
+            </div>
             <h2 style={sf(19, 600, { margin: "12px 0 0", lineHeight: 1.1, maxWidth: "18ch" })}>{txt(f.statLine)}</h2>
           </div>
           {swipe}
-        </Inset>
-      </Root>
+        </SlideInset>
+      </SlideRoot>
     );
   }
 
   if (k === "2c-list") {
     return (
-      <Root>
-        <Inset>
+      <SlideRoot w={w} h={h} g={g}>
+        <SlideInset pad={pad}>
           {cHdr}
           {bar("71%")}
           <h2 style={sf(23, 700, { margin: "16px 0 14px", lineHeight: 1.02, maxWidth: "16ch" })}>{txt(f.heading)}</h2>
@@ -397,16 +453,16 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
             ))}
           </div>
           {swipe}
-        </Inset>
-      </Root>
+        </SlideInset>
+      </SlideRoot>
     );
   }
 
   if (k === "2d-image") {
     const image = img(f.image);
     return (
-      <Root>
-        <Inset>
+      <SlideRoot w={w} h={h} g={g}>
+        <SlideInset pad={pad}>
           {cHdr}
           {bar("86%")}
           <div
@@ -428,15 +484,15 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               <div style={sans(11, 400, { color: g.sub, marginTop: "4px" })}>{txt(f.captionSub)}</div>
             ) : null}
           </div>
-        </Inset>
-      </Root>
+        </SlideInset>
+      </SlideRoot>
     );
   }
 
   if (k === "2e-myth" || (style === "single" && k === "1c-myth")) {
     return (
-      <Root>
-        <Inset>
+      <SlideRoot w={w} h={h} g={g}>
+        <SlideInset pad={pad}>
           {style === "single" ? <div style={mn(8, { color: acc })}>Myth vs fact</div> : cHdr}
           {style === "single" ? null : bar("57%")}
           <div style={{ margin: "auto 0", display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -463,16 +519,16 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
           ) : (
             swipe
           )}
-        </Inset>
-      </Root>
+        </SlideInset>
+      </SlideRoot>
     );
   }
 
   if (k === "2f-cta" || k === "1f-cta") {
     const recap = strings(f.recap);
     return (
-      <Root>
-        <Inset>
+      <SlideRoot w={w} h={h} g={g}>
+        <SlideInset pad={pad}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={sf(11, 700)}>{brand}</span>
             <span style={mn(8, { color: acc })}>{counter}</span>
@@ -516,8 +572,8 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               Save ⤓
             </span>
           </div>
-        </Inset>
-      </Root>
+        </SlideInset>
+      </SlideRoot>
     );
   }
 
@@ -585,7 +641,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
 
     if (k === "1a-statement") {
       return (
-        <Root>
+        <SlideRoot w={w} h={h} g={g}>
           <ImgFill image={img(f.image)} />
           {scrim}
           {ticks(index)}
@@ -594,12 +650,12 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
             {txt(f.kicker) ? <div style={mn(8, { color: acc, marginBottom: "8px" })}>{txt(f.kicker)}</div> : null}
             <h2 style={sf(30, 800, { margin: 0, lineHeight: 1, color: "#f4efe0" })}>{txt(f.hook)}</h2>
           </div>
-        </Root>
+        </SlideRoot>
       );
     }
     if (k === "1b-question") {
       return (
-        <Root>
+        <SlideRoot w={w} h={h} g={g}>
           {ticks(index)}
           {chipAt}
           <div style={{ position: "absolute", left: `${pad}px`, right: "36px", top: "150px" }}>
@@ -608,29 +664,36 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               <p style={sans(13, 600, { margin: "14px 0 0", color: "rgba(244,239,224,.85)" })}>{txt(f.sub)}</p>
             ) : null}
           </div>
-        </Root>
+        </SlideRoot>
       );
     }
     if (k === "1c-kinetic") {
       return (
-        <Root>
+        <SlideRoot w={w} h={h} g={g}>
           {ticks(index)}
           {chipAt}
           <div style={{ position: "absolute", left: `${pad}px`, right: "36px", top: "150px" }}>
             {txt(f.preWord) ? (
               <div style={sans(14, 600, { color: acc, marginBottom: "2px" })}>{txt(f.preWord)}</div>
             ) : null}
-            <div style={sf(56, 800, { lineHeight: 0.92, letterSpacing: "-.02em" })}>{txt(f.bigWord)}</div>
+            <div
+              style={sf(fitToWidth(txt(f.bigWord), 56, w - pad - 36), 800, {
+                lineHeight: 0.92,
+                letterSpacing: "-.02em",
+              })}
+            >
+              {txt(f.bigWord)}
+            </div>
             {txt(f.sub) ? (
               <div style={sans(13, 600, { marginTop: "12px", color: "rgba(244,239,224,.85)" })}>{txt(f.sub)}</div>
             ) : null}
           </div>
-        </Root>
+        </SlideRoot>
       );
     }
     if (k === "1d-title") {
       return (
-        <Root>
+        <SlideRoot w={w} h={h} g={g}>
           <ImgFill image={img(f.image)} />
           {scrim}
           {ticks(index)}
@@ -642,12 +705,12 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               <p style={sans(12, 600, { margin: "10px 0 0", color: "rgba(244,239,224,.85)" })}>{txt(f.sub)}</p>
             ) : null}
           </div>
-        </Root>
+        </SlideRoot>
       );
     }
     if (k === "1e-caption") {
       return (
-        <Root>
+        <SlideRoot w={w} h={h} g={g}>
           <ImgFill image={img(f.image)} />
           {scrim}
           {ticks(index)}
@@ -665,7 +728,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
           >
             <div style={sans(15, 700, { lineHeight: 1.28, color: "#f4efe0" })}>{txt(f.caption)}</div>
           </div>
-        </Root>
+        </SlideRoot>
       );
     }
   }
@@ -708,18 +771,20 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
         <span style={sans(10, 700, { color: "#fff" })}>{brand}</span>
       </div>
     );
-    const Wrap = ({ children }: { children: ReactNode }) => (
-      <Root extra={{ background: image?.url || image?.tint ? undefined : g.bg }}>
+    // A plain function, not a component: returning elements avoids declaring a
+    // new component type per render, which would remount the frame on each edit.
+    const wrap = (children: ReactNode) => (
+      <SlideRoot w={w} h={h} g={g} extra={{ background: image?.url || image?.tint ? undefined : g.bg }}>
         {image ? <ImgFill image={image} /> : null}
         {segs}
         {topbar}
         {children}
-      </Root>
+      </SlideRoot>
     );
 
     if (k === "1a-poll") {
       return (
-        <Wrap>
+        wrap(
           <div style={{ position: "absolute", left: "22px", right: "22px", top: "150px" }}>
             {txt(f.kicker) ? (
               <div style={mn(8, { color: safeOn(acc, g.base), marginBottom: "10px" })}>{txt(f.kicker)}</div>
@@ -742,12 +807,12 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               </div>
             </div>
           </div>
-        </Wrap>
+        )
       );
     }
     if (k === "1b-question") {
       return (
-        <Wrap>
+        wrap(
           <div style={{ position: "absolute", left: "22px", right: "22px", top: "170px" }}>
             <h2 style={sf(28, 800, { margin: "0 0 18px", lineHeight: 1.02, color: "#f4efe0" })}>{txt(f.prompt)}</h2>
             <div
@@ -762,12 +827,12 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               <div style={{ height: "34px", borderRadius: "9px", background: "#eee7d7" }} />
             </div>
           </div>
-        </Wrap>
+        )
       );
     }
     if (k === "1c-quiz") {
       return (
-        <Wrap>
+        wrap(
           <div style={{ position: "absolute", left: "22px", right: "22px", top: "160px" }}>
             {txt(f.kicker) ? <div style={mn(8, { color: acc, marginBottom: "10px" })}>{txt(f.kicker)}</div> : null}
             <h2 style={sf(26, 800, { margin: "0 0 18px", lineHeight: 1.04, color: "#f4efe0" })}>{txt(f.prompt)}</h2>
@@ -793,12 +858,12 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               ))}
             </div>
           </div>
-        </Wrap>
+        )
       );
     }
     if (k === "1d-slider") {
       return (
-        <Wrap>
+        wrap(
           <div style={{ position: "absolute", left: "22px", right: "22px", top: "190px" }}>
             <h2 style={sf(26, 800, { margin: "0 0 20px", lineHeight: 1.04, color: "#f4efe0" })}>{txt(f.prompt)}</h2>
             <div
@@ -823,12 +888,12 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               </div>
             </div>
           </div>
-        </Wrap>
+        )
       );
     }
     if (k === "1e-countdown") {
       return (
-        <Wrap>
+        wrap(
           <div style={{ position: "absolute", left: "22px", right: "22px", top: "160px" }}>
             {txt(f.kicker) ? <div style={mn(8, { color: acc, marginBottom: "10px" })}>{txt(f.kicker)}</div> : null}
             <h2 style={sf(26, 800, { margin: "0 0 18px", lineHeight: 1.04, color: "#f4efe0" })}>{txt(f.headline)}</h2>
@@ -858,12 +923,12 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               {txt(f.linkLabel)}
             </div>
           </div>
-        </Wrap>
+        )
       );
     }
     if (k === "1f-reshare") {
       return (
-        <Wrap>
+        wrap(
           <div style={{ position: "absolute", left: "22px", right: "22px", top: "170px" }}>
             {txt(f.flag) ? (
               <div
@@ -901,7 +966,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               />
             </div>
           </div>
-        </Wrap>
+        )
       );
     }
   }
@@ -909,8 +974,8 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   // ── SINGLE announcement ───────────────────────────────────────────────────
   if (k === "1d-announce") {
     return (
-      <Root>
-        <Inset>
+      <SlideRoot w={w} h={h} g={g}>
+        <SlideInset pad={pad}>
           {txt(f.pill) ? (
             <div
               style={{
@@ -945,8 +1010,8 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
           >
             {brand}
           </div>
-        </Inset>
-      </Root>
+        </SlideInset>
+      </SlideRoot>
     );
   }
 
@@ -998,7 +1063,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
 
     if (k === "1a-lifestyle") {
       return (
-        <Root>
+        <SlideRoot w={w} h={h} g={g}>
           <ImgFill image={image} />
           {scrim}
           {chip}
@@ -1006,12 +1071,12 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
             {txt(f.kicker) ? <div style={mn(8, { color: acc, marginBottom: "8px" })}>{txt(f.kicker)}</div> : null}
             <h2 style={sf(30, 800, { margin: 0, lineHeight: 1, color: "#f7f2e6" })}>{txt(f.headline)}</h2>
           </div>
-        </Root>
+        </SlideRoot>
       );
     }
     if (k === "1d-photoquote") {
       return (
-        <Root>
+        <SlideRoot w={w} h={h} g={g}>
           <ImgFill image={image} />
           {scrim}
           {chip}
@@ -1026,12 +1091,12 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               </div>
             ) : null}
           </div>
-        </Root>
+        </SlideRoot>
       );
     }
     if (k === "1b-fieldnote") {
       return (
-        <Root extra={{ background: "#ece6d6", color: "#1a2230" }}>
+        <SlideRoot w={w} h={h} g={g} extra={{ background: "#ece6d6", color: "#1a2230" }}>
           <div style={{ position: "absolute", inset: `${pad}px`, display: "flex", flexDirection: "column" }}>
             <div
               style={{
@@ -1065,12 +1130,12 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               ) : null}
             </div>
           </div>
-        </Root>
+        </SlideRoot>
       );
     }
     if (k === "1c-split") {
       return (
-        <Root extra={{ background: "#ece6d6", color: "#1a2230" }}>
+        <SlideRoot w={w} h={h} g={g} extra={{ background: "#ece6d6", color: "#1a2230" }}>
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
             <div style={{ flex: 1.2, position: "relative", overflow: "hidden", background: "#e0dac9" }}>
               <ImgFill image={image} />
@@ -1093,20 +1158,20 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               ) : null}
             </div>
           </div>
-        </Root>
+        </SlideRoot>
       );
     }
   }
 
   // Fallback — an unknown kind still renders something legible rather than blank.
   return (
-    <Root>
-      <Inset>
+    <SlideRoot w={w} h={h} g={g}>
+      <SlideInset pad={pad}>
         {cHdr}
         <div style={{ margin: "auto 0", ...sf(24, 700) }}>
           {txt(f.hook) || txt(f.headline) || txt(f.prompt)}
         </div>
-      </Inset>
-    </Root>
+      </SlideInset>
+    </SlideRoot>
   );
 }

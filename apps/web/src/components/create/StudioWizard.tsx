@@ -10,7 +10,7 @@ import { TopicStep } from "./steps/TopicStep";
 import { FillStep } from "./steps/FillStep";
 import { ReviewStep } from "./steps/ReviewStep";
 import { ImagePicker } from "./ImagePicker";
-import { DEFAULT_VOICE_ID } from "@/lib/ai/voice";
+import { DEFAULT_VOICE_ID } from "@/lib/ai/voices";
 import { getManifest } from "@/lib/templates/manifests";
 import { asText, type PostDoc, type TemplateStyleId } from "@/lib/templates/types";
 import {

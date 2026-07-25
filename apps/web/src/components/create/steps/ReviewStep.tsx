@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Icon, PLATFORMS } from "@/components/ui/Icon";
 import { Slide } from "@/components/slide/Slide";
 import { SlideFit } from "@/components/slide/SlideFrame";
@@ -109,7 +110,7 @@ export function ReviewStep({
           >
             Create another
           </button>
-          <a
+          <Link
             href="/pieces"
             style={{
               background: "transparent",
@@ -125,7 +126,7 @@ export function ReviewStep({
             }}
           >
             View pieces
-          </a>
+          </Link>
         </div>
       </div>
     );

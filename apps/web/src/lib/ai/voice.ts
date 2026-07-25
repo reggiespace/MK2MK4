@@ -16,14 +16,7 @@ import { asText } from "@/lib/templates/types";
 
 const ELEVENLABS_API = "https://api.elevenlabs.io/v1";
 
-/** The three voices offered in the design's Voice tab. */
-export const VOICES = [
-  { id: "9BWtsMINqrJLrRacOk9x", name: "Aria", desc: "Warm · calm · unhurried" },
-  { id: "CwhRBWXzGAHq8TQ4Fs17", name: "Sage", desc: "Evidence-led · steady" },
-  { id: "XrExE9yKIg1WjnnlVkGX", name: "Nova", desc: "Bright · upbeat" },
-] as const;
-
-export const DEFAULT_VOICE_ID = VOICES[0].id;
+export { VOICES, DEFAULT_VOICE_ID } from "./voices";
 
 /**
  * The lines that will be read, in frame order.

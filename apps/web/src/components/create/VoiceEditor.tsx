@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { previewScriptAction, synthesizeVoiceAction } from "@/app/actions/create";
-import { VOICES } from "@/lib/ai/voice";
+import { VOICES } from "@/lib/ai/voices";
 
 /**
  * The Voice tab (Reels and Stories). On-screen text is the narration script,

@@ -11,8 +11,6 @@
 
 import type { Slot, TemplateManifest, TemplateStyleId } from "./types";
 
-type SlotSpec = Partial<Slot> & Pick<Slot, "id" | "type">;
-
 /** Terse slot builder mirroring Studio's `S(id, type, max, req, label)`. */
 function s(id: string, type: Slot["type"], max: number, req: 0 | 1, label: string, extra?: Partial<Slot>): Slot {
   return { id, type, max, required: !!req, label, ...extra };
