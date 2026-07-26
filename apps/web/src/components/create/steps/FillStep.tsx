@@ -225,7 +225,16 @@ export function FillStep({
               ["58%", "72%"],
               ["74%", "38%"],
             ].map(([w1, w2], i) => (
-              <div key={i} style={{ animation: "fadeUp .4s ease both", animationDelay: `${i * 0.08}s` }}>
+              <div
+                key={i}
+                style={{
+                  animationName: "fadeUp",
+                  animationDuration: ".4s",
+                  animationTimingFunction: "ease",
+                  animationFillMode: "both",
+                  animationDelay: `${i * 0.08}s`,
+                }}
+              >
                 {[w1, w2].map((w, j) => (
                   <div
                     key={j}
@@ -257,7 +266,10 @@ export function FillStep({
                   background: "linear-gradient(135deg,var(--surface-2),var(--surface))",
                   overflow: "hidden",
                   position: "relative",
-                  animation: "pop .5s ease both",
+                  animationName: "pop",
+                  animationDuration: ".5s",
+                  animationTimingFunction: "ease",
+                  animationFillMode: "both",
                   animationDelay: `${i * 0.09}s`,
                 }}
               >
