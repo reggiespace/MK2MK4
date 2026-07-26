@@ -8,11 +8,27 @@
  *
  * The component always draws at the manifest's `base` dimensions; `SlideFrame`
  * scales it. Never add a second renderer.
+ *
+ * Geometry note: a base px becomes `SAFE[style].scale` canvas px in the export
+ * (3.176x for the 4:5 formats, 4.286x for 9:16). Anything that has to clear
+ * Instagram's UI overlays therefore lives in `@/lib/templates/safezone` as a
+ * named anchor rather than as a literal here — see that file, and the tests that
+ * assert the anchors are still legal.
  */
 
 import type { CSSProperties, ReactNode } from "react";
 import { getManifest } from "@/lib/templates/manifests";
-import { FONTS, ground, safeOn } from "@/lib/templates/theme";
+import {
+  FEED_PAD,
+  MIN_FIT_PX,
+  REEL_LAYOUT,
+  REEL_TYPE,
+  STORY_LAYOUT,
+  STORY_TYPE,
+  chromeBase,
+  type Insets,
+} from "@/lib/templates/safezone";
+import { FONTS, ground, inkOn, readableOn, safeOn } from "@/lib/templates/theme";
 import type { ImageValue, PairItem, QuizOption, SlideDoc, TemplateStyleId } from "@/lib/templates/types";
 import { isImageValue, isPairItems, isQuizOptions, isStringList } from "@/lib/templates/types";
 
@@ -53,6 +69,26 @@ const sans = (size: number, weight = 400, ex?: CSSProperties): CSSProperties => 
   ...ex,
 });
 
+/**
+ * Dark halo for copy set over imagery.
+ *
+ * A gradient scrim alone can't be trusted: it is thinnest exactly where the reel
+ * hook now sits (the 200-600 canvas band), and a bright frame from fal.ai will
+ * punch through it. Four hairline offsets plus two blurs read as the brief's
+ * "dark stroke" while staying quiet enough for an editorial face — and because
+ * the offsets are base px they scale with the frame like everything else.
+ */
+const overImage = (px = 1): CSSProperties => ({
+  textShadow: [
+    `${px}px 0 0 rgba(10,12,16,.62)`,
+    `-${px}px 0 0 rgba(10,12,16,.62)`,
+    `0 ${px}px 0 rgba(10,12,16,.62)`,
+    `0 -${px}px 0 rgba(10,12,16,.62)`,
+    `0 0 ${px * 6}px rgba(10,12,16,.72)`,
+    `0 ${px * 2}px ${px * 10}px rgba(10,12,16,.5)`,
+  ].join(","),
+});
+
 const p2 = (n: number) => String(n).padStart(2, "0");
 
 /**
@@ -64,13 +100,15 @@ const p2 = (n: number) => String(n).padStart(2, "0");
  * rather than let published art spill, in the same spirit as the accent
  * guardrail: the value is always safe, nothing needs hand-tuning per slide.
  *
- * 0.55em is a workable average advance for Spectral at weights 700–800.
+ * 0.55em is a workable average advance for Spectral at weights 700–800. The
+ * `MIN_FIT_PX` floor is set so that even a fully shrunk token stays above the
+ * 45px on-screen type floor once a reel is scaled to canvas.
  */
 function fitToWidth(text: string, baseSize: number, availableWidth: number): number {
   const chars = text.trim().length;
   if (!chars) return baseSize;
   const needed = availableWidth / (chars * 0.55);
-  return Math.max(12, Math.min(baseSize, needed));
+  return Math.max(MIN_FIT_PX, Math.min(baseSize, needed));
 }
 
 // ── field accessors (tolerate any persisted shape) ──────────────────────────
@@ -172,13 +210,26 @@ function SlideRoot({
   );
 }
 
-function SlideInset({ pad, children }: { pad: number; children: ReactNode }) {
+/** Safe-zone inset. Per-side, because 9:16 is far from symmetric. */
+function SlideInset({ inset, children }: { inset: Insets; children: ReactNode }) {
   return (
-    <div style={{ position: "absolute", inset: `${pad}px`, display: "flex", flexDirection: "column" }}>
+    <div
+      style={{
+        position: "absolute",
+        top: `${inset.top}px`,
+        right: `${inset.right}px`,
+        bottom: `${inset.bottom}px`,
+        left: `${inset.left}px`,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {children}
     </div>
   );
 }
+
+const FEED_INSET: Insets = { top: FEED_PAD, right: FEED_PAD, bottom: FEED_PAD, left: FEED_PAD };
 
 export function Slide({ slide, index, total, ctx }: SlideProps) {
   const style = ctx.style;
@@ -190,14 +241,32 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   const acc = ctx.accent;
   const brand = ctx.brand;
   const handle = ctx.handle;
-  const pad = style === "reel" || style === "story" ? 18 : 26;
   const counter = `${p2(index + 1)}/${p2(total)}`;
   const k = slide.kind;
+
+  /** Accent used as words — held to the body-copy bar, not the graphic bar. */
+  const accText = readableOn(acc, g.base);
+  /** Accent used as a large graphic mark: 3:1 is AA for text this size. */
+  const accMark = safeOn(acc, g.base, 3);
+  /** Foreground for copy printed on an accent fill. */
+  const accInk = inkOn(acc);
+
+  const inset: Insets =
+    style === "reel"
+      ? {
+          top: REEL_LAYOUT.ctaTop,
+          right: REEL_LAYOUT.right,
+          bottom: REEL_LAYOUT.ctaBottom,
+          left: REEL_LAYOUT.left,
+        }
+      : style === "story"
+        ? chromeBase("story")
+        : FEED_INSET;
 
   const cHdr = (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <span style={sf(11, 700)}>{brand}</span>
-      <span style={mn(8, { color: g.sub ?? "rgba(244,239,224,.7)" })}>{counter}</span>
+      <span style={mn(8, { color: g.sub })}>{counter}</span>
     </div>
   );
 
@@ -209,7 +278,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
 
   const swipe = (
     <div style={{ marginTop: "auto", display: "flex", justifyContent: "flex-end", paddingTop: "8px" }}>
-      <span style={sans(9, 600, { color: g.sub ?? "#6e6952" })}>Swipe →</span>
+      <span style={sans(9, 600, { color: g.sub })}>Swipe →</span>
     </div>
   );
 
@@ -233,10 +302,12 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   if (k === "1a-knockout") {
     return (
       <SlideRoot w={w} h={h} g={g}>
-        <SlideInset pad={pad}>
+        <SlideInset inset={inset}>
           {cHdr}
           <div style={{ marginTop: "auto" }}>
-            {txt(f.kicker) ? <div style={mn(8, { color: acc, marginBottom: "10px" })}>{txt(f.kicker)}</div> : null}
+            {txt(f.kicker) ? (
+              <div style={mn(8, { color: accText, marginBottom: "10px" })}>{txt(f.kicker)}</div>
+            ) : null}
             <h2 style={sf(40, 800, { margin: 0, lineHeight: 0.97, letterSpacing: "-.01em" })}>{txt(f.hook)}</h2>
           </div>
           <div
@@ -260,7 +331,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   if (k === "1b-editorial") {
     return (
       <SlideRoot w={w} h={h} g={g}>
-        <SlideInset pad={pad}>
+        <SlideInset inset={inset}>
           <div
             style={{
               display: "flex",
@@ -270,7 +341,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               paddingBottom: "7px",
             }}
           >
-            <span style={mn(8, { color: acc })}>{txt(f.kicker)}</span>
+            <span style={mn(8, { color: accText })}>{txt(f.kicker)}</span>
             <span style={mn(8, { color: g.sub })}>{counter}</span>
           </div>
           <h2 style={sf(30, 700, { margin: "16px 0 0", lineHeight: 1, letterSpacing: "-.01em" })}>{txt(f.hook)}</h2>
@@ -288,20 +359,19 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   }
 
   if (k === "1c-bigstat" || k === "1a-stat") {
-    const ac = safeOn(acc, g.base);
     return (
       <SlideRoot w={w} h={h} g={g}>
-        <SlideInset pad={pad}>
+        <SlideInset inset={inset}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={mn(8, { color: ac })}>{txt(f.kicker)}</span>
-            <span style={mn(8, { color: "rgba(244,239,224,.7)" })}>{style === "single" ? brand : counter}</span>
+            <span style={mn(8, { color: accText })}>{txt(f.kicker)}</span>
+            <span style={mn(8, { color: g.sub })}>{style === "single" ? brand : counter}</span>
           </div>
           <div style={{ margin: "auto 0" }}>
             <div
-              style={sf(fitToWidth(txt(f.statValue), 94, w - pad * 2), 800, {
+              style={sf(fitToWidth(txt(f.statValue), 94, w - inset.left - inset.right), 800, {
                 lineHeight: 0.8,
                 letterSpacing: "-.03em",
-                color: ac,
+                color: accMark,
               })}
             >
               {txt(f.statValue)}
@@ -318,9 +388,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               alignItems: "center",
             }}
           >
-            <span style={sans(8, 400, { color: "rgba(244,239,224,.8)" })}>
-              {txt(f.source) ? `Source: ${txt(f.source)}` : ""}
-            </span>
+            <span style={sans(8, 400, { color: g.sub })}>{txt(f.source) ? `Source: ${txt(f.source)}` : ""}</span>
             <span style={sf(10, 700)}>{brand}</span>
           </div>
         </SlideInset>
@@ -329,21 +397,18 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   }
 
   if (k === "1d-quote" || (style === "single" && k === "1b-quote")) {
-    const ac = safeOn(acc, g.base);
     return (
       <SlideRoot w={w} h={h} g={g}>
-        <SlideInset pad={pad}>
+        <SlideInset inset={inset}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={mn(8, { color: ac })}>{txt(f.kicker)}</span>
-            <span style={mn(8, { color: "rgba(244,239,224,.7)" })}>{style === "single" ? brand : counter}</span>
+            <span style={mn(8, { color: accText })}>{txt(f.kicker)}</span>
+            <span style={mn(8, { color: g.sub })}>{style === "single" ? brand : counter}</span>
           </div>
           <div style={{ margin: "auto 0" }}>
-            <div style={sf(72, 800, { lineHeight: 0.5, height: "34px", color: ac })}>&ldquo;</div>
+            <div style={sf(72, 800, { lineHeight: 0.5, height: "34px", color: accMark })}>&ldquo;</div>
             <h2 style={sf(26, 700, { fontStyle: "italic", margin: 0, lineHeight: 1.14 })}>{txt(f.quote)}</h2>
             {txt(f.attribution) ? (
-              <div style={sans(11, 600, { color: "rgba(244,239,224,.82)", marginTop: "16px" })}>
-                {txt(f.attribution)}
-              </div>
+              <div style={sans(11, 600, { color: g.sub, marginTop: "16px" })}>{txt(f.attribution)}</div>
             ) : null}
           </div>
           <div
@@ -357,7 +422,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
             }}
           >
             <span style={sf(10, 700)}>{brand}</span>
-            <span style={sans(9, 600, { color: "rgba(244,239,224,.85)" })}>Swipe →</span>
+            <span style={sans(9, 600, { color: g.sub })}>Swipe →</span>
           </div>
         </SlideInset>
       </SlideRoot>
@@ -367,11 +432,11 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   if (k === "2a-point") {
     return (
       <SlideRoot w={w} h={h} g={g}>
-        <SlideInset pad={pad}>
+        <SlideInset inset={inset}>
           {cHdr}
           {bar("43%")}
           <div style={{ margin: "auto 0" }}>
-            <div style={sf(46, 800, { lineHeight: 0.8, color: acc })}>{txt(f.index)}</div>
+            <div style={sf(46, 800, { lineHeight: 0.8, color: accMark })}>{txt(f.index)}</div>
             {txt(f.label) ? <div style={mn(8, { color: g.sub, margin: "12px 0 6px" })}>{txt(f.label)}</div> : null}
             <h2 style={sf(24, 700, { margin: 0, lineHeight: 1.04 })}>{txt(f.heading)}</h2>
             {txt(f.body) ? (
@@ -389,7 +454,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   if (k === "2b-stat") {
     return (
       <SlideRoot w={w} h={h} g={g}>
-        <SlideInset pad={pad}>
+        <SlideInset inset={inset}>
           {cHdr}
           {bar("57%")}
           <div
@@ -401,9 +466,11 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               padding: "22px 20px",
             }}
           >
-            {txt(f.label) ? <div style={mn(8, { color: acc, marginBottom: "8px" })}>{txt(f.label)}</div> : null}
+            {txt(f.label) ? (
+              <div style={mn(8, { color: readableOn(acc, "#faf7ec"), marginBottom: "8px" })}>{txt(f.label)}</div>
+            ) : null}
             <div
-              style={sf(fitToWidth(txt(f.statValue), 60, w - pad * 2 - 40), 800, {
+              style={sf(fitToWidth(txt(f.statValue), 60, w - inset.left - inset.right - 40), 800, {
                 lineHeight: 0.82,
                 letterSpacing: "-.02em",
               })}
@@ -421,7 +488,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   if (k === "2c-list") {
     return (
       <SlideRoot w={w} h={h} g={g}>
-        <SlideInset pad={pad}>
+        <SlideInset inset={inset}>
           {cHdr}
           {bar("71%")}
           <h2 style={sf(23, 700, { margin: "16px 0 14px", lineHeight: 1.02, maxWidth: "16ch" })}>{txt(f.heading)}</h2>
@@ -434,7 +501,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
                     height: "18px",
                     borderRadius: "999px",
                     background: acc,
-                    color: "#fff",
+                    color: accInk,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -462,7 +529,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
     const image = img(f.image);
     return (
       <SlideRoot w={w} h={h} g={g}>
-        <SlideInset pad={pad}>
+        <SlideInset inset={inset}>
           {cHdr}
           {bar("86%")}
           <div
@@ -492,16 +559,17 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   if (k === "2e-myth" || (style === "single" && k === "1c-myth")) {
     return (
       <SlideRoot w={w} h={h} g={g}>
-        <SlideInset pad={pad}>
-          {style === "single" ? <div style={mn(8, { color: acc })}>Myth vs fact</div> : cHdr}
+        <SlideInset inset={inset}>
+          {style === "single" ? <div style={mn(8, { color: accText })}>Myth vs fact</div> : cHdr}
           {style === "single" ? null : bar("57%")}
           <div style={{ margin: "auto 0", display: "flex", flexDirection: "column", gap: "14px" }}>
             <div style={{ background: "#e0dac9", borderRadius: "14px", padding: "16px 18px" }}>
-              <div style={mn(8, { color: "#8a8672", marginBottom: "6px" })}>Myth</div>
+              {/* #8a8672 / #6e6952 measured 2.62:1 and 3.95:1 on this card. */}
+              <div style={mn(8, { color: "#5f5b46", marginBottom: "6px" })}>Myth</div>
               <div
                 style={sf(18, 600, {
                   lineHeight: 1.08,
-                  color: "#6e6952",
+                  color: "#524e3b",
                   textDecoration: "line-through",
                   textDecorationThickness: "2px",
                 })}
@@ -509,16 +577,12 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
                 {txt(f.myth)}
               </div>
             </div>
-            <div style={{ background: acc, borderRadius: "14px", padding: "16px 18px", color: "#fff" }}>
-              <div style={mn(8, { opacity: 0.85, marginBottom: "6px" })}>Fact</div>
+            <div style={{ background: acc, borderRadius: "14px", padding: "16px 18px", color: accInk }}>
+              <div style={mn(8, { marginBottom: "6px" })}>Fact</div>
               <div style={sf(20, 700, { lineHeight: 1.06 })}>{txt(f.fact)}</div>
             </div>
           </div>
-          {style === "single" ? (
-            <div style={{ marginTop: "auto", ...sf(10, 700), color: acc }}>{brand}</div>
-          ) : (
-            swipe
-          )}
+          {style === "single" ? <div style={{ marginTop: "auto", ...sf(10, 700), color: accText }}>{brand}</div> : swipe}
         </SlideInset>
       </SlideRoot>
     );
@@ -526,20 +590,42 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
 
   if (k === "2f-cta" || k === "1f-cta") {
     const recap = strings(f.recap);
+    // The reel's end frame reuses this layout at 252x448, where 4.29x scaling
+    // drops the feed sizes under the 45px on-screen floor.
+    const isReel = style === "reel";
+    const t = isReel
+      ? {
+          brand: REEL_TYPE.ctaBrand,
+          meta: REEL_TYPE.ctaMeta,
+          hook: REEL_TYPE.ctaHook,
+          recap: REEL_TYPE.ctaRecap,
+          recapWeight: 700,
+          follow: REEL_TYPE.ctaFollow,
+          save: REEL_TYPE.ctaSave,
+          gap: 6,
+        }
+      : { brand: 11, meta: 8, hook: 30, recap: 12, recapWeight: 500, follow: 10, save: 11, gap: 7 };
     return (
       <SlideRoot w={w} h={h} g={g}>
-        <SlideInset pad={pad}>
+        <SlideInset inset={inset}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={sf(11, 700)}>{brand}</span>
-            <span style={mn(8, { color: acc })}>{counter}</span>
+            <span style={sf(t.brand, 700)}>{brand}</span>
+            <span style={mn(t.meta, { fontWeight: isReel ? 700 : 400, color: accText })}>{counter}</span>
           </div>
           <div style={{ margin: "auto 0" }}>
-            {txt(f.kicker) ? <div style={mn(8, { color: acc, marginBottom: "10px" })}>{txt(f.kicker)}</div> : null}
-            <h2 style={sf(30, 800, { margin: "0 0 14px", lineHeight: 0.98, maxWidth: "15ch" })}>{txt(f.hook)}</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+            {txt(f.kicker) ? (
+              <div style={mn(t.meta, { fontWeight: isReel ? 700 : 400, color: accText, marginBottom: "10px" })}>
+                {txt(f.kicker)}
+              </div>
+            ) : null}
+            <h2 style={sf(t.hook, 800, { margin: "0 0 14px", lineHeight: 0.98, maxWidth: "15ch" })}>{txt(f.hook)}</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: `${t.gap}px` }}>
               {recap.map((r, j) => (
-                <div key={j} style={{ display: "flex", gap: "9px", alignItems: "center", ...sans(12, 500) }}>
-                  <span style={{ color: acc, fontSize: "14px" }}>✓</span>
+                <div
+                  key={j}
+                  style={{ display: "flex", gap: "9px", alignItems: "center", ...sans(t.recap, t.recapWeight) }}
+                >
+                  <span style={{ color: accText, fontSize: `${t.recap + 2}px` }}>✓</span>
                   {r}
                 </div>
               ))}
@@ -556,15 +642,15 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               gap: "8px",
             }}
           >
-            <span style={sans(10, 600)}>{txt(f.followLine) || `Follow ${handle}`}</span>
+            <span style={sans(t.follow, isReel ? 700 : 600)}>{txt(f.followLine) || `Follow ${handle}`}</span>
             <span
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "6px",
                 background: acc,
-                color: "#141a24",
-                ...sans(11, 700),
+                color: accInk,
+                ...sans(t.save, 700),
                 padding: "8px 12px",
                 borderRadius: "999px",
               }}
@@ -584,32 +670,41 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
         display: "inline-flex",
         alignItems: "center",
         gap: "6px",
-        background: "rgba(20,26,36,.5)",
+        background: "rgba(20,26,36,.62)",
         borderRadius: "999px",
         padding: "4px 10px 4px 5px",
       }}
     >
       <span
         style={{
-          width: "16px",
-          height: "16px",
+          width: "20px",
+          height: "20px",
           borderRadius: "5px",
           background: acc,
-          color: "#141a24",
+          color: accInk,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          ...sf(8, 800),
+          ...sf(REEL_TYPE.monogram, 800),
         }}
       >
         {ctx.initials}
       </span>
-      <span style={sans(9, 700, { color: "#f4efe0" })}>{brand}</span>
+      <span style={sans(REEL_TYPE.brand, 700, { color: "#f4efe0", ...overImage() })}>{brand}</span>
     </div>
   );
 
   const ticks = (active: number) => (
-    <div style={{ position: "absolute", top: "16px", left: `${pad}px`, right: `${pad}px`, display: "flex", gap: "5px" }}>
+    <div
+      style={{
+        position: "absolute",
+        top: `${REEL_LAYOUT.ticksTop}px`,
+        left: `${REEL_LAYOUT.left}px`,
+        right: `${REEL_LAYOUT.right}px`,
+        display: "flex",
+        gap: "5px",
+      }}
+    >
       {Array.from({ length: total }, (_, d) => (
         <span
           key={d}
@@ -625,18 +720,22 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   );
 
   if (style === "reel") {
+    // Mid-frame stops raised: the hook now sits at ~410-500 canvas px, where the
+    // old ramp had thinned to .12 alpha and left type floating on raw imagery.
     const scrim = (
       <div
         style={{
           position: "absolute",
           inset: 0,
           background:
-            "linear-gradient(180deg,rgba(10,12,16,.5) 0%,rgba(10,12,16,.12) 40%,rgba(10,12,16,.72) 100%)",
+            "linear-gradient(180deg,rgba(10,12,16,.62) 0%,rgba(10,12,16,.34) 34%,rgba(10,12,16,.18) 58%,rgba(10,12,16,.74) 100%)",
         }}
       />
     );
     const chipAt = (
-      <div style={{ position: "absolute", left: `${pad}px`, top: "34px" }}>{brandChip}</div>
+      <div style={{ position: "absolute", left: `${REEL_LAYOUT.left}px`, top: `${REEL_LAYOUT.chipTop}px` }}>
+        {brandChip}
+      </div>
     );
 
     if (k === "1a-statement") {
@@ -646,9 +745,29 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
           {scrim}
           {ticks(index)}
           {chipAt}
-          <div style={{ position: "absolute", left: `${pad}px`, right: "44px", top: "150px" }}>
-            {txt(f.kicker) ? <div style={mn(8, { color: acc, marginBottom: "8px" })}>{txt(f.kicker)}</div> : null}
-            <h2 style={sf(30, 800, { margin: 0, lineHeight: 1, color: "#f4efe0" })}>{txt(f.hook)}</h2>
+          <div
+            style={{
+              position: "absolute",
+              left: `${REEL_LAYOUT.left}px`,
+              right: `${REEL_LAYOUT.rightStatement}px`,
+              top: `${REEL_LAYOUT.hookTop}px`,
+            }}
+          >
+            {txt(f.kicker) ? (
+              <div
+                style={mn(REEL_TYPE.kicker, {
+                  fontWeight: 700,
+                  color: accText,
+                  marginBottom: "8px",
+                  ...overImage(),
+                })}
+              >
+                {txt(f.kicker)}
+              </div>
+            ) : null}
+            <h2 style={sf(REEL_TYPE.hook, 800, { margin: 0, lineHeight: 1, color: g.fg, ...overImage() })}>
+              {txt(f.hook)}
+            </h2>
           </div>
         </SlideRoot>
       );
@@ -658,10 +777,17 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
         <SlideRoot w={w} h={h} g={g}>
           {ticks(index)}
           {chipAt}
-          <div style={{ position: "absolute", left: `${pad}px`, right: "36px", top: "150px" }}>
-            <h2 style={sf(30, 800, { margin: 0, lineHeight: 1.02 })}>{txt(f.hook)}</h2>
+          <div
+            style={{
+              position: "absolute",
+              left: `${REEL_LAYOUT.left}px`,
+              right: `${REEL_LAYOUT.rightHook}px`,
+              top: `${REEL_LAYOUT.hookTop}px`,
+            }}
+          >
+            <h2 style={sf(REEL_TYPE.hook, 800, { margin: 0, lineHeight: 1.02 })}>{txt(f.hook)}</h2>
             {txt(f.sub) ? (
-              <p style={sans(13, 600, { margin: "14px 0 0", color: "rgba(244,239,224,.85)" })}>{txt(f.sub)}</p>
+              <p style={sans(REEL_TYPE.sub, 700, { margin: "14px 0 0", color: g.sub })}>{txt(f.sub)}</p>
             ) : null}
           </div>
         </SlideRoot>
@@ -672,20 +798,28 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
         <SlideRoot w={w} h={h} g={g}>
           {ticks(index)}
           {chipAt}
-          <div style={{ position: "absolute", left: `${pad}px`, right: "36px", top: "150px" }}>
+          <div
+            style={{
+              position: "absolute",
+              left: `${REEL_LAYOUT.left}px`,
+              right: `${REEL_LAYOUT.rightHook}px`,
+              top: `${REEL_LAYOUT.hookTop}px`,
+            }}
+          >
             {txt(f.preWord) ? (
-              <div style={sans(14, 600, { color: acc, marginBottom: "2px" })}>{txt(f.preWord)}</div>
+              <div style={sans(REEL_TYPE.preWord, 700, { color: accText, marginBottom: "2px" })}>{txt(f.preWord)}</div>
             ) : null}
             <div
-              style={sf(fitToWidth(txt(f.bigWord), 56, w - pad - 36), 800, {
-                lineHeight: 0.92,
-                letterSpacing: "-.02em",
-              })}
+              style={sf(
+                fitToWidth(txt(f.bigWord), REEL_TYPE.bigWord, w - REEL_LAYOUT.left - REEL_LAYOUT.rightHook),
+                800,
+                { lineHeight: 0.92, letterSpacing: "-.02em" },
+              )}
             >
               {txt(f.bigWord)}
             </div>
             {txt(f.sub) ? (
-              <div style={sans(13, 600, { marginTop: "12px", color: "rgba(244,239,224,.85)" })}>{txt(f.sub)}</div>
+              <div style={sans(REEL_TYPE.sub, 700, { marginTop: "12px", color: g.sub })}>{txt(f.sub)}</div>
             ) : null}
           </div>
         </SlideRoot>
@@ -698,11 +832,33 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
           {scrim}
           {ticks(index)}
           {chipAt}
-          <div style={{ position: "absolute", left: `${pad}px`, right: "40px", top: "190px" }}>
-            {txt(f.kicker) ? <div style={mn(7, { color: acc, marginBottom: "8px" })}>{txt(f.kicker)}</div> : null}
-            <h2 style={sf(26, 800, { margin: 0, lineHeight: 1.04, color: "#f4efe0" })}>{txt(f.title)}</h2>
+          <div
+            style={{
+              position: "absolute",
+              left: `${REEL_LAYOUT.left}px`,
+              right: `${REEL_LAYOUT.rightTitle}px`,
+              top: `${REEL_LAYOUT.titleTop}px`,
+            }}
+          >
+            {txt(f.kicker) ? (
+              <div
+                style={mn(REEL_TYPE.kicker, {
+                  fontWeight: 700,
+                  color: accText,
+                  marginBottom: "8px",
+                  ...overImage(),
+                })}
+              >
+                {txt(f.kicker)}
+              </div>
+            ) : null}
+            <h2 style={sf(REEL_TYPE.title, 800, { margin: 0, lineHeight: 1.04, color: g.fg, ...overImage() })}>
+              {txt(f.title)}
+            </h2>
             {txt(f.sub) ? (
-              <p style={sans(12, 600, { margin: "10px 0 0", color: "rgba(244,239,224,.85)" })}>{txt(f.sub)}</p>
+              <p style={sans(REEL_TYPE.sub, 700, { margin: "10px 0 0", color: g.sub, ...overImage() })}>
+                {txt(f.sub)}
+              </p>
             ) : null}
           </div>
         </SlideRoot>
@@ -718,15 +874,15 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
           <div
             style={{
               position: "absolute",
-              left: `${pad}px`,
-              right: `${pad}px`,
-              bottom: "150px",
-              background: "rgba(20,26,36,.62)",
+              left: `${REEL_LAYOUT.left}px`,
+              right: `${REEL_LAYOUT.right}px`,
+              bottom: `${REEL_LAYOUT.captionBottom}px`,
+              background: "rgba(20,26,36,.68)",
               borderRadius: "12px",
               padding: "12px 14px",
             }}
           >
-            <div style={sans(15, 700, { lineHeight: 1.28, color: "#f4efe0" })}>{txt(f.caption)}</div>
+            <div style={sans(REEL_TYPE.caption, 700, { lineHeight: 1.28, color: "#f4efe0" })}>{txt(f.caption)}</div>
           </div>
         </SlideRoot>
       );
@@ -736,8 +892,19 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   // ── STORY ─────────────────────────────────────────────────────────────────
   if (style === "story") {
     const image = img(f.image);
+    // Decoration only — no copy — so this one anchor stays at the top of the
+    // frame, echoing Instagram's own progress chrome. See safezone.ts.
     const segs = (
-      <div style={{ position: "absolute", top: "14px", left: "16px", right: "16px", display: "flex", gap: "5px" }}>
+      <div
+        style={{
+          position: "absolute",
+          top: `${STORY_LAYOUT.segsTop}px`,
+          left: `${STORY_LAYOUT.segsSide}px`,
+          right: `${STORY_LAYOUT.segsSide}px`,
+          display: "flex",
+          gap: "5px",
+        }}
+      >
         {Array.from({ length: total }, (_, d) => (
           <span
             key={d}
@@ -752,44 +919,85 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
       </div>
     );
     const topbar = (
-      <div style={{ position: "absolute", top: "26px", left: "16px", display: "flex", alignItems: "center", gap: "7px" }}>
+      <div
+        style={{
+          position: "absolute",
+          top: `${STORY_LAYOUT.barTop}px`,
+          left: `${STORY_LAYOUT.left}px`,
+          display: "flex",
+          alignItems: "center",
+          gap: "7px",
+        }}
+      >
         <span
           style={{
-            width: "20px",
-            height: "20px",
+            width: "22px",
+            height: "22px",
             borderRadius: "6px",
             background: acc,
-            color: "#141a24",
+            color: accInk,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            ...sf(9, 800),
+            ...sf(STORY_TYPE.monogram, 800),
           }}
         >
           {ctx.initials}
         </span>
-        <span style={sans(10, 700, { color: "#fff" })}>{brand}</span>
+        <span style={sans(STORY_TYPE.brand, 700, { color: "#fff", ...overImage() })}>{brand}</span>
       </div>
     );
+    // Story frames have no built-in scrim, so an uploaded background used to put
+    // white display type straight onto raw imagery. Only drawn when there is an
+    // image to protect against.
+    const storyScrim = image ? (
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(180deg,rgba(10,12,16,.55) 0%,rgba(10,12,16,.3) 32%,rgba(10,12,16,.24) 70%,rgba(10,12,16,.5) 100%)",
+        }}
+      />
+    ) : null;
     // A plain function, not a component: returning elements avoids declaring a
     // new component type per render, which would remount the frame on each edit.
     const wrap = (children: ReactNode) => (
       <SlideRoot w={w} h={h} g={g} extra={{ background: image?.url || image?.tint ? undefined : g.bg }}>
         {image ? <ImgFill image={image} /> : null}
+        {storyScrim}
         {segs}
         {topbar}
         {children}
       </SlideRoot>
     );
+    const block = (top: number, children: ReactNode) => (
+      <div
+        style={{
+          position: "absolute",
+          left: `${STORY_LAYOUT.left}px`,
+          right: `${STORY_LAYOUT.right}px`,
+          top: `${top}px`,
+        }}
+      >
+        {children}
+      </div>
+    );
+    const storyKicker = (v: string) => (
+      <div style={mn(STORY_TYPE.kicker, { fontWeight: 700, color: accText, marginBottom: "10px", ...overImage() })}>
+        {v}
+      </div>
+    );
 
     if (k === "1a-poll") {
-      return (
-        wrap(
-          <div style={{ position: "absolute", left: "22px", right: "22px", top: "150px" }}>
-            {txt(f.kicker) ? (
-              <div style={mn(8, { color: safeOn(acc, g.base), marginBottom: "10px" })}>{txt(f.kicker)}</div>
-            ) : null}
-            <h2 style={sf(28, 800, { margin: "0 0 20px", lineHeight: 1, color: "#f4efe0" })}>{txt(f.prompt)}</h2>
+      return wrap(
+        block(
+          STORY_LAYOUT.pollTop,
+          <>
+            {txt(f.kicker) ? storyKicker(txt(f.kicker)) : null}
+            <h2 style={sf(STORY_TYPE.prompt, 800, { margin: "0 0 20px", lineHeight: 1, color: "#f4efe0", ...overImage() })}>
+              {txt(f.prompt)}
+            </h2>
             <div
               style={{
                 background: "#fff",
@@ -798,23 +1006,28 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
                 boxShadow: "0 12px 30px rgba(0,0,0,.3)",
               }}
             >
-              <div style={sans(15, 700, { textAlign: "center", color: "#1a2230", padding: "11px 0" })}>
+              <div style={sans(STORY_TYPE.option, 700, { textAlign: "center", color: "#1a2230", padding: "11px 0" })}>
                 {txt(f.optionA)}
               </div>
               <div style={{ height: "1.5px", background: "rgba(26,34,48,.12)" }} />
-              <div style={sans(15, 700, { textAlign: "center", color: "#1a2230", padding: "11px 0" })}>
+              <div style={sans(STORY_TYPE.option, 700, { textAlign: "center", color: "#1a2230", padding: "11px 0" })}>
                 {txt(f.optionB)}
               </div>
             </div>
-          </div>
-        )
+          </>,
+        ),
       );
     }
     if (k === "1b-question") {
-      return (
-        wrap(
-          <div style={{ position: "absolute", left: "22px", right: "22px", top: "170px" }}>
-            <h2 style={sf(28, 800, { margin: "0 0 18px", lineHeight: 1.02, color: "#f4efe0" })}>{txt(f.prompt)}</h2>
+      return wrap(
+        block(
+          STORY_LAYOUT.questionTop,
+          <>
+            <h2
+              style={sf(STORY_TYPE.prompt, 800, { margin: "0 0 18px", lineHeight: 1.02, color: "#f4efe0", ...overImage() })}
+            >
+              {txt(f.prompt)}
+            </h2>
             <div
               style={{
                 background: "#fff",
@@ -823,29 +1036,41 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
                 boxShadow: "0 12px 30px rgba(0,0,0,.3)",
               }}
             >
-              <div style={sans(13, 700, { color: "#1a2230", marginBottom: "12px" })}>{txt(f.stickerLabel)}</div>
+              <div style={sans(STORY_TYPE.sticker, 700, { color: "#1a2230", marginBottom: "12px" })}>
+                {txt(f.stickerLabel)}
+              </div>
               <div style={{ height: "34px", borderRadius: "9px", background: "#eee7d7" }} />
             </div>
-          </div>
-        )
+          </>,
+        ),
       );
     }
     if (k === "1c-quiz") {
-      return (
-        wrap(
-          <div style={{ position: "absolute", left: "22px", right: "22px", top: "160px" }}>
-            {txt(f.kicker) ? <div style={mn(8, { color: acc, marginBottom: "10px" })}>{txt(f.kicker)}</div> : null}
-            <h2 style={sf(26, 800, { margin: "0 0 18px", lineHeight: 1.04, color: "#f4efe0" })}>{txt(f.prompt)}</h2>
+      return wrap(
+        block(
+          STORY_LAYOUT.quizTop,
+          <>
+            {txt(f.kicker) ? storyKicker(txt(f.kicker)) : null}
+            <h2
+              style={sf(STORY_TYPE.promptSm, 800, {
+                margin: "0 0 18px",
+                lineHeight: 1.04,
+                color: "#f4efe0",
+                ...overImage(),
+              })}
+            >
+              {txt(f.prompt)}
+            </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
               {quiz(f.options).map((o, j) => (
                 <div
                   key={j}
                   style={{
                     background: o.correct ? acc : "#fff",
-                    color: o.correct ? "#fff" : "#1a2230",
+                    color: o.correct ? accInk : "#1a2230",
                     borderRadius: "11px",
                     padding: "12px 14px",
-                    ...sans(14, 700),
+                    ...sans(STORY_TYPE.optionSm, 700),
                     display: "flex",
                     alignItems: "center",
                     gap: "8px",
@@ -857,15 +1082,25 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
                 </div>
               ))}
             </div>
-          </div>
-        )
+          </>,
+        ),
       );
     }
     if (k === "1d-slider") {
-      return (
-        wrap(
-          <div style={{ position: "absolute", left: "22px", right: "22px", top: "190px" }}>
-            <h2 style={sf(26, 800, { margin: "0 0 20px", lineHeight: 1.04, color: "#f4efe0" })}>{txt(f.prompt)}</h2>
+      return wrap(
+        block(
+          STORY_LAYOUT.sliderTop,
+          <>
+            <h2
+              style={sf(STORY_TYPE.promptSm, 800, {
+                margin: "0 0 20px",
+                lineHeight: 1.04,
+                color: "#f4efe0",
+                ...overImage(),
+              })}
+            >
+              {txt(f.prompt)}
+            </h2>
             <div
               style={{
                 background: "#fff",
@@ -887,16 +1122,26 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
                 </span>
               </div>
             </div>
-          </div>
-        )
+          </>,
+        ),
       );
     }
     if (k === "1e-countdown") {
-      return (
-        wrap(
-          <div style={{ position: "absolute", left: "22px", right: "22px", top: "160px" }}>
-            {txt(f.kicker) ? <div style={mn(8, { color: acc, marginBottom: "10px" })}>{txt(f.kicker)}</div> : null}
-            <h2 style={sf(26, 800, { margin: "0 0 18px", lineHeight: 1.04, color: "#f4efe0" })}>{txt(f.headline)}</h2>
+      return wrap(
+        block(
+          STORY_LAYOUT.countdownTop,
+          <>
+            {txt(f.kicker) ? storyKicker(txt(f.kicker)) : null}
+            <h2
+              style={sf(STORY_TYPE.promptSm, 800, {
+                margin: "0 0 18px",
+                lineHeight: 1.04,
+                color: "#f4efe0",
+                ...overImage(),
+              })}
+            >
+              {txt(f.headline)}
+            </h2>
             <div
               style={{
                 background: "rgba(255,255,255,.14)",
@@ -907,66 +1152,77 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
                 marginBottom: "14px",
               }}
             >
-              <div style={{ ...mn(8), color: "rgba(255,255,255,.75)", marginBottom: "6px" }}>{txt(f.targetTime)}</div>
-              <div style={sf(24, 800, { color: "#fff" })}>06 : 12 : 40</div>
+              <div style={mn(STORY_TYPE.meta, { fontWeight: 700, color: "rgba(255,255,255,.8)", marginBottom: "6px" })}>
+                {txt(f.targetTime)}
+              </div>
+              <div style={sf(STORY_TYPE.timer, 800, { color: "#fff" })}>06 : 12 : 40</div>
             </div>
             <div
               style={{
                 background: acc,
-                color: "#141a24",
+                color: accInk,
                 borderRadius: "999px",
                 padding: "11px",
                 textAlign: "center",
-                ...sans(13, 700),
+                ...sans(STORY_TYPE.link, 700),
               }}
             >
               {txt(f.linkLabel)}
             </div>
-          </div>
-        )
+          </>,
+        ),
       );
     }
     if (k === "1f-reshare") {
-      return (
-        wrap(
-          <div style={{ position: "absolute", left: "22px", right: "22px", top: "170px" }}>
-            {txt(f.flag) ? (
-              <div
-                style={{
-                  display: "inline-block",
-                  background: acc,
-                  color: "#141a24",
-                  ...sans(11, 700),
-                  padding: "5px 11px",
-                  borderRadius: "999px",
-                  marginBottom: "12px",
-                }}
-              >
-                {txt(f.flag)}
-              </div>
-            ) : null}
+      // Inset further than the other frames: the preview is locked to 4:5, so
+      // its height follows its width, and at the shared 22px inset the card ran
+      // ~100 canvas px into the reply bar. Narrowing is the only lever that does
+      // not change the layout.
+      return wrap(
+        <div
+          style={{
+            position: "absolute",
+            left: `${STORY_LAYOUT.reshareSide}px`,
+            right: `${STORY_LAYOUT.reshareSide}px`,
+            top: `${STORY_LAYOUT.reshareTop}px`,
+          }}
+        >
+          {txt(f.flag) ? (
             <div
               style={{
-                background: "#fff",
-                borderRadius: "14px",
-                padding: "12px",
-                boxShadow: "0 12px 30px rgba(0,0,0,.3)",
+                display: "inline-block",
+                background: acc,
+                color: accInk,
+                ...sans(STORY_TYPE.flag, 700),
+                padding: "5px 11px",
+                borderRadius: "999px",
+                marginBottom: "12px",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "10px" }}>
-                <span style={{ width: "22px", height: "22px", borderRadius: "999px", background: acc }} />
-                <span style={sans(11, 700, { color: "#1a2230" })}>{handle}</span>
-              </div>
-              <div
-                style={{
-                  aspectRatio: "4/5",
-                  borderRadius: "9px",
-                  background: "linear-gradient(150deg,#3b5a78,#5c7556)",
-                }}
-              />
+              {txt(f.flag)}
             </div>
+          ) : null}
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "14px",
+              padding: "12px",
+              boxShadow: "0 12px 30px rgba(0,0,0,.3)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "10px" }}>
+              <span style={{ width: "22px", height: "22px", borderRadius: "999px", background: acc }} />
+              <span style={sans(STORY_TYPE.handle, 700, { color: "#1a2230" })}>{handle}</span>
+            </div>
+            <div
+              style={{
+                aspectRatio: "4/5",
+                borderRadius: "9px",
+                background: "linear-gradient(150deg,#3b5a78,#5c7556)",
+              }}
+            />
           </div>
-        )
+        </div>,
       );
     }
   }
@@ -975,14 +1231,14 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   if (k === "1d-announce") {
     return (
       <SlideRoot w={w} h={h} g={g}>
-        <SlideInset pad={pad}>
+        <SlideInset inset={inset}>
           {txt(f.pill) ? (
             <div
               style={{
                 display: "inline-block",
                 alignSelf: "flex-start",
                 background: acc,
-                color: "#141a24",
+                color: accInk,
                 ...sans(11, 800),
                 padding: "5px 12px",
                 borderRadius: "999px",
@@ -992,12 +1248,12 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
             </div>
           ) : null}
           <div style={{ margin: "auto 0" }}>
-            {txt(f.kicker) ? <div style={mn(8, { color: acc, marginBottom: "10px" })}>{txt(f.kicker)}</div> : null}
+            {txt(f.kicker) ? (
+              <div style={mn(8, { color: accText, marginBottom: "10px" })}>{txt(f.kicker)}</div>
+            ) : null}
             <h2 style={sf(34, 800, { margin: 0, lineHeight: 0.98, letterSpacing: "-.01em" })}>{txt(f.headline)}</h2>
             {txt(f.sub) ? (
-              <p style={sans(13, 600, { margin: "14px 0 0", color: "rgba(244,239,224,.85)", maxWidth: "24ch" })}>
-                {txt(f.sub)}
-              </p>
+              <p style={sans(13, 600, { margin: "14px 0 0", color: g.sub, maxWidth: "24ch" })}>{txt(f.sub)}</p>
             ) : null}
           </div>
           <div
@@ -1032,8 +1288,8 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
       <div
         style={{
           position: "absolute",
-          top: `${pad}px`,
-          left: `${pad}px`,
+          top: `${FEED_PAD}px`,
+          left: `${FEED_PAD}px`,
           display: "inline-flex",
           alignItems: "center",
           gap: "6px",
@@ -1048,7 +1304,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
             height: "16px",
             borderRadius: "5px",
             background: acc,
-            color: "#141a24",
+            color: accInk,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1057,7 +1313,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
         >
           {ctx.initials}
         </span>
-        <span style={sans(9, 700, { color: "#f4efe0" })}>{brand}</span>
+        <span style={sans(9, 700, { color: "#f4efe0", ...overImage() })}>{brand}</span>
       </div>
     );
 
@@ -1067,9 +1323,13 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
           <ImgFill image={image} />
           {scrim}
           {chip}
-          <div style={{ position: "absolute", left: `${pad}px`, right: `${pad}px`, bottom: `${pad}px` }}>
-            {txt(f.kicker) ? <div style={mn(8, { color: acc, marginBottom: "8px" })}>{txt(f.kicker)}</div> : null}
-            <h2 style={sf(30, 800, { margin: 0, lineHeight: 1, color: "#f7f2e6" })}>{txt(f.headline)}</h2>
+          <div style={{ position: "absolute", left: `${FEED_PAD}px`, right: `${FEED_PAD}px`, bottom: `${FEED_PAD}px` }}>
+            {txt(f.kicker) ? (
+              <div style={mn(8, { color: accText, marginBottom: "8px", ...overImage() })}>{txt(f.kicker)}</div>
+            ) : null}
+            <h2 style={sf(30, 800, { margin: 0, lineHeight: 1, color: "#f7f2e6", ...overImage() })}>
+              {txt(f.headline)}
+            </h2>
           </div>
         </SlideRoot>
       );
@@ -1080,13 +1340,23 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
           <ImgFill image={image} />
           {scrim}
           {chip}
-          <div style={{ position: "absolute", left: `${pad}px`, right: `${pad}px`, bottom: `${pad}px` }}>
-            <div style={sf(60, 800, { lineHeight: 0.5, height: "28px", color: acc })}>&ldquo;</div>
-            <h2 style={sf(24, 700, { fontStyle: "italic", margin: 0, lineHeight: 1.14, color: "#f7f2e6" })}>
+          <div style={{ position: "absolute", left: `${FEED_PAD}px`, right: `${FEED_PAD}px`, bottom: `${FEED_PAD}px` }}>
+            <div style={sf(60, 800, { lineHeight: 0.5, height: "28px", color: accMark, ...overImage() })}>
+              &ldquo;
+            </div>
+            <h2
+              style={sf(24, 700, {
+                fontStyle: "italic",
+                margin: 0,
+                lineHeight: 1.14,
+                color: "#f7f2e6",
+                ...overImage(),
+              })}
+            >
               {txt(f.quote)}
             </h2>
             {txt(f.attribution) ? (
-              <div style={sans(11, 600, { color: "rgba(247,242,230,.85)", marginTop: "14px" })}>
+              <div style={sans(11, 600, { color: g.sub, marginTop: "14px", ...overImage() })}>
                 {txt(f.attribution)}
               </div>
             ) : null}
@@ -1097,7 +1367,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
     if (k === "1b-fieldnote") {
       return (
         <SlideRoot w={w} h={h} g={g} extra={{ background: "#ece6d6", color: "#1a2230" }}>
-          <div style={{ position: "absolute", inset: `${pad}px`, display: "flex", flexDirection: "column" }}>
+          <div style={{ position: "absolute", inset: `${FEED_PAD}px`, display: "flex", flexDirection: "column" }}>
             <div
               style={{
                 display: "flex",
@@ -1107,7 +1377,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
               }}
             >
               <span style={sf(12, 700, { color: "#1a2230" })}>{brand}</span>
-              {txt(f.tag) ? <span style={mn(8, { color: acc })}>{txt(f.tag)}</span> : null}
+              {txt(f.tag) ? <span style={mn(8, { color: readableOn(acc, "#ece6d6") })}>{txt(f.tag)}</span> : null}
             </div>
             <div
               style={{
@@ -1143,13 +1413,15 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
             <div
               style={{
                 flex: 1,
-                padding: `${pad}px`,
+                padding: `${FEED_PAD}px`,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
               }}
             >
-              {txt(f.kicker) ? <div style={mn(8, { color: acc, marginBottom: "8px" })}>{txt(f.kicker)}</div> : null}
+              {txt(f.kicker) ? (
+                <div style={mn(8, { color: readableOn(acc, "#ece6d6"), marginBottom: "8px" })}>{txt(f.kicker)}</div>
+              ) : null}
               <h2 style={sf(24, 700, { margin: 0, lineHeight: 1.04, color: "#1a2230" })}>{txt(f.headline)}</h2>
               {txt(f.body) ? (
                 <p style={sans(12, 400, { margin: "10px 0 0", color: "#4a4636", lineHeight: 1.42, maxWidth: "26ch" })}>
@@ -1166,7 +1438,7 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
   // Fallback — an unknown kind still renders something legible rather than blank.
   return (
     <SlideRoot w={w} h={h} g={g}>
-      <SlideInset pad={pad}>
+      <SlideInset inset={inset}>
         {cHdr}
         <div style={{ margin: "auto 0", ...sf(24, 700) }}>
           {txt(f.hook) || txt(f.headline) || txt(f.prompt)}
