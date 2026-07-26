@@ -6,6 +6,8 @@ import {
   leadHookFormula,
   payoffIndex,
   positionGuidance,
+  reelDurationLines,
+  reelScriptBudget,
   rotateHookFormulas,
 } from "@/lib/ai/playbook";
 
@@ -64,6 +66,28 @@ describe("positionGuidance — carousel", () => {
     const notes = positionGuidance("reel", ["1a-statement", "1d-title", "1f-cta"]);
     expect(joined(notes.flat())).not.toContain("SECOND COVER");
   });
+
+  it("asks every interior slide to earn the next swipe", () => {
+    const notes = positionGuidance("carousel", kinds);
+    // Swipe-through past ~70% is the reach multiplier, so interiors carry it.
+    expect(joined(notes[1])).toContain("EARN THE SWIPE");
+    expect(joined(notes[2])).toContain("EARN THE SWIPE");
+    // The cover has no preceding swipe to buy, and the end card closes.
+    expect(joined(notes[0])).not.toContain("EARN THE SWIPE");
+    expect(joined(notes[4])).not.toContain("EARN THE SWIPE");
+  });
+
+  it("names the audience on the cover", () => {
+    const [first] = positionGuidance("carousel", kinds);
+    expect(joined(first)).toContain("NAME THE AUDIENCE");
+  });
+
+  it("puts the send target on the end card, not the caption", () => {
+    const notes = positionGuidance("carousel", kinds);
+    expect(joined(notes[4])).toContain("SEND TARGET");
+    expect(joined(notes[4])).toContain("Sends outrank saves");
+    expect(joined(notes[0])).not.toContain("SEND TARGET");
+  });
 });
 
 describe("positionGuidance — reel", () => {
@@ -84,6 +108,52 @@ describe("positionGuidance — reel", () => {
 
   it("closes the loop and asks for the send on the end frame", () => {
     expect(joined(notes[3])).toContain("SAVE TARGET");
+    expect(joined(notes[3])).toContain("SEND TARGET");
+    expect(joined(notes[3])).toContain("CLOSE THE LOOP");
+  });
+
+  it("sets up the rewatch on the opening frame", () => {
+    // Absolute seconds count alongside percent viewed, so a second watch is
+    // worth as much as a longer script.
+    expect(joined(notes[0])).toContain("LOOP");
+  });
+});
+
+describe("reelScriptBudget", () => {
+  const frames = (n: number) => ["1a-statement", ...Array.from({ length: n - 1 }, () => "1d-title")];
+
+  it("keeps a normal reel inside the 30–90 second band", () => {
+    const b = reelScriptBudget(frames(8));
+    expect(b.minSeconds).toBeGreaterThanOrEqual(30);
+    expect(b.maxSeconds).toBeLessThanOrEqual(90);
+    expect(b.minWords).toBeLessThanOrEqual(b.maxWords);
+    expect(b.short).toBe(false);
+  });
+
+  it("never asks for more words than the chosen frames can hold", () => {
+    // Two frames of voiceScript cannot reach 30s, and instructing the model to
+    // write 75 words into ~50 words of budget guarantees truncation.
+    const b = reelScriptBudget(frames(2));
+    expect(b.short).toBe(true);
+    expect(b.maxWords).toBeLessThan(75);
+    expect(joined(reelDurationLines(frames(2)))).toContain("Do not pad");
+  });
+
+  it("scales the per-frame allowance with the frame count", () => {
+    expect(reelScriptBudget(frames(8)).perFrameWords).toBeLessThan(
+      reelScriptBudget(frames(4)).perFrameWords,
+    );
+  });
+
+  it("states the total run time rather than a per-frame ceiling", () => {
+    const text = joined(reelDurationLines(frames(6)));
+    expect(text).toContain("TOTAL RUN TIME");
+    expect(text).toContain("seconds at speaking pace");
+  });
+
+  it("survives an unknown kind", () => {
+    expect(() => reelScriptBudget(["nope"])).not.toThrow();
+    expect(reelScriptBudget([]).perFrameWords).toBeGreaterThan(0);
   });
 });
 
@@ -94,6 +164,19 @@ describe("positionGuidance — story", () => {
     expect(joined(notes[2])).toContain("QUESTION STICKER");
     expect(joined(notes[2])).toContain("DM");
     expect(joined(notes[0])).not.toContain("QUESTION STICKER");
+  });
+
+  it("marks frames past the fifth as non-essential", () => {
+    const notes = positionGuidance("story", [
+      "1a-poll",
+      "1c-quiz",
+      "1c-quiz",
+      "1c-quiz",
+      "1c-quiz",
+      "1b-question",
+    ]);
+    expect(joined(notes[5])).toContain("PAST FRAME 5");
+    expect(joined(notes[4])).not.toContain("PAST FRAME");
   });
 
   it("still names the sticker when the user opens with something other than a poll", () => {
@@ -142,6 +225,14 @@ describe("headlineSlotFor", () => {
 });
 
 describe("hook formula rotation", () => {
+  it("carries enough shapes that audiences cannot learn the opener", () => {
+    // The report's rule is to rotate 5–10 formulas.
+    expect(HOOK_FORMULAS.length).toBeGreaterThanOrEqual(5);
+    expect(HOOK_FORMULAS.length).toBeLessThanOrEqual(10);
+    expect(HOOK_FORMULAS.filter((f) => f.proven)).toHaveLength(3);
+    expect(new Set(HOOK_FORMULAS.map((f) => f.id)).size).toBe(HOOK_FORMULAS.length);
+  });
+
   it("is deterministic per seed and keeps every formula in the library", () => {
     const a = rotateHookFormulas("protein timing");
     expect(rotateHookFormulas("protein timing").map((f) => f.id)).toEqual(a.map((f) => f.id));

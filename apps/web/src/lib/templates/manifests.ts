@@ -44,7 +44,7 @@ export const CAROUSEL: TemplateManifest = {
     insetPx: 84,
   },
   aiContract:
-    "Fill only the slots below and the brand tokens. Never move, add, remove, resize, or restyle elements. Empty optional slots collapse gracefully. On-slide copy is engagement-only — the app-download CTA belongs in postDelivery, never on a slide.",
+    "Fill only the slots below and the brand tokens. Never move, add, remove, resize, or restyle elements. Empty optional slots collapse gracefully. Slide 2 is an independent second cover — the post is re-served led by it when nobody swipes — and every slide before the last ends owing the reader the next one. On-slide copy is engagement-only — the app-download CTA belongs in postDelivery, never on a slide.",
   accentGuardrail: ACCENT_GUARDRAIL,
   kinds: {
     "1a-knockout": {
@@ -174,7 +174,7 @@ export const REEL: TemplateManifest = {
     bottom: 240,
   },
   aiContract:
-    "Fill only the slots below and the brand tokens. Never move, add, remove, resize, or restyle elements. On-screen text = the ElevenLabs voice script (voiceScript per frame drives narration AND the visible caption). Backgrounds marked image are fal.ai slots. On-screen copy is engagement-only — the app-download CTA belongs in postDelivery, never on a frame.",
+    "Fill only the slots below and the brand tokens. Never move, add, remove, resize, or restyle elements. On-screen text = the ElevenLabs voice script (voiceScript per frame drives narration AND the visible caption), and the scripts are read back to back, so the whole reel is written to run 30-90 seconds rather than to fill every per-frame budget. Backgrounds marked image are fal.ai slots and must read as original footage, never as reposted or recycled video. On-screen copy is engagement-only — the app-download CTA belongs in postDelivery, never on a frame.",
   accentGuardrail: ACCENT_GUARDRAIL,
   kinds: {
     "1a-statement": {
@@ -279,7 +279,7 @@ export const STORY: TemplateManifest = {
     right: 60,
   },
   aiContract:
-    "Stories optimize for interaction (tap/vote/reply), NOT reach. Every frame MUST carry exactly one interactive sticker as its tap target. Fill only the slots + the sticker options; never move/add/remove/restyle elements. Lead with a POLL — it collects the most taps for the least viewer effort. Save the QUESTION sticker for a later frame: its value is opening a DM reply, which is a stronger relationship signal than a tap. The app-download CTA belongs in postDelivery/link, never as body copy.",
+    "Stories optimize for interaction (tap/vote/reply), NOT reach. Every frame MUST carry exactly one interactive sticker as its tap target. Fill only the slots + the sticker options; never move/add/remove/restyle elements. Lead with a POLL — it collects the most taps for the least viewer effort. Save the QUESTION sticker for a later frame: its value is opening a DM reply, which is a stronger relationship signal than a tap. Tap-through drops off after the fifth frame, so nothing essential sits past it. The app-download CTA belongs in postDelivery/link, never as body copy.",
   accentGuardrail: ACCENT_GUARDRAIL,
   kinds: {
     "1a-poll": {

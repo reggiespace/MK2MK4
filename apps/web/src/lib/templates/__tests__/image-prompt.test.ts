@@ -11,17 +11,44 @@ import type { TemplateStyleId } from "../types";
  */
 
 describe("suggestImagePrompt", () => {
-  it("returns the AI's own prompt untouched when the frame carries one", () => {
+  it("keeps the AI's own prompt when the frame carries one", () => {
     // Photo templates declare an `imagePrompt` slot and the model fills it.
-    // Nothing derived should ever override a considered prompt.
+    // Nothing derived should override a considered prompt's subject or framing.
     const explicit = "A bowl of lentils on a linen cloth, morning light through a kitchen window.";
-    expect(
-      suggestImagePrompt({
-        style: "photo",
-        slide: { kind: "1a-lifestyle", f: { imagePrompt: explicit, headline: "Ignored" } },
-        topic: "fibre",
-      }),
-    ).toBe(explicit);
+    const out = suggestImagePrompt({
+      style: "photo",
+      slide: { kind: "1a-lifestyle", f: { imagePrompt: explicit, headline: "Ignored" } },
+      topic: "fibre",
+    });
+    expect(out.startsWith(explicit)).toBe(true);
+    expect(out).not.toContain("Ignored");
+  });
+
+  it("applies the subject guardrail to a generated prompt too, exactly once", () => {
+    // The guardrail is a compliance rule, not a suggestion: a model-written
+    // imagePrompt must not be able to opt out of it, and re-deriving from an
+    // already-guarded prompt must not stack a second copy.
+    const explicit = "A woman standing on a bathroom scale, before and after.";
+    const once = suggestImagePrompt({
+      style: "photo",
+      slide: { kind: "1a-lifestyle", f: { imagePrompt: explicit } },
+    });
+    expect(once).toContain("No before/after body comparisons");
+    expect(once).toContain("no bathroom scales");
+
+    const twice = suggestImagePrompt({
+      style: "photo",
+      slide: { kind: "1a-lifestyle", f: { imagePrompt: once } },
+    });
+    expect(twice).toBe(once);
+  });
+
+  it("guards every derived prompt as well", () => {
+    for (const style of Object.keys(MANIFESTS) as TemplateStyleId[]) {
+      const kind = Object.keys(MANIFESTS[style].kinds)[0];
+      const out = suggestImagePrompt({ style, slide: { kind, f: { headline: "Week three" } } });
+      expect(out, `${style} skipped the guardrail`).toContain("no clinical or medical-procedure imagery");
+    }
   });
 
   it("derives a prompt from the frame's own copy for formats with no prompt slot", () => {

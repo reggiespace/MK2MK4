@@ -13,6 +13,8 @@
  * Platform behaviour changes — re-check before treating any figure as current.
  */
 
+import { HOOK_FORMULAS } from "@/lib/ai/playbook";
+
 export interface Signal {
   label: string;
   note: string;
@@ -145,14 +147,19 @@ export interface Hook {
   topTier?: boolean;
 }
 
-export const HOOKS: Hook[] = [
-  { name: "Contrarian claim", example: "Everything you've been told about protein timing is backwards.", topTier: true },
-  { name: "Mistake warning", example: "The one carousel mistake quietly killing your reach.", topTier: true },
-  { name: "List tease", example: "5 shifts that saved me 10 hours a week (#3 surprised me).", topTier: true },
-  { name: "Open question", example: "Why do some posts hit 200K while yours die at 2K?" },
-  { name: "Callout", example: "Most people get this wrong about their fade days." },
-  { name: "Reveal / POV", example: "Here's what nobody tells you about week three." },
-];
+/**
+ * Derived from the model-facing library rather than restated.
+ *
+ * The two lists were duplicated, which meant this page could drift out of step
+ * with the formulas the generator actually rotates through — the report page
+ * would keep claiming six shapes while the prompt used ten. `playbook.ts` is
+ * pure and imports nothing server-only, so it is safe to read from a page.
+ */
+export const HOOKS: Hook[] = HOOK_FORMULAS.map((f) => ({
+  name: f.name.replace(/^./, (c) => c.toUpperCase()),
+  example: f.example,
+  topTier: f.proven,
+}));
 
 /** The nine rules every template in this system is built to satisfy. */
 export const MANDATE: string[] = [

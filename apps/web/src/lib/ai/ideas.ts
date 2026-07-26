@@ -1,6 +1,6 @@
 import "server-only";
 import { completeJson } from "./client";
-import { HOOK_LIBRARY, RANKING_SIGNALS, rotateHookFormulas } from "./playbook";
+import { COLD_VIEWER, HOOK_LIBRARY, RANKING_SIGNALS, SEND_TRIGGER, rotateHookFormulas } from "./playbook";
 import type { BrandVoice } from "./generate";
 
 export interface SuggestedIdea {
@@ -49,7 +49,17 @@ export async function suggestIdeas(
     `Write in ${LANGUAGE[brand.locale] ?? "English"}.`,
     brand.voiceDescription ? `\nBRAND VOICE\n${brand.voiceDescription}` : "",
     `\n${RANKING_SIGNALS}`,
+    `\n${SEND_TRIGGER}`,
+    `\n${COLD_VIEWER}`,
     `\n${HOOK_LIBRARY}`,
+    // A topic is chosen before a single line is written, so the distribution
+    // decisions that matter most are made here rather than in the draft.
+    `\nWHAT A GOOD TOPIC IS
+A topic is not a subject area — it is a promise to a specific person in a specific
+situation, narrow enough that they recognise themselves and want the answer now.
+"Protein timing" is a subject. "Why your protein target fails on the days you feel sick"
+is a topic. Judge every candidate on whether it could earn a save, a send or a full
+watch; if the honest answer is only a like, it is not worth pitching.`,
     brand.claimsGuardrail
       ? `\nNever propose a topic that would require claiming the product diagnoses, treats, or prevents anything.`
       : "",
@@ -66,14 +76,21 @@ export async function suggestIdeas(
     `Pitch ${count} post topics${opts.pillar ? ` for the "${opts.pillar}" content pillar` : ""}.`,
     ``,
     `Each idea needs:`,
-    `- title: the topic already written as a hook — 5–8 words, ≤ 60 chars, opening a curiosity gap. Specific beats generic: "5 shifts that saved me 10 hrs/week", never "productivity tips".`,
-    `- angle: one sentence on how to treat it, naming the reader's actual situation and what they would save or send it for.`,
+    `- title: the topic already written as a hook — 5–8 words, ≤ 60 chars, opening a curiosity gap. Specific beats generic every time, so every title carries at least one of: a number, a timeframe, or a named situation. "5 shifts that saved me 10 hrs/week" and "the week-three stall nobody warns you about", never "productivity tips".`,
+    `- angle: one sentence covering three things — the situation the reader is in when this lands, the one person they would forward it to, and what they keep it for. Name the recipient concretely ("whoever told them it gets easier at week four"), never "their friends".`,
     `- format: the style that suits it best — carousel, reel, story, single or photo.`,
+    ``,
+    `Before you commit to an idea, decide which single signal it is built to earn — a save, a send, or a full watch — and make the angle consistent with that choice. A reference someone returns to is a save; a line someone forwards on someone else's behalf is a send; a story that only pays off at the end is a watch. An idea built for all three is built for none.`,
     ``,
     `Use a different hook formula for each title; work through ${spread.join(", ")} in that order unless a topic genuinely fights it.`,
     ``,
-    `Match the format to the mechanic, not to habit: carousels earn saves and get re-served on their second slide, reels live on watch time and sends, stories build the relationship through taps and replies, single/photo carry one idea whole.`,
-    `Vary the formats. Avoid topics that are near-duplicates of each other.`,
+    `Pick the format from the mechanic, not from habit:`,
+    `- carousel — the idea has 5–8 separable steps or points, each worth a swipe, and the last one is worth saving. It also gets re-served on its second slide, so it suits ideas with two independent entry points.`,
+    `- reel — the idea genuinely carries 30–90 seconds of spoken narration and opens with something that lands in under 3 seconds. If it is really one sentence, it is not a reel.`,
+    `- story — the idea is a question worth asking existing followers, answered by a tap or a reply. Stories reach no new people, so never put a topic here that deserves reach.`,
+    `- single / photo — one idea, whole, that loses nothing by having no second surface.`,
+    ``,
+    `Vary the formats. Avoid topics that are near-duplicates of each other, and avoid any topic that only makes sense to someone who already follows this account.`,
   ].join("\n");
 
   const raw = (await completeJson(workspaceId, "topic_ideas", IDEAS_SCHEMA, system, user)) as {

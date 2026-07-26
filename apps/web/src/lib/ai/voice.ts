@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireCredential } from "@/lib/integrations";
 import { assetKey, saveAsset } from "@/lib/storage";
 import { Provider } from "@/generated/prisma/enums";
+import { NARRATION_WPM } from "./playbook";
 import { getManifest } from "@/lib/templates/manifests";
 import type { PostDoc, TemplateStyleId } from "@/lib/templates/types";
 import { asText } from "@/lib/templates/types";
@@ -70,10 +71,13 @@ export interface VoiceTrack {
   estimatedSeconds: number;
 }
 
-/** ~150 words per minute is a natural narration pace. */
+/**
+ * Read time at the same pace the reel script budget is derived from, so the
+ * duration the prompt asks for and the duration shown in the editor agree.
+ */
 export function estimateSeconds(lines: string[]): number {
   const words = lines.join(" ").trim().split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.round((words / 150) * 60));
+  return Math.max(1, Math.round((words / NARRATION_WPM) * 60));
 }
 
 /** Synthesize the assembled script and store it as an audio asset. */

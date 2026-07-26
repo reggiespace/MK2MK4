@@ -2,11 +2,14 @@ import "server-only";
 import { completeJson } from "./client";
 import { describeSlots, draftSchema, fitToBudget, generatableSlots } from "./schema";
 import {
+  COLD_VIEWER,
   HOOK_LIBRARY,
   RANKING_SIGNALS,
+  SEND_TRIGGER,
   formatPlaybook,
   leadHookFormula,
   positionGuidance,
+  reelDurationLines,
 } from "./playbook";
 import { getManifest } from "@/lib/templates/manifests";
 import { coerceFields } from "@/lib/templates/doc";
@@ -54,6 +57,8 @@ function systemPrompt(brand: BrandVoice, style: TemplateStyleId): string {
     brand.voiceDescription ? `\nBRAND VOICE\n${brand.voiceDescription}` : "",
     `\nTEMPLATE CONTRACT\n${man.aiContract}`,
     `\n${RANKING_SIGNALS}`,
+    `\n${SEND_TRIGGER}`,
+    `\n${COLD_VIEWER}`,
     `\n${HOOK_LIBRARY}`,
     `\n${formatPlaybook(style)}`,
     `\nCTA CONVENTION (do not break this)
@@ -66,6 +71,8 @@ function systemPrompt(brand: BrandVoice, style: TemplateStyleId): string {
 - Fill optional slots only when they genuinely add something; otherwise return an empty string and the layout collapses gracefully.
 - One idea per slide. Put the strongest point early.
 - Write for the save and the send: a line someone keeps, or forwards to a specific person. Asking for a like is never the goal.
+- The send ask belongs on the surface and names a recognisable person. "Share this", "tag a friend" and "send to a friend" are all failures — say who.
+- Assume the reader has never seen this account before. Nothing depends on an earlier post or on knowing the product.
 - No emoji. No hashtags inside slide copy.`,
   ];
   return parts.filter(Boolean).join("\n");
@@ -98,11 +105,15 @@ function userPrompt(
   const delivery = man.noCaption
     ? `This is a Story: it carries no caption. Return slides only.`
     : `POST DELIVERY
-- caption: ≤ ${man.postDelivery.caption?.max ?? 2200} chars. Hook-led and keyword-rich, ends with a soft "→ link in bio". Include the download ask here, not on a slide. Open with the hook before the "more" fold and include one explicit save-or-send trigger ("send this to the person who…"); never ask for a like.
+- caption: ≤ ${man.postDelivery.caption?.max ?? 2200} chars. Hook-led, ending with a soft "→ link in bio". Include the download ask here, not on a slide. The first ~125 characters are all that shows before the "more" fold and they are what interest-matching reads, so open with the hook and the topic's plain-language keywords — the words a stranger would actually search — before anything else. Include one explicit save-or-send trigger that names a person ("send this to the person who…"); never ask for a like.
 - firstComment: ≤ ${man.postDelivery.firstComment?.max ?? 2200} chars. Auto-posted by the scheduler; carries the real link${
         brand.downloadUrl ? ` (${brand.downloadUrl})` : ""
-      } plus a short pitch and an engagement question.
+      } plus a short pitch and one question. Comment depth is what counts, so ask something that takes a sentence of personal experience to answer — never a yes/no or a one-word poll.
 - hashtags: 5–10 niche tags, each starting with "#", weighted to tags under 100K posts. No generic mega-tags.`;
+
+  // The per-frame budgets are ceilings; only the sum tells the model what the
+  // finished reel will actually run to.
+  const duration = style === "reel" ? reelDurationLines(kinds).join("\n") : "";
 
   return [
     `Create one ${man.label} post.`,
@@ -111,6 +122,7 @@ function userPrompt(
     ``,
     rotation,
     ``,
+    ...(duration ? [duration, ``] : []),
     `Fill these slides in order. Return an object whose "slides" key maps the index strings to their slot values. The "→" lines are what this slide's position in the sequence demands — they override generic instincts about where content belongs.`,
     ``,
     slideSpecs,
