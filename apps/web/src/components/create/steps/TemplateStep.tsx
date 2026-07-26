@@ -35,6 +35,7 @@ export function TemplateStep({
     brand: account.name,
     handle: account.handle,
     initials: account.initials,
+    logoUrl: account.logoUrl,
   };
 
   return (

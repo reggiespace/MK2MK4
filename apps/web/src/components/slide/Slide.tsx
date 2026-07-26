@@ -37,8 +37,10 @@ export interface SlideContext {
   accent: string;
   brand: string;
   handle: string;
-  /** Monogram shown in reel/story/photo brand chips. */
+  /** Monogram shown in reel/story/photo brand chips when there is no logo. */
   initials: string;
+  /** Brand logo, drawn in place of the monogram wherever a chip appears. */
+  logoUrl?: string | null;
 }
 
 interface SlideProps {
@@ -226,6 +228,63 @@ function SlideInset({ inset, children }: { inset: Insets; children: ReactNode })
     >
       {children}
     </div>
+  );
+}
+
+/**
+ * The brand mark in reel, story and photo chips.
+ *
+ * Draws the account's logo when one is set, and the initials monogram when it
+ * isn't — so a workspace that never uploads a mark keeps exactly the design's
+ * lettered square, and one that does gets its own logo everywhere the monogram
+ * used to be, with no per-template wiring.
+ *
+ * `contain` rather than `cover`: a logo cropped to fill is a broken logo. The
+ * accent stays as the tile behind it so a transparent PNG still reads as a
+ * mark rather than a hole, and the corner radius matches the monogram it
+ * replaces.
+ */
+function BrandMark({
+  size,
+  radius,
+  accent,
+  ink,
+  fontSize,
+  initials,
+  logoUrl,
+}: {
+  size: number;
+  radius: number;
+  accent: string;
+  ink: string;
+  fontSize: number;
+  initials: string;
+  logoUrl?: string | null;
+}) {
+  const box: CSSProperties = {
+    width: `${size}px`,
+    height: `${size}px`,
+    borderRadius: `${radius}px`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    overflow: "hidden",
+  };
+
+  if (logoUrl) {
+    return (
+      <span
+        style={{
+          ...box,
+          background: `url(${logoUrl}) center/contain no-repeat, ${accent}`,
+        }}
+      />
+    );
+  }
+
+  return (
+    <span style={{ ...box, background: accent, color: ink, ...sf(fontSize, 800) }}>{initials}</span>
   );
 }
 
@@ -675,21 +734,15 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
         padding: "4px 10px 4px 5px",
       }}
     >
-      <span
-        style={{
-          width: "20px",
-          height: "20px",
-          borderRadius: "5px",
-          background: acc,
-          color: accInk,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          ...sf(REEL_TYPE.monogram, 800),
-        }}
-      >
-        {ctx.initials}
-      </span>
+      <BrandMark
+        size={20}
+        radius={5}
+        accent={acc}
+        ink={accInk}
+        fontSize={REEL_TYPE.monogram}
+        initials={ctx.initials}
+        logoUrl={ctx.logoUrl}
+      />
       <span style={sans(REEL_TYPE.brand, 700, { color: "#f4efe0", ...overImage() })}>{brand}</span>
     </div>
   );
@@ -929,21 +982,15 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
           gap: "7px",
         }}
       >
-        <span
-          style={{
-            width: "22px",
-            height: "22px",
-            borderRadius: "6px",
-            background: acc,
-            color: accInk,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            ...sf(STORY_TYPE.monogram, 800),
-          }}
-        >
-          {ctx.initials}
-        </span>
+        <BrandMark
+          size={22}
+          radius={6}
+          accent={acc}
+          ink={accInk}
+          fontSize={STORY_TYPE.monogram}
+          initials={ctx.initials}
+          logoUrl={ctx.logoUrl}
+        />
         <span style={sans(STORY_TYPE.brand, 700, { color: "#fff", ...overImage() })}>{brand}</span>
       </div>
     );
@@ -1298,21 +1345,15 @@ export function Slide({ slide, index, total, ctx }: SlideProps) {
           padding: "4px 11px 4px 5px",
         }}
       >
-        <span
-          style={{
-            width: "16px",
-            height: "16px",
-            borderRadius: "5px",
-            background: acc,
-            color: accInk,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            ...sf(8, 800),
-          }}
-        >
-          {ctx.initials}
-        </span>
+        <BrandMark
+          size={16}
+          radius={5}
+          accent={acc}
+          ink={accInk}
+          fontSize={8}
+          initials={ctx.initials}
+          logoUrl={ctx.logoUrl}
+        />
         <span style={sans(9, 700, { color: "#f4efe0", ...overImage() })}>{brand}</span>
       </div>
     );

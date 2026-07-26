@@ -8,6 +8,8 @@ import { Icon, PLATFORMS } from "@/components/ui/Icon";
 import { getManifest } from "@/lib/templates/manifests";
 import type { PostDoc, TemplateStyleId } from "@/lib/templates/types";
 import { display, kicker, statusPill } from "@/components/create/styles";
+import { ACCOUNT_WITH_LOGO, slideCtx } from "@/lib/slide-context";
+import { StickerPlan } from "@/components/create/StickerPlan";
 
 /** A single piece: every slide as rendered, plus its delivery and schedule. */
 export default async function PiecePage(props: { params: Promise<{ id: string }> }) {
@@ -17,7 +19,7 @@ export default async function PiecePage(props: { params: Promise<{ id: string }>
   const post = await prisma.post.findFirst({
     where: { id, workspaceId: auth.workspaceId },
     include: {
-      account: true,
+      account: ACCOUNT_WITH_LOGO,
       scheduledPosts: { include: { channel: true }, orderBy: { scheduledAt: "asc" } },
       renderJobs: { orderBy: { createdAt: "desc" }, take: 1 },
     },
@@ -27,13 +29,7 @@ export default async function PiecePage(props: { params: Promise<{ id: string }>
   const doc = post.doc as unknown as PostDoc;
   const style = post.style as TemplateStyleId;
   const man = getManifest(style);
-  const ctx = {
-    style,
-    accent: post.account.accent,
-    brand: post.account.name,
-    handle: post.account.handle,
-    initials: post.account.initials,
-  };
+  const ctx = slideCtx(style, post.account);
 
   return (
     <div style={{ maxWidth: "1120px", margin: "0 auto", padding: "32px 40px 64px", display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -65,6 +61,8 @@ export default async function PiecePage(props: { params: Promise<{ id: string }>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+          {/* Stories ship as flat images; the tappable stickers are placed by hand. */}
+          <StickerPlan style={style} doc={doc} />
           {!man.noCaption ? (
             <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "16px", padding: "18px 20px" }}>
               <div style={{ ...kicker, marginBottom: "10px" }}>Caption</div>

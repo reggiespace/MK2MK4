@@ -6,6 +6,7 @@ import { Icon, PLATFORMS } from "@/components/ui/Icon";
 import { loadWorkspaceContext } from "@/lib/workspace";
 import { listIntegrationStatus } from "@/lib/integrations";
 import { getManifest } from "@/lib/templates/manifests";
+import { ACCOUNT_WITH_LOGO, slideCtx } from "@/lib/slide-context";
 import type { PostDoc, TemplateStyleId } from "@/lib/templates/types";
 import { display, kicker, statusPill } from "@/components/create/styles";
 
@@ -18,13 +19,13 @@ export default async function DashboardPage() {
       where: { post: { workspaceId: auth.workspaceId }, status: { in: ["pending", "scheduled"] } },
       orderBy: { scheduledAt: "asc" },
       take: 6,
-      include: { post: { include: { account: true } }, channel: true },
+      include: { post: { include: { account: ACCOUNT_WITH_LOGO } }, channel: true },
     }),
     prisma.post.findMany({
       where: { workspaceId: auth.workspaceId },
       orderBy: { updatedAt: "desc" },
       take: 4,
-      include: { account: true },
+      include: { account: ACCOUNT_WITH_LOGO },
     }),
     listIntegrationStatus(auth.workspaceId),
     prisma.idea.findFirst({
@@ -237,13 +238,7 @@ export default async function DashboardPage() {
                               slide={cover}
                               index={0}
                               total={doc.slides.length}
-                              ctx={{
-                                style,
-                                accent: post.account.accent,
-                                brand: post.account.name,
-                                handle: post.account.handle,
-                                initials: post.account.initials,
-                              }}
+                              ctx={slideCtx(style, post.account)}
                             />
                           </SlideScaled>
                         ) : (

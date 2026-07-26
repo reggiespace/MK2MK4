@@ -79,6 +79,7 @@ export function FillStep({
     brand: account.name,
     handle: account.handle,
     initials: account.initials,
+    logoUrl: account.logoUrl,
   };
 
   // ── idle ──────────────────────────────────────────────────────────────────

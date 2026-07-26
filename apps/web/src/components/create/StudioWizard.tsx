@@ -12,7 +12,8 @@ import { ReviewStep } from "./steps/ReviewStep";
 import { ImagePicker } from "./ImagePicker";
 import { DEFAULT_VOICE_ID } from "@/lib/ai/voices";
 import { getManifest } from "@/lib/templates/manifests";
-import { asText, type PostDoc, type TemplateStyleId } from "@/lib/templates/types";
+import type { PostDoc, TemplateStyleId } from "@/lib/templates/types";
+import { suggestImagePrompt } from "@/lib/templates/image-prompt";
 import {
   generateDraftAction,
   saveDraftAction,
@@ -463,9 +464,12 @@ export function StudioWizard({
         <ImagePicker
           accountId={accountId}
           style={style}
-          initialPrompt={
-            doc ? asText(doc.slides[activeSlide]?.f.imagePrompt) : ""
-          }
+          initialPrompt={suggestImagePrompt({
+            style,
+            slide: doc?.slides[activeSlide],
+            topic,
+            brand: account?.name,
+          })}
           onPick={applyPickedAsset}
           onClose={() => setPickerSlot(null)}
           onToast={showToast}

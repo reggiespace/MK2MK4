@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Icon, PLATFORMS } from "@/components/ui/Icon";
 import { Slide } from "@/components/slide/Slide";
 import { SlideFit } from "@/components/slide/SlideFrame";
+import { StickerPlan } from "@/components/create/StickerPlan";
 import { checkDraftAction, type ReviewCheck } from "@/app/actions/create";
 import { getManifest } from "@/lib/templates/manifests";
 import type { PostDoc, TemplateStyleId } from "@/lib/templates/types";
@@ -69,6 +70,7 @@ export function ReviewStep({
     brand: account.name,
     handle: account.handle,
     initials: account.initials,
+    logoUrl: account.logoUrl,
   };
 
   if (scheduled) {
@@ -245,6 +247,7 @@ export function ReviewStep({
 
         {/* Publish panel */}
         <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+          <StickerPlan style={style} doc={doc} />
           <div
             style={{
               display: "inline-flex",

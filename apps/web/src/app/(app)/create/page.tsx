@@ -25,6 +25,7 @@ export default async function CreatePage() {
         initials: a.initials,
         mark: a.mark,
         accent: a.accent,
+        logoUrl: a.logoAsset?.url ?? null,
         channels: a.channels.map((c) => ({
           id: c.id,
           platform: c.platform,

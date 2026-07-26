@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { Slide } from "@/components/slide/Slide";
 import { getManifest } from "@/lib/templates/manifests";
 import { verifyRenderToken } from "@/lib/render";
+import { ACCOUNT_WITH_LOGO, slideCtx } from "@/lib/slide-context";
 import type { PostDoc, TemplateStyleId } from "@/lib/templates/types";
 
 /**
@@ -27,7 +28,7 @@ export default async function RenderSlidePage(props: {
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    include: { account: true },
+    include: { account: ACCOUNT_WITH_LOGO },
   });
   if (!post) notFound();
 
@@ -67,13 +68,7 @@ export default async function RenderSlidePage(props: {
           slide={slide}
           index={index}
           total={doc.slides.length}
-          ctx={{
-            style,
-            accent: post.account.accent,
-            brand: post.account.name,
-            handle: post.account.handle,
-            initials: post.account.initials,
-          }}
+          ctx={slideCtx(style, post.account)}
         />
       </div>
     </div>

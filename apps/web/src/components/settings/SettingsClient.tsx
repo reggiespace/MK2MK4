@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Icon, PLATFORMS } from "@/components/ui/Icon";
 import {
@@ -13,6 +13,7 @@ import {
   updateVoiceAction,
   upsertChannelAction,
 } from "@/app/actions/settings";
+import { listLogoAssetsAction, setBrandLogoAction } from "@/app/actions/assets";
 import { display, kicker, textArea, textInput } from "@/components/create/styles";
 
 /**
@@ -35,6 +36,10 @@ export interface SettingsAccount {
   initials: string;
   mark: string;
   handle: string;
+  accent: string;
+  /** Currently selected logo asset, or null when the monogram is in use. */
+  logoAssetId: string | null;
+  logoUrl: string | null;
   voiceDescription: string;
   tones: string[];
   readingLevel: string;
@@ -48,6 +53,7 @@ const SECTIONS = [
   { id: "integrations", label: "Integrations", icon: "plug" },
   { id: "channels", label: "Channels", icon: "ig" },
   { id: "voice", label: "Brand voice", icon: "sparkles" },
+  { id: "mark", label: "Brand mark", icon: "image" },
   { id: "pillars", label: "Content pillars", icon: "layers" },
 ] as const;
 
@@ -215,6 +221,10 @@ export function SettingsClient({
         <ChannelsSection account={account} pending={pending} run={run} />
       ) : null}
       {section === "voice" && account ? <VoiceSection account={account} pending={pending} run={run} /> : null}
+      {section === "mark" && account ? (
+        // Keyed so switching brands remounts and re-seeds the selection.
+        <BrandMarkSection key={account.id} account={account} pending={pending} run={run} />
+      ) : null}
       {section === "pillars" && account ? <PillarsSection account={account} pending={pending} run={run} /> : null}
     </div>
   );
@@ -859,6 +869,167 @@ function VoiceSection({ account, pending, run }: { account: SettingsAccount; pen
         }}
       >
         {pending ? "Saving…" : "Save brand voice"}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Brand mark picker.
+ *
+ * The renderer draws this wherever the initials monogram used to sit — the reel
+ * and story chips and the photo chip — so choosing one here changes every future
+ * export without touching a template. Candidates come from the Assets library
+ * filed under Logo; uploading happens on the Assets page rather than here, so
+ * there is one ingest path instead of two.
+ */
+function BrandMarkSection({ account, pending, run }: { account: SettingsAccount; pending: boolean; run: Runner }) {
+  const [options, setOptions] = useState<{ id: string; name: string; url: string }[] | null>(null);
+  const [selected, setSelected] = useState<string | null>(account.logoAssetId);
+  const [loading, startLoad] = useTransition();
+
+  // Load once per account rather than on every settings visit — the list is only
+  // needed when this tab is open, and it changes only when someone uploads. The
+  // caller keys this component on the account id, so switching brands remounts
+  // and re-seeds `selected` instead of needing a reset here.
+  useEffect(() => {
+    startLoad(async () => {
+      const res = await listLogoAssetsAction(account.id);
+      setOptions(res.ok ? res.data : []);
+    });
+  }, [account.id]);
+
+  const preview = options?.find((o) => o.id === selected)?.url ?? (selected ? account.logoUrl : null);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "22px", maxWidth: "720px" }}>
+      <div>
+        <h2 style={display(20, 700, { margin: "0 0 4px" })}>Brand mark · {account.name}</h2>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: "14px" }}>
+          Drawn in the corner chip on Reels, Stories and photo posts. With no mark set, slides fall back to the{" "}
+          <strong>{account.initials}</strong> monogram.
+        </p>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <span
+          style={{
+            width: "72px",
+            height: "72px",
+            borderRadius: "18px",
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: preview
+              ? `url(${preview}) center/contain no-repeat, ${account.accent}`
+              : account.accent,
+            color: "#f4efe0",
+            fontFamily: "var(--font-display)",
+            fontWeight: 800,
+            fontSize: "26px",
+          }}
+        >
+          {preview ? "" : account.initials}
+        </span>
+        <div style={{ fontSize: "13.5px", color: "var(--muted)", lineHeight: 1.6 }}>
+          {preview
+            ? "This mark is drawn on every slide the chip appears on."
+            : "No mark set — slides use the monogram."}
+          <br />
+          The logo is fit inside the chip, never cropped, over the brand accent.
+        </div>
+      </div>
+
+      <div>
+        <div style={{ ...kicker, marginBottom: "10px" }}>Choose from the library</div>
+        {loading && options === null ? (
+          <div style={{ fontSize: "13px", color: "var(--muted)" }}>Loading…</div>
+        ) : options && options.length ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(104px,1fr))", gap: "10px" }}>
+            {options.map((o) => {
+              const on = o.id === selected;
+              return (
+                <button
+                  key={o.id}
+                  onClick={() => setSelected(on ? null : o.id)}
+                  title={o.name}
+                  style={{
+                    border: `2px solid ${on ? "var(--accent)" : "var(--border)"}`,
+                    borderRadius: "14px",
+                    background: "var(--surface)",
+                    padding: "8px",
+                    cursor: "pointer",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "7px",
+                  }}
+                >
+                  <span
+                    style={{
+                      aspectRatio: "1/1",
+                      borderRadius: "9px",
+                      background: `url(${o.url}) center/contain no-repeat, var(--surface-2)`,
+                      border: "1px solid var(--border)",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: "11.5px",
+                      fontWeight: 600,
+                      color: "var(--ink)",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {o.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div
+            style={{
+              border: "1px dashed var(--border-2)",
+              borderRadius: "14px",
+              padding: "22px",
+              fontSize: "13.5px",
+              color: "var(--muted)",
+            }}
+          >
+            No logos in the library yet. Upload one on the{" "}
+            <a href="/assets" style={{ color: "var(--slate)", fontWeight: 600 }}>
+              Assets
+            </a>{" "}
+            page — file it as <strong>Logo</strong> and it will appear here.
+          </div>
+        )}
+      </div>
+
+      <button
+        className="hover-lift"
+        disabled={pending || selected === account.logoAssetId}
+        onClick={() =>
+          run(
+            () => setBrandLogoAction(account.id, selected),
+            selected ? "Brand mark saved" : "Brand mark cleared — back to the monogram",
+          )
+        }
+        style={{
+          alignSelf: "flex-start",
+          background: selected === account.logoAssetId ? "var(--border)" : "var(--accent)",
+          color: selected === account.logoAssetId ? "var(--muted)" : "#f4efe0",
+          border: "none",
+          borderRadius: "11px",
+          padding: "12px 22px",
+          fontSize: "14px",
+          fontWeight: 700,
+          cursor: selected === account.logoAssetId ? "default" : "pointer",
+        }}
+      >
+        {pending ? "Saving…" : "Save brand mark"}
       </button>
     </div>
   );

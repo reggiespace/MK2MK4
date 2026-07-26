@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/db";
-import { requireAuth } from "@/lib/session";
+import { requireAuth, getSession } from "@/lib/session";
 import { display, kicker } from "@/components/create/styles";
+import { UploadButton } from "@/components/assets/UploadButton";
 
 /** The asset library — uploads plus everything fal.ai and the renderer produced. */
 export default async function AssetsPage(props: { searchParams: Promise<{ kind?: string }> }) {
   const { kind = "all" } = await props.searchParams;
   const auth = await requireAuth();
+  const session = await getSession();
 
   const assets = await prisma.asset.findMany({
     where: {
@@ -21,12 +23,16 @@ export default async function AssetsPage(props: { searchParams: Promise<{ kind?:
 
   return (
     <div style={{ maxWidth: "1120px", margin: "0 auto", padding: "32px 40px 64px", display: "flex", flexDirection: "column", gap: "22px" }}>
-      <div>
-        <div style={{ ...kicker, marginBottom: "6px" }}>Library</div>
-        <h1 style={display(32, 700, { margin: 0, lineHeight: 1.1 })}>Assets</h1>
-        <p style={{ margin: "8px 0 0", color: "var(--muted)", fontSize: "14px" }}>
-          Every image you generate is saved here automatically and can be reused in any template slot.
-        </p>
+      <div style={{ display: "flex", gap: "20px", alignItems: "flex-end", flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 340px" }}>
+          <div style={{ ...kicker, marginBottom: "6px" }}>Library</div>
+          <h1 style={display(32, 700, { margin: 0, lineHeight: 1.1 })}>Assets</h1>
+          <p style={{ margin: "8px 0 0", color: "var(--muted)", fontSize: "14px" }}>
+            Every image you generate is saved here automatically and can be reused in any template slot. Upload
+            your own logo and screenshots — anything filed under Logo can be set as a brand mark in Settings.
+          </p>
+        </div>
+        <UploadButton accountId={session.accountId ?? null} />
       </div>
 
       <div style={{ display: "flex", gap: "7px", flexWrap: "wrap" }}>

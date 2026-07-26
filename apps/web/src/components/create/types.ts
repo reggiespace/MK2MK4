@@ -16,6 +16,8 @@ export interface WizardAccount {
   initials: string;
   mark: string;
   accent: string;
+  /** Brand logo drawn in place of the monogram, when one is set in Settings. */
+  logoUrl: string | null;
   channels: WizardChannel[];
   pillars: { id: string; name: string }[];
 }

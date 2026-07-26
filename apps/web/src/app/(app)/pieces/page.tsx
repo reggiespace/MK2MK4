@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { getManifest } from "@/lib/templates/manifests";
 import type { PostDoc, TemplateStyleId } from "@/lib/templates/types";
 import { display, statusPill } from "@/components/create/styles";
+import { ACCOUNT_WITH_LOGO, slideCtx } from "@/lib/slide-context";
 
 /**
  * The content library. Thumbnails are drawn by the shared renderer, so a piece
@@ -29,7 +30,7 @@ export default async function PiecesPage(props: {
     },
     orderBy: { updatedAt: "desc" },
     take: 60,
-    include: { account: true, scheduledPosts: { include: { channel: true } } },
+    include: { account: ACCOUNT_WITH_LOGO, scheduledPosts: { include: { channel: true } } },
   });
 
   const counts = await prisma.post.groupBy({
@@ -192,13 +193,7 @@ export default async function PiecesPage(props: {
                         slide={cover}
                         index={0}
                         total={doc.slides.length}
-                        ctx={{
-                          style,
-                          accent: post.account.accent,
-                          brand: post.account.name,
-                          handle: post.account.handle,
-                          initials: post.account.initials,
-                        }}
+                        ctx={slideCtx(style, post.account)}
                       />
                     </SlideScaled>
                   ) : (
