@@ -95,8 +95,12 @@ docker compose -f infra/docker-compose.yml exec web \
 ## Local development (without Docker)
 
 ```bash
-# Backing services only
-docker compose -f infra/docker-compose.yml up -d postgres redis
+# Backing services only. `docker-compose.override.yml` is what publishes
+# 5432/6379 to the host — Compose only auto-loads it when invoked with no -f
+# flag, so both files must be named explicitly here or the ports never reach
+# the host and `prisma migrate deploy` fails with "Can't reach database
+# server at localhost:5432".
+docker compose -f infra/docker-compose.yml -f infra/docker-compose.override.yml up -d postgres redis
 
 # Web app
 cp .env.example apps/web/.env   # adjust DATABASE_URL / REDIS_URL to localhost

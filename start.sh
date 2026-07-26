@@ -5,6 +5,10 @@ set -e
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$REPO_ROOT/.env"
+# The override file is what publishes postgres/redis to the host (5432/6379).
+# Compose only auto-loads it when invoked with no -f flag at all, so every
+# invocation below names it explicitly.
+COMPOSE_FILES=(-f "$REPO_ROOT/infra/docker-compose.yml" -f "$REPO_ROOT/infra/docker-compose.override.yml")
 
 echo "🚀 Starting ReggieSpace Social Studio..."
 echo "📁 Working directory: $REPO_ROOT"
@@ -26,12 +30,12 @@ set +a
 # all variables are actually loaded into the containers. These warnings are harmless.
 docker compose \
   --env-file "$ENV_FILE" \
-  -f "$REPO_ROOT/infra/docker-compose.yml" \
+  "${COMPOSE_FILES[@]}" \
   up -d
 
 # Wait for services to be healthy
 echo "⏳ Waiting for services to be ready..."
-until docker compose -f "$REPO_ROOT/infra/docker-compose.yml" ps | grep -q "web.*Up"; do
+until docker compose "${COMPOSE_FILES[@]}" ps | grep -q "web.*Up"; do
     sleep 2
 done
 
