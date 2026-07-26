@@ -1,35 +1,46 @@
 import "server-only";
-import { env } from "@/lib/env";
-import type { Publisher, ScheduleOptions, PublishResult } from "./types";
+import type {
+  Publisher,
+  PublisherCredentials,
+  ScheduleOptions,
+  PublishResult,
+} from "./types";
 import { composePostText } from "./compose";
 
-const BUFFER_API = "https://api.bufferapp.com/1";
 const BUFFER_GRAPHQL = "https://graph.buffer.com/graphql";
 
-async function gql(query: string, variables: Record<string, unknown>) {
-  const key = env.bufferApiKey();
-  if (!key) throw new Error("BUFFER_API_KEY not set");
-  const res = await fetch(BUFFER_GRAPHQL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({ query, variables }),
-  });
-  if (!res.ok) throw new Error(`Buffer API ${res.status}: ${await res.text()}`);
-  const json = await res.json();
-  if (json.errors?.length) throw new Error(json.errors[0].message);
-  return json.data;
-}
-
+/** Credentials are injected per workspace; this class never reads env. */
 export class BufferPublisher implements Publisher {
   name = "buffer";
+
+  private readonly apiKey: string;
+  private readonly orgId?: string;
+
+  constructor(credentials: PublisherCredentials) {
+    if (!credentials.apiKey) throw new Error("Buffer API key missing");
+    this.apiKey = credentials.apiKey;
+    this.orgId = credentials.orgId;
+  }
+
+  private async gql(query: string, variables: Record<string, unknown>) {
+    const res = await fetch(BUFFER_GRAPHQL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+    if (!res.ok) throw new Error(`Buffer API ${res.status}: ${await res.text()}`);
+    const json = await res.json();
+    if (json.errors?.length) throw new Error(json.errors[0].message);
+    return json.data;
+  }
 
   async getBestTime(channelId: string, _network: string): Promise<Date> {
     // Use next available slot in Buffer's posting schedule.
     try {
-      const data = await gql(
+      const data = await this.gql(
         `query Channel($id: ID!) {
           channel(id: $id) {
             schedulingTimes { scheduledAt }
@@ -62,7 +73,7 @@ export class BufferPublisher implements Publisher {
   }
 
   private async createPost(input: Record<string, unknown>) {
-    const data = await gql(
+    const data = await this.gql(
       `mutation CreatePost($input: CreatePostInput!) {
         createPost(input: $input) {
           __typename

@@ -9,7 +9,8 @@ if [ -n "$DATABASE_URL" ]; then
   node /run-migrations.js 2>&1 || echo "[entrypoint] Migration warning (may already be applied)"
 fi
 
-# Initialize operator account if env vars are set (idempotent via upsert).
-node init-operator.js 2>/dev/null || true
+# Bootstrap the workspace, sign-in user and brand accounts (idempotent).
+node /init-workspace.js || echo "[entrypoint] Workspace bootstrap warning"
+
 
 exec node apps/web/server.js

@@ -1,15 +1,21 @@
 import "server-only";
-import { env } from "@/lib/env";
-import type { Publisher, ScheduleOptions, PublishResult } from "./types";
+import type {
+  Publisher,
+  PublisherCredentials,
+  ScheduleOptions,
+  PublishResult,
+} from "./types";
 import { composePostText } from "./compose";
 
 /**
- * Postiz publisher (self-hosted at postiz.reggiespace.ca).
+ * Postiz publisher — bring-your-own instance.
  *
- * Public API: `${POSTIZ_BASE_URL}/public/v1`, authenticated with the raw API
- * key in the `Authorization` header (no `Bearer` prefix). Media must be pushed
- * into Postiz first (upload-from-url) and then referenced by id when creating
- * the post. Postiz calls a channel an "integration".
+ * Public API: `${baseUrl}/public/v1`, authenticated with the raw API key in the
+ * `Authorization` header (no `Bearer` prefix). Media must be pushed into Postiz
+ * first (upload-from-url) and then referenced by id when creating the post.
+ * Postiz calls a channel an "integration".
+ *
+ * Credentials are injected per workspace; this class never reads env.
  */
 
 interface PostizUpload {
@@ -17,26 +23,40 @@ interface PostizUpload {
   path?: string;
 }
 
-async function postizFetch(path: string, options: RequestInit = {}) {
-  const key = env.postizApiKey();
-  if (!key) throw new Error("POSTIZ_API_KEY not set");
-  const base = env.postizBaseUrl();
-  const res = await fetch(`${base}/public/v1${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: key,
-      ...(options.headers ?? {}),
-    },
-  });
-  if (!res.ok) throw new Error(`Postiz API ${res.status}: ${await res.text()}`);
-  // Some endpoints (e.g. delete) return no body.
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
-}
+const DEFAULT_BASE_URL = "https://postiz.reggiespace.ca/api";
 
 export class PostizPublisher implements Publisher {
   name = "postiz";
+
+  private readonly apiKey: string;
+  private readonly baseUrl: string;
+
+  constructor(credentials: PublisherCredentials) {
+    if (!credentials.apiKey) throw new Error("Postiz API key missing");
+    this.apiKey = credentials.apiKey;
+    this.baseUrl = (credentials.baseUrl || DEFAULT_BASE_URL).replace(/\/+$/, "");
+  }
+
+  private async request(path: string, options: RequestInit = {}) {
+    const res = await fetch(`${this.baseUrl}/public/v1${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: this.apiKey,
+        ...(options.headers ?? {}),
+      },
+    });
+    if (!res.ok) throw new Error(`Postiz API ${res.status}: ${await res.text()}`);
+    // Some endpoints (e.g. delete) return no body.
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  }
+
+  /** Verify the key works — backs the Settings "Test connection" button. */
+  async listIntegrations(): Promise<Array<{ id: string; name: string; identifier: string }>> {
+    const data = await this.request("/integrations");
+    return Array.isArray(data) ? data : [];
+  }
 
   async getBestTime(_channelId: string, _network: string): Promise<Date> {
     // Postiz has no best-time endpoint; the cadence layer decides slots.
@@ -51,7 +71,7 @@ export class PostizPublisher implements Publisher {
   private async uploadMedia(mediaUrls: string[]): Promise<PostizUpload[]> {
     const uploads: PostizUpload[] = [];
     for (const url of mediaUrls) {
-      const data = await postizFetch("/upload-from-url", {
+      const data = await this.request("/upload-from-url", {
         method: "POST",
         body: JSON.stringify({ url }),
       });
@@ -101,7 +121,7 @@ export class PostizPublisher implements Publisher {
     opts: ScheduleOptions | Omit<ScheduleOptions, "scheduledAt">,
     uploads: PostizUpload[],
   ): Promise<PublishResult> {
-    const data = await postizFetch("/posts", {
+    const data = await this.request("/posts", {
       method: "POST",
       body: JSON.stringify({
         type,

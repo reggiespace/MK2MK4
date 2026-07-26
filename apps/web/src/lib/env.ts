@@ -52,6 +52,17 @@ export const env = {
   storageDir: () => process.env.STORAGE_DIR ?? "./storage",
   publicMediaBaseUrl: () =>
     process.env.PUBLIC_MEDIA_BASE_URL ?? "http://localhost:3000/media",
+
+  storageBackend: () => (process.env.STORAGE_BACKEND === "s3" ? "s3" : "local"),
+  mediaS3Bucket: () => optional("MEDIA_S3_BUCKET"),
+  mediaS3Region: () => process.env.MEDIA_S3_REGION ?? "garage",
+  mediaS3Endpoint: () => optional("MEDIA_S3_ENDPOINT"),
+  mediaPublicBaseUrl: () => optional("MEDIA_PUBLIC_BASE_URL"),
+
+  /** Model used for fal.ai image generation. */
+  falImageModel: () => process.env.FAL_IMAGE_MODEL ?? "fal-ai/flux/dev",
+  /** Base URL the worker screenshots slides from. */
+  webBaseUrl: () => process.env.WEB_BASE_URL ?? "http://localhost:3000",
 };
 
 /** Snapshot of which integrations are configured (for the Settings screen). */

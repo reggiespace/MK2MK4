@@ -1,5 +1,9 @@
-// Gastric IQ Social Content Studio — data model (Phase 1)
-// Prisma 7: new `prisma-client` generator (explicit output) + driver adapter at runtime.
+// ReggieSpace Social Studio — data model.
+//
+// Workspace-scoped from the start: every tenant-owned row hangs off a Workspace
+// so multi-tenant auth and billing drop in later without another migration.
+// Content follows the template manifests — a post stores its slide sequence as
+// kind + slot values, not fixed columns, because the manifests own that shape.
 
 generator client {
   provider = "prisma-client"
@@ -11,232 +15,297 @@ datasource db {
 }
 
 // ---------------------------------------------------------------------------
-// Auth — single operator (no public signup)
+// Tenancy & auth
 // ---------------------------------------------------------------------------
-model Operator {
-  id           String   @id @default(cuid())
-  email        String   @unique
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Reserved for the billing phase — unused until Stripe is wired.
+  plan               String  @default("free")
+  stripeCustomerId   String?
+  freePostsRemaining Int     @default(5)
+
+  users        User[]
+  accounts     BrandAccount[]
+  integrations Integration[]
+  assets       Asset[]
+  posts        Post[]
+}
+
+model User {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  email        String    @unique
   passwordHash String
-  createdAt    DateTime @default(now())
+  name         String?
+  createdAt    DateTime  @default(now())
+
+  @@index([workspaceId])
 }
 
 // ---------------------------------------------------------------------------
-// Brands & brand kits — the routing key for language, kit, voice, publisher
+// Integrations — per-workspace credentials (bring-your-own publishing keys).
+// AI providers fall back to platform env keys when a workspace has none.
 // ---------------------------------------------------------------------------
+
+enum Provider {
+  postiz
+  buffer
+  zernio
+  fal
+  elevenlabs
+  openai
+}
+
+model Integration {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  provider    Provider
+
+  /// Encrypted at rest by lib/crypto — never stored or logged in plaintext.
+  apiKey     String
+  baseUrl    String?
+  connected  Boolean   @default(true)
+  lastSyncAt DateTime?
+  meta       Json?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([workspaceId, provider])
+}
+
+// ---------------------------------------------------------------------------
+// Brand accounts — the identity a post is created for
+// ---------------------------------------------------------------------------
+
 enum Locale {
   en
   pt_BR
 }
 
-enum VoiceGender {
-  male
-  female
+enum ReadingLevel {
+  grade5
+  grade7
+  grade9
 }
 
-enum Publisher {
-  buffer
-  zernio
-  postiz
-}
+model BrandAccount {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-model Brand {
-  id        String    @id @default(cuid())
-  key       String    @unique // gastric-us | gastric-br
-  name      String
-  locale    Locale
-  publisher Publisher
-  channels  Json // [{ network: "facebook"|"instagram", channelId: string, label?: string }]
-  createdAt DateTime  @default(now())
+  key      String
+  name     String
+  locale   Locale
+  handle   String
+  initials String
 
-  brandKit BrandKit?
+  /// CSS gradient for the monogram mark in the sidebar and account cards.
+  mark String @default("linear-gradient(135deg,#3b5a78,#5c7556)")
+  /// Brand accent fed to every template; the accent guardrail keeps it legible.
+  accent   String @default("#5c7556")
+  timezone String @default("America/Toronto")
+
+  // Brand voice — drives every AI generation for this account.
+  voiceDescription String       @default("") @db.Text
+  tones            String[]     @default([])
+  readingLevel     ReadingLevel @default(grade7)
+  claimsGuardrail  Boolean      @default(true)
+
+  /// Where the post-level download CTA points (caption + first comment).
+  downloadUrl String?
+
+  logoAssetId String?
+  logoAsset   Asset?  @relation("BrandLogo", fields: [logoAssetId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  channels Channel[]
   pillars  Pillar[]
   ideas    Idea[]
-  pieces   ContentPiece[]
-  runs     ContentRun[]
-  cadences Cadence[]
+  assets   Asset[]   @relation("AccountAssets")
+  posts    Post[]
+
+  @@unique([workspaceId, key])
+  @@index([workspaceId])
 }
 
-model BrandKit {
-  id           String       @id @default(cuid())
-  brandId      String       @unique
-  brand        Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  logoPath     String // path under assets/brands
-  // Vessel palette tokens (hex)
-  tokens       Json // { moss, slate, brass, cream, ink, darkBg, darkFg, ... }
-  fonts        Json // { display: "Spectral", body: "Albert Sans", mono: "IBM Plex Mono" }
-  defaultSkin  Skin         @default(mark_forward)
-  defaultTemplate Template  @default(bold_highlight)
-  artDirection ArtDirection @default(warm_lifestyle)
-  toneGuide    String       @db.Text
-  voiceId      String // ElevenLabs voice id for this locale
+enum Platform {
+  instagram
+  facebook
+  tiktok
+  youtube
+  linkedin
+  x
 }
 
-// ---------------------------------------------------------------------------
-// Pillars & ideas
-// ---------------------------------------------------------------------------
+model Channel {
+  id        String       @id @default(cuid())
+  accountId String
+  account   BrandAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  platform  Platform
+  handle    String
+
+  /// Publisher-side channel id (Postiz calls this an "integration" id).
+  externalId String?
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  scheduledPosts ScheduledPost[]
+
+  @@unique([accountId, platform])
+  @@index([accountId])
+}
+
 model Pillar {
-  id          String @id @default(cuid())
-  brandId     String
-  brand       Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  name        String
-  description String @db.Text
+  id        String       @id @default(cuid())
+  accountId String
+  account   BrandAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  name      String
+  position  Int          @default(0)
 
   ideas Idea[]
+  posts Post[]
 
-  @@unique([brandId, name])
-}
-
-enum Format {
-  single
-  carousel
-  reel
-  story
-}
-
-enum IdeaStatus {
-  suggested
-  selected
-  used
-  dismissed
+  @@unique([accountId, name])
 }
 
 model Idea {
-  id                String     @id @default(cuid())
-  brandId           String
-  brand             Brand      @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  pillarId          String?
-  pillar            Pillar?    @relation(fields: [pillarId], references: [id], onDelete: SetNull)
-  title             String
-  angle             String     @db.Text
-  recommendedFormat Format
-  insightsContext   String?    @db.Text // Phase 2 hook: research/analytics summary
-  storyBrief        Json? // writer-step narrative: { story, keyMessage, beats[], ctaIntent }
-  status            IdeaStatus @default(suggested)
-  createdAt         DateTime   @default(now())
+  id        String       @id @default(cuid())
+  accountId String
+  account   BrandAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  pillarId  String?
+  pillar    Pillar?      @relation(fields: [pillarId], references: [id], onDelete: SetNull)
+  title     String
+  angle     String       @db.Text
 
-  pieces ContentPiece[]
+  /// Suggested style id — carousel | reel | story | single | photo
+  format    String?
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([accountId, createdAt])
 }
 
 // ---------------------------------------------------------------------------
-// Content pieces, slides, media
+// Assets library
 // ---------------------------------------------------------------------------
-enum Skin {
-  light
-  dark
-  mark_forward
+
+enum AssetKind {
+  photo
+  screen
+  logo
+  video
+  audio
 }
 
-enum Template {
-  classic
-  editorial_bold
-  bold_highlight
-  minimal_card
-  photo_overlay
+model Asset {
+  id          String        @id @default(cuid())
+  workspaceId String
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  accountId   String?
+  account     BrandAccount? @relation("AccountAssets", fields: [accountId], references: [id], onDelete: SetNull)
+
+  name       String
+  kind       AssetKind
+  url        String
+  storageKey String?
+  mimeType   String?
+  width      Int?
+  height     Int?
+  bytes      Int?
+
+  /// True when produced by fal.ai / ElevenLabs rather than uploaded.
+  ai        Boolean  @default(false)
+  prompt    String?  @db.Text
+  costCents Int      @default(0)
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  brandLogoFor BrandAccount[] @relation("BrandLogo")
+  voiceForPost Post[]         @relation("PostVoice")
+
+  @@index([workspaceId, createdAt])
+  @@index([accountId, kind])
 }
 
-enum ArtDirection {
-  warm_lifestyle
-  editorial_illustration
-  cinematic
-}
+// ---------------------------------------------------------------------------
+// Posts — the draft the Create wizard assembles
+// ---------------------------------------------------------------------------
 
-enum PieceStatus {
+enum PostStatus {
   draft
   rendering
   review
-  blocked
   scheduled
   published
   failed
 }
 
-model ContentPiece {
-  id              String       @id @default(cuid())
-  brandId         String
-  brand           Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  ideaId          String?
-  idea            Idea?        @relation(fields: [ideaId], references: [id], onDelete: SetNull)
-  format          Format
-  template        Template? // per-piece override of the brand's defaultTemplate
-  caption         String       @db.Text
-  firstComment    String?      @db.Text // links + engagement question, link-free caption
-  claims          Json? // last claims-check result snapshot for the review panel
-  runId           String?
-  run             ContentRun?  @relation(fields: [runId], references: [id], onDelete: SetNull)
-  hashtags        String[]     @default([])
-  status          PieceStatus  @default(draft)
-  costCents       Int          @default(0)
-  formatRationale String?      @db.Text
-  voiceover       String?      @db.Text // reel narration script
-  voiceGender     VoiceGender? // reel voiceover gender; null → female default
-  motion          Boolean      @default(false) // reel AI motion (image-to-video) opt-in
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+enum Narration {
+  verbatim
+  condensed
+}
 
-  slides         Slide[]
-  mediaAssets    MediaAsset[]
-  scheduledPosts ScheduledPost[]
+model Post {
+  id          String       @id @default(cuid())
+  workspaceId String
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  accountId   String
+  account     BrandAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  /// Template style id: carousel | reel | story | single | photo
+  style String
+  /// Cover archetype kind id, e.g. "1a-knockout"
+  archetype String
+
+  topic    String? @db.Text
+  pillarId String?
+  pillar   Pillar? @relation(fields: [pillarId], references: [id], onDelete: SetNull)
+
+  /// The full PostDoc: { slides:[{kind,f}], caption, first, hashtags, linkSticker, mention }.
+  /// The manifests own this shape — see lib/templates/types.ts.
+  doc Json
+
+  // Denormalised from `doc` for listing, search and publishing.
+  caption      String   @default("") @db.Text
+  firstComment String   @default("") @db.Text
+  hashtags     String[] @default([])
+
+  status    PostStatus @default(draft)
+  costCents Int        @default(0)
+
+  // Voice (Reels/Stories)
+  voiceId      String?
+  narration    Narration @default(verbatim)
+  voiceAssetId String?
+  voiceAsset   Asset?    @relation("PostVoice", fields: [voiceAssetId], references: [id], onDelete: SetNull)
+
+  /// Rendered slide/frame URLs in slide order, produced by the render service.
+  mediaUrls String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   renderJobs     RenderJob[]
+  scheduledPosts ScheduledPost[]
+
+  @@index([workspaceId, updatedAt])
+  @@index([accountId, status])
 }
 
-enum SlideRole {
-  cover
-  body
-  cta
-}
-
-model Slide {
-  id           String       @id @default(cuid())
-  pieceId      String
-  piece        ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
-  index        Int
-  role         SlideRole
-  skin         Skin
-  eyebrow      String?
-  headline     String?
-  body         String?      @db.Text
-  imagePrompt  String?      @db.Text // literal scene description for fal.ai
-  mediaAssetId String?
-  mediaAsset   MediaAsset?  @relation("SlideAsset", fields: [mediaAssetId], references: [id], onDelete: SetNull)
-
-  @@unique([pieceId, index])
-}
-
-enum AssetType {
-  image
-  video
-  audio
-}
-
-enum Engine {
-  template
-  fal
-  elevenlabs
-}
-
-model MediaAsset {
-  id        String       @id @default(cuid())
-  pieceId   String
-  piece     ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
-  type      AssetType
-  url       String
-  engine    Engine
-  prompt    String?      @db.Text
-  costCents Int          @default(0)
-  meta      Json? // { width, height, durationMs, ... }
-  createdAt DateTime     @default(now())
-
-  slides Slide[] @relation("SlideAsset")
-}
-
-// ---------------------------------------------------------------------------
-// Rendering jobs (worker) & scheduling/publishing
-// ---------------------------------------------------------------------------
 enum JobKind {
-  image
-  carousel
+  slides
   reel
-  story
+  voice
 }
 
 enum JobStatus {
@@ -247,19 +316,24 @@ enum JobStatus {
 }
 
 model RenderJob {
-  id          String       @id @default(cuid())
-  pieceId     String
-  piece       ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  postId      String
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   kind        JobKind
-  status      JobStatus    @default(queued)
-  progress    Int          @default(0)
+  status      JobStatus @default(queued)
+  progress    Int       @default(0)
   workerJobId String?
-  error       String?      @db.Text
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  error       String?   @db.Text
+
+  /// Worker result payload — rendered urls, durations, sizes.
+  outputs   Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId, createdAt])
 }
 
-enum PostStatus {
+enum ScheduleStatus {
   pending
   scheduled
   published
@@ -267,50 +341,24 @@ enum PostStatus {
 }
 
 model ScheduledPost {
-  id             String       @id @default(cuid())
-  pieceId        String
-  piece          ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
-  channel        String // channelId from Brand.channels
-  network        String // facebook | instagram
+  id        String  @id @default(cuid())
+  postId    String
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  channelId String
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
   scheduledAt    DateTime
-  provider       Publisher
+  provider       Provider
   providerPostId String?
-  status         PostStatus   @default(pending)
-  idempotencyKey String       @unique
-  error          String?      @db.Text
-  createdAt      DateTime     @default(now())
-}
+  status         ScheduleStatus @default(pending)
 
-enum RunStatus {
-  running
-  complete
-  failed
-}
+  /// Guards against double-publishing on retry.
+  idempotencyKey String  @unique
+  error          String? @db.Text
 
-model ContentRun {
-  id        String    @id @default(cuid())
-  brandId   String
-  brand     Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  runDate   DateTime  @db.Date
-  pillar    String
-  format    Format
-  status    RunStatus @default(running)
-  error     String?   @db.Text
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  pieces ContentPiece[]
-
-  @@unique([brandId, runDate, pillar])
-}
-
-model Cadence {
-  id       String   @id @default(cuid())
-  brandId  String
-  brand    Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  weekday  Int // 0=Sunday .. 6=Saturday
-  pillar   String
-  format   Format
-  networks String[] // ['instagram','facebook'] | ['instagram']
-
-  @@unique([brandId, weekday])
+  @@index([scheduledAt, status])
+  @@index([postId])
 }

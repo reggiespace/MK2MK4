@@ -1,9 +1,14 @@
-# Gastric IQ media worker — Python + ffmpeg + bundled brand fonts/logos
-FROM python:3.12-slim
+# ReggieSpace Studio media worker — headless Chromium + ffmpeg.
+#
+# The Playwright base image ships Chromium and every system library it needs,
+# which is a long and easily-broken list to reproduce by hand. Keep this tag in
+# step with the `playwright` version in apps/worker/pyproject.toml.
+FROM mcr.microsoft.com/playwright/python:v1.49.0-jammy
 
-# ffmpeg for reel assembly; fontconfig for Pillow text rendering
+# ffmpeg for reel assembly; fonts-liberation covers generic fallbacks (brand
+# webfonts are served by the app itself and loaded by the browser).
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg fontconfig \
+    && apt-get install -y --no-install-recommends ffmpeg fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -12,10 +17,7 @@ COPY apps/worker/pyproject.toml ./pyproject.toml
 RUN pip install --no-cache-dir -e .
 
 COPY apps/worker/app ./app
-# Brand logos + fonts (downloaded/copied during build prep)
-COPY assets ./assets
 
 ENV STORAGE_DIR=/data/storage
-ENV ASSETS_ROOT=/app/assets
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

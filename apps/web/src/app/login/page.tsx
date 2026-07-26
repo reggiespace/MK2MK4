@@ -11,22 +11,21 @@ export default function LoginPage() {
   return (
     <main className="login-shell">
       <form action={formAction} className="login-card">
-        <div className="brand-mark">
-          Gastric<span>IQ</span>
+        <div>
+          <div className="brand-mark">
+            Reggie<span>Space</span>
+          </div>
+          <p className="eyebrow" style={{ marginTop: "4px" }}>
+            Social Studio
+          </p>
         </div>
-        <p className="eyebrow">Social Content Studio</p>
         <label className="field">
           <span>Email</span>
           <input name="email" type="email" autoComplete="username" required />
         </label>
         <label className="field">
           <span>Password</span>
-          <input
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
+          <input name="password" type="password" autoComplete="current-password" required />
         </label>
         {state.error ? <p className="error">{state.error}</p> : null}
         <button type="submit" disabled={pending}>

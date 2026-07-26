@@ -7,54 +7,45 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(1),
 });
 
 export type LoginState = { error?: string };
 
-export async function loginAction(
-  _prev: LoginState,
-  formData: FormData,
-): Promise<LoginState> {
-  try {
-    console.log("[loginAction] start");
-    const parsed = loginSchema.safeParse({
-      email: formData.get("email"),
-      password: formData.get("password"),
-    });
-    console.log("[loginAction] parsed:", parsed.success);
-    if (!parsed.success) {
-      return { error: "Enter a valid email and password." };
-    }
+/** Compare against this when the email is unknown, so timing doesn't leak. */
+const DUMMY_HASH = "$2a$12$invalidinvalidinvalidinvalidinvalidinvalidin";
 
-    console.log("[loginAction] querying operator");
-    const operator = await prisma.operator.findUnique({
-      where: { email: parsed.data.email },
+export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  const parsed = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) {
+    return { error: "Enter a valid email and password." };
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: parsed.data.email.toLowerCase() },
     });
-    console.log("[loginAction] operator found:", !!operator);
-    // Always run a hash compare to avoid leaking whether the email exists.
-    const hash =
-      operator?.passwordHash ?? "$2a$12$invalidinvalidinvalidinvalidinvalidinvalidin";
-    const ok = await bcrypt.compare(parsed.data.password, hash);
-    console.log("[loginAction] ok:", ok);
-    if (!operator || !ok) {
+    const ok = await bcrypt.compare(parsed.data.password, user?.passwordHash ?? DUMMY_HASH);
+    if (!user || !ok) {
       return { error: "Invalid email or password." };
     }
 
-    console.log("[loginAction] getting session");
     const session = await getSession();
-    session.operatorId = operator.id;
-    session.email = operator.email;
-    console.log("[loginAction] saving session");
+    session.userId = user.id;
+    session.workspaceId = user.workspaceId;
+    session.email = user.email;
     await session.save();
-    console.log("[loginAction] redirecting");
-
-    redirect("/");
-  } catch (e) {
-    console.error("[loginAction] UNCAUGHT ERROR:", e);
-    throw e;
+  } catch (err) {
+    console.error("[loginAction]", err);
+    return { error: "Something went wrong signing in. Try again." };
   }
+
+  // Outside the try — `redirect` signals by throwing.
+  redirect("/");
 }
 
 export async function logoutAction(): Promise<void> {

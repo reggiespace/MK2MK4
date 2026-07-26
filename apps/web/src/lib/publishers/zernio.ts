@@ -1,31 +1,44 @@
 import "server-only";
-import { env } from "@/lib/env";
-import type { Publisher, ScheduleOptions, PublishResult } from "./types";
+import type {
+  Publisher,
+  PublisherCredentials,
+  ScheduleOptions,
+  PublishResult,
+} from "./types";
 import { composePostText } from "./compose";
 
-async function zernioFetch(path: string, options: RequestInit = {}) {
-  const key = env.zernioApiKey();
-  if (!key) throw new Error("ZERNIO_API_KEY not set");
-  const base = env.zernioBaseUrl();
-  const res = await fetch(`${base}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
-      ...(options.headers ?? {}),
-    },
-  });
-  if (!res.ok) throw new Error(`Zernio API ${res.status}: ${await res.text()}`);
-  return res.json();
-}
+const DEFAULT_BASE_URL = "https://api.zernio.com";
 
+/** Credentials are injected per workspace; this class never reads env. */
 export class ZernioPublisher implements Publisher {
   name = "zernio";
+
+  private readonly apiKey: string;
+  private readonly baseUrl: string;
+
+  constructor(credentials: PublisherCredentials) {
+    if (!credentials.apiKey) throw new Error("Zernio API key missing");
+    this.apiKey = credentials.apiKey;
+    this.baseUrl = (credentials.baseUrl || DEFAULT_BASE_URL).replace(/\/+$/, "");
+  }
+
+  private async request(path: string, options: RequestInit = {}) {
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+        ...(options.headers ?? {}),
+      },
+    });
+    if (!res.ok) throw new Error(`Zernio API ${res.status}: ${await res.text()}`);
+    return res.json();
+  }
 
   async getBestTime(_channelId: string, _network: string): Promise<Date> {
     // Zernio best-time suggestion: POST /v1/insights/best-time (if available)
     try {
-      const data = await zernioFetch("/v1/insights/best-time", {
+      const data = await this.request("/v1/insights/best-time", {
         method: "POST",
         body: JSON.stringify({ accountId: _channelId }),
       });
@@ -41,7 +54,7 @@ export class ZernioPublisher implements Publisher {
   }
 
   async schedule(opts: ScheduleOptions): Promise<PublishResult> {
-    const data = await zernioFetch("/v1/posts", {
+    const data = await this.request("/v1/posts", {
       method: "POST",
       body: JSON.stringify({
         accountId: opts.channelId,
@@ -60,7 +73,7 @@ export class ZernioPublisher implements Publisher {
   }
 
   async publishNow(opts: Omit<ScheduleOptions, "scheduledAt">): Promise<PublishResult> {
-    const data = await zernioFetch("/v1/posts/publish", {
+    const data = await this.request("/v1/posts/publish", {
       method: "POST",
       body: JSON.stringify({
         accountId: opts.channelId,
