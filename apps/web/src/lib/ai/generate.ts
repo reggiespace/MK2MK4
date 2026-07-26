@@ -1,6 +1,13 @@
 import "server-only";
 import { completeJson } from "./client";
 import { describeSlots, draftSchema, fitToBudget, generatableSlots } from "./schema";
+import {
+  HOOK_LIBRARY,
+  RANKING_SIGNALS,
+  formatPlaybook,
+  leadHookFormula,
+  positionGuidance,
+} from "./playbook";
 import { getManifest } from "@/lib/templates/manifests";
 import { coerceFields } from "@/lib/templates/doc";
 import type { PostDoc, SlideDoc, SlotValue, TemplateStyleId } from "@/lib/templates/types";
@@ -46,14 +53,19 @@ function systemPrompt(brand: BrandVoice, style: TemplateStyleId): string {
     brand.tones.length ? `Tone: ${brand.tones.join(", ").toLowerCase()}.` : "",
     brand.voiceDescription ? `\nBRAND VOICE\n${brand.voiceDescription}` : "",
     `\nTEMPLATE CONTRACT\n${man.aiContract}`,
+    `\n${RANKING_SIGNALS}`,
+    `\n${HOOK_LIBRARY}`,
+    `\n${formatPlaybook(style)}`,
     `\nCTA CONVENTION (do not break this)
 - On-slide copy is engagement-only: save, follow, send. Never put a download link, URL, or "download the app" on a slide or frame.
 - The download/external CTA lives only in the post caption (as a soft "→ link in bio") and in the auto-posted first comment (which carries the actual URL).`,
     brand.claimsGuardrail ? `\n${CLAIMS_GUARDRAIL}` : "",
     `\nRULES
 - Respect every character budget exactly. Shorter is better than truncated.
+- Word counts apply on top of the character budgets and both must hold: a hook headline is 5–8 words, a spoken hook (voiceScript on a hook frame) is 10–14 words, and any on-screen text block in a reel is ≤ 10 words. Where a budget cannot hold the word count, the character budget wins.
 - Fill optional slots only when they genuinely add something; otherwise return an empty string and the layout collapses gracefully.
 - One idea per slide. Put the strongest point early.
+- Write for the save and the send: a line someone keeps, or forwards to a specific person. Asking for a like is never the goal.
 - No emoji. No hashtags inside slide copy.`,
   ];
   return parts.filter(Boolean).join("\n");
@@ -67,14 +79,26 @@ function userPrompt(
   pillar?: string | null,
 ): string {
   const man = getManifest(style);
+  // Position guidance is computed from this draft's actual sequence — the user
+  // can add, remove and reorder slides, so it cannot be baked into the manifest.
+  const guidance = positionGuidance(style, kinds);
   const slideSpecs = kinds
-    .map((kind, i) => `SLIDE ${i} (index "${i}")\n${describeSlots(style, kind)}`)
+    .map((kind, i) => {
+      const notes = guidance[i].map((line) => `  → ${line}`).join("\n");
+      const head = `SLIDE ${i} (index "${i}" — slide ${i + 1} of ${kinds.length})`;
+      return [head, describeSlots(style, kind), notes].filter(Boolean).join("\n");
+    })
     .join("\n\n");
+
+  const lead = leadHookFormula(topic);
+  const rotation = `HOOK ROTATION FOR THIS POST
+- Lead the opening hook with the "${lead.name}" formula — e.g. "${lead.example}" — unless the topic genuinely fights it, in which case pick another from the library.
+- Any second hook surface uses a different formula. Never repeat a formula inside one post.`;
 
   const delivery = man.noCaption
     ? `This is a Story: it carries no caption. Return slides only.`
     : `POST DELIVERY
-- caption: ≤ ${man.postDelivery.caption?.max ?? 2200} chars. Hook-led and keyword-rich, ends with a soft "→ link in bio". Include the download ask here, not on a slide.
+- caption: ≤ ${man.postDelivery.caption?.max ?? 2200} chars. Hook-led and keyword-rich, ends with a soft "→ link in bio". Include the download ask here, not on a slide. Open with the hook before the "more" fold and include one explicit save-or-send trigger ("send this to the person who…"); never ask for a like.
 - firstComment: ≤ ${man.postDelivery.firstComment?.max ?? 2200} chars. Auto-posted by the scheduler; carries the real link${
         brand.downloadUrl ? ` (${brand.downloadUrl})` : ""
       } plus a short pitch and an engagement question.
@@ -85,7 +109,9 @@ function userPrompt(
     pillar ? `Content pillar: ${pillar}.` : "",
     `Topic: ${topic}`,
     ``,
-    `Fill these slides in order. Return an object whose "slides" key maps the index strings to their slot values.`,
+    rotation,
+    ``,
+    `Fill these slides in order. Return an object whose "slides" key maps the index strings to their slot values. The "→" lines are what this slide's position in the sequence demands — they override generic instincts about where content belongs.`,
     ``,
     slideSpecs,
     ``,

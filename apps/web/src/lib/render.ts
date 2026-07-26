@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
 import { env } from "@/lib/env";
 import { getManifest } from "@/lib/templates/manifests";
+import { assembleScript, synthesizeVoice } from "@/lib/ai/voice";
+import { DEFAULT_VOICE_ID } from "@/lib/ai/voices";
 import type { PostDoc, TemplateStyleId } from "@/lib/templates/types";
 
 /**
@@ -103,8 +105,14 @@ export async function renderSlides(postId: string): Promise<RenderedFrame[]> {
 /**
  * Queue a reel render. The worker renders the frames, applies motion and
  * transitions, muxes the narration track, then calls back with the mp4.
+ *
+ * Narration is synthesized first when the post has none: a reel whose voice
+ * track is missing would otherwise publish silent, and the Voice tab is
+ * optional in the wizard.
  */
 export async function enqueueReelRender(postId: string): Promise<{ jobId: string }> {
+  await ensureNarration(postId);
+
   const post = await prisma.post.findUnique({
     where: { id: postId },
     include: { voiceAsset: true },
@@ -142,4 +150,82 @@ export async function enqueueReelRender(postId: string): Promise<{ jobId: string
   }
 
   return { jobId: job.id };
+}
+
+/**
+ * Synthesize the reel's narration if it doesn't have one yet. No-op when the
+ * post already carries a voice track or has no spoken lines at all.
+ */
+async function ensureNarration(postId: string): Promise<void> {
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (!post || post.voiceAssetId) return;
+
+  const doc = post.doc as unknown as PostDoc;
+  const lines = assembleScript(post.style as TemplateStyleId, doc, post.narration);
+  if (!lines.length) return;
+
+  const track = await synthesizeVoice({
+    workspaceId: post.workspaceId,
+    accountId: post.accountId,
+    postId: post.id,
+    voiceId: post.voiceId ?? DEFAULT_VOICE_ID,
+    lines,
+  });
+  await prisma.post.update({
+    where: { id: post.id },
+    data: { voiceAssetId: track.assetId, voiceId: post.voiceId ?? DEFAULT_VOICE_ID },
+  });
+}
+
+export type RenderOutcome =
+  | { status: "ready"; mediaUrls: string[] }
+  | { status: "rendering"; jobId: string };
+
+/**
+ * Produce the media a post needs to publish, dispatching on its format.
+ *
+ * Reels must ship an mp4, not a stack of stills, so they go through the async
+ * worker path and the caller has to wait for the callback. Everything else
+ * renders its frames inline.
+ */
+export async function ensureRendered(postId: string): Promise<RenderOutcome> {
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (!post) throw new Error("Post not found.");
+
+  if (post.mediaUrls.length) return { status: "ready", mediaUrls: post.mediaUrls };
+
+  if (post.style === "reel") {
+    // Don't queue a second render while one is already in flight.
+    const active = await prisma.renderJob.findFirst({
+      where: { postId, kind: "reel", status: { in: ["queued", "running"] } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (active) return { status: "rendering", jobId: active.id };
+
+    const { jobId } = await enqueueReelRender(postId);
+    return { status: "rendering", jobId };
+  }
+
+  const frames = await renderSlides(postId);
+  return { status: "ready", mediaUrls: frames.map((f) => f.url) };
+}
+
+/** Current render state for a post, for the Review screen to poll. */
+export async function renderStatus(postId: string): Promise<{
+  status: "idle" | "rendering" | "ready" | "failed";
+  error?: string;
+  mediaUrls: string[];
+}> {
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (!post) throw new Error("Post not found.");
+  if (post.mediaUrls.length) return { status: "ready", mediaUrls: post.mediaUrls };
+
+  const job = await prisma.renderJob.findFirst({
+    where: { postId },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!job) return { status: "idle", mediaUrls: [] };
+  if (job.status === "failed") return { status: "failed", error: job.error ?? undefined, mediaUrls: [] };
+  if (job.status === "done") return { status: "ready", mediaUrls: post.mediaUrls };
+  return { status: "rendering", mediaUrls: [] };
 }

@@ -279,7 +279,7 @@ export const STORY: TemplateManifest = {
     right: 60,
   },
   aiContract:
-    "Stories optimize for interaction (tap/vote/reply), NOT reach. Every frame MUST carry exactly one interactive sticker as its tap target. Fill only the slots + the sticker options; never move/add/remove/restyle elements. Put a poll or question on the FIRST frame for the engagement boost. The app-download CTA belongs in postDelivery/link, never as body copy.",
+    "Stories optimize for interaction (tap/vote/reply), NOT reach. Every frame MUST carry exactly one interactive sticker as its tap target. Fill only the slots + the sticker options; never move/add/remove/restyle elements. Lead with a POLL — it collects the most taps for the least viewer effort. Save the QUESTION sticker for a later frame: its value is opening a DM reply, which is a stronger relationship signal than a tap. The app-download CTA belongs in postDelivery/link, never as body copy.",
   accentGuardrail: ACCENT_GUARDRAIL,
   kinds: {
     "1a-poll": {
@@ -431,7 +431,7 @@ export const PHOTO: TemplateManifest = {
     insetPx: 84,
   },
   aiContract:
-    "Image-led post. Pick ONE treatment. The image slot is required and is a drop/upload OR a fal.ai generation. Fill only the image, the labelled copy, and brand tokens; never move/add/remove/restyle, and never remove the scrim. Logo auto-places from the brand default. Engagement-only on frame; download CTA lives in postDelivery.",
+    "Image-led post. Pick ONE treatment. The image slot is required and is a drop/upload OR a fal.ai generation. Fill only the image, the labelled copy, and brand tokens; never move/add/remove/restyle, and never remove the scrim. Engagement-only on frame; download CTA lives in postDelivery.",
   accentGuardrail: ACCENT_GUARDRAIL,
   kinds: {
     "1a-lifestyle": {
@@ -519,7 +519,9 @@ export const STYLES = [
 
 /** Hard slide-count limits per format, from the manifests' notes. */
 export const SLIDE_LIMITS: Record<TemplateStyleId, { min: number; max: number }> = {
-  carousel: { min: 3, max: 8 },
+  // 5–8 is the researched working band: fewer than five leaves no interior
+  // slide between the cover and the end card to carry the payoff.
+  carousel: { min: 5, max: 8 },
   reel: { min: 3, max: 8 },
   story: { min: 1, max: 5 },
   single: { min: 1, max: 1 },

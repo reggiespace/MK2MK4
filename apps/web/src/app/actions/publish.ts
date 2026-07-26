@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/session";
 import { activePublisher } from "@/lib/integrations";
 import { getPublisherForWorkspace, type Network, type PostFormat } from "@/lib/publishers";
-import { renderSlides } from "@/lib/render";
+import { ensureRendered, renderStatus } from "@/lib/render";
 import { validateDoc } from "@/lib/templates/doc";
 import type { PostDoc, TemplateStyleId } from "@/lib/templates/types";
 import type { ActionResult } from "./create";
@@ -83,12 +83,16 @@ export async function publishPostAction(input: {
     const providerKey = PROVIDER_TO_KEY[providerEnum];
     const publisher = await getPublisherForWorkspace(auth.workspaceId, providerKey);
 
-    // Render through the shared renderer if we haven't already.
-    let mediaUrls = post.mediaUrls;
-    if (!mediaUrls.length) {
-      const frames = await renderSlides(post.id);
-      mediaUrls = frames.map((f) => f.url);
+    // Render through the shared renderer if we haven't already. Reels go to the
+    // async worker path — they must ship an mp4 with narration, not stills — so
+    // publishing waits for the callback rather than posting half a post.
+    const render = await ensureRendered(post.id);
+    if (render.status === "rendering") {
+      throw new Error(
+        "Your reel is still rendering — narration and motion take a moment. Try publishing again shortly.",
+      );
     }
+    const mediaUrls = render.mediaUrls;
 
     const when =
       input.mode === "now"
@@ -167,6 +171,49 @@ export async function publishPostAction(input: {
     revalidatePath("/pieces");
 
     return { ok: true, data: { scheduledAt: when.toISOString(), channels: results } };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export interface RenderState {
+  status: "idle" | "rendering" | "ready" | "failed";
+  error?: string;
+  mediaUrls: string[];
+}
+
+/**
+ * Kick off rendering for a post if it hasn't started, and report where it is.
+ * Reels take a while (frames, motion, audio mux), so the Review screen starts
+ * this on arrival and polls rather than blocking the publish button.
+ */
+export async function startRenderAction(postId: string): Promise<ActionResult<RenderState>> {
+  try {
+    const auth = await requireAuth();
+    const owned = await prisma.post.findFirst({
+      where: { id: postId, workspaceId: auth.workspaceId },
+      select: { id: true },
+    });
+    if (!owned) throw new Error("Post not found.");
+
+    const outcome = await ensureRendered(postId);
+    return outcome.status === "ready"
+      ? { ok: true, data: { status: "ready", mediaUrls: outcome.mediaUrls } }
+      : { ok: true, data: { status: "rendering", mediaUrls: [] } };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function renderStatusAction(postId: string): Promise<ActionResult<RenderState>> {
+  try {
+    const auth = await requireAuth();
+    const owned = await prisma.post.findFirst({
+      where: { id: postId, workspaceId: auth.workspaceId },
+      select: { id: true },
+    });
+    if (!owned) throw new Error("Post not found.");
+    return { ok: true, data: await renderStatus(postId) };
   } catch (err) {
     return fail(err);
   }

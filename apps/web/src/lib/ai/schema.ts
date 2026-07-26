@@ -115,6 +115,10 @@ export function describeSlots(style: TemplateStyleId, kind: string): string {
     if (s.type === "list") {
       return `  - ${s.id}: ${s.min ?? 2}–${s.maxItems ?? 3} lines, each ≤ ${s.max || 40} chars (${req})`;
     }
+    // `max: 0` means unbounded — URLs, timestamps and post refs carry no
+    // character budget. Printing "≤ 0 chars" told the model to emit nothing,
+    // which then failed the Review gate for being empty and required.
+    if (s.max === 0) return `  - ${s.id} (${s.label}): no length limit, ${req}`;
     return `  - ${s.id} (${s.label}): ≤ ${s.max} chars, ${req}`;
   });
   return `${kind} — ${k.name}: ${k.desc}\n${lines.join("\n")}`;
