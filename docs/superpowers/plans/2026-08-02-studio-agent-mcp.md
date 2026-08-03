@@ -21,6 +21,7 @@
 - Tools return structured failures, never thrown strings: `{ ok: false, code, message, retryable }`.
 - Token format is exactly `rss_<base64url>`; hashed with sha256; **never** logged, and never returned after creation.
 - Caps are counted over a **rolling 24 hours** from the time of the call, not a calendar day.
+- `Job.kind` is the `AgentJobKind` enum and `Job.state` is the existing `JobStatus` enum. Prisma generates string-literal union types for enums, so writing `state: "running"` and comparing `job.state === "done"` both typecheck — the string literals in the later tasks' code are correct as written and must not be refactored into enum member references.
 - No `publish` or `schedule` tool ships in this plan. The `publish` scope string is reserved but never issued.
 - Run `pnpm --filter @giq/web test` for unit tests, `pnpm --filter @giq/web test:db` for DB-backed tests.
 
@@ -143,6 +144,8 @@ model ApiToken {
 
 - [ ] **Step 4: Add the `Job` model**
 
+`state` reuses the **existing** `JobStatus` enum — it already declares exactly `queued | running | done | failed`, and duplicating that value set as a bare string would let a typo in a later task write an invalid state. `kind` needs a new `AgentJobKind` enum (`media | render`); the existing `JobKind` is unrelated (`slides | reel | voice`). Add `AgentJobKind` beside the other enums, following the file's placement convention. This matches `RenderJob`, which is enum-typed.
+
 ```prisma
 /// A server-minted handle for slow work the agent polls, covering both media
 /// generation and rendering. Protocol 2026-07-28 specifies exactly this shape:
@@ -156,10 +159,8 @@ model Job {
   apiTokenId  String?
   apiToken    ApiToken? @relation(fields: [apiTokenId], references: [id], onDelete: SetNull)
 
-  /// "media" | "render"
-  kind String
-  /// "queued" | "running" | "done" | "failed"
-  state String @default("queued")
+  kind  AgentJobKind
+  state JobStatus   @default(queued)
 
   total Int @default(0)
   done  Int @default(0)
