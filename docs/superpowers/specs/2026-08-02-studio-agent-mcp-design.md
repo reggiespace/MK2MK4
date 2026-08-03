@@ -115,7 +115,8 @@ New `ApiToken` model, workspace-scoped:
 | Field | Purpose |
 |---|---|
 | `workspaceId` | tenancy — every tool call is scoped to it |
-| `name` | display |
+| `userId` | who minted it; makes `Post.apiTokenId` resolve to a person once a workspace has more than one member |
+| `name` | display — one token per client ("Hermes cron", "Claude web") |
 | `tokenHash` | sha256 of the token; plaintext shown once at creation, never stored |
 | `prefix` | first 8 chars, for identifying a token in the UI |
 | `scopes` | `["draft", "media", "render"]`; `publish` reserved, unissued |
@@ -123,10 +124,60 @@ New `ApiToken` model, workspace-scoped:
 | `dailyDraftCap` | draft-count ceiling |
 | `lastUsedAt`, `expiresAt`, `revokedAt` | rotation and audit |
 
-Token format `rss_<base64url>`. `/api/mcp` resolves `Authorization: Bearer …` to a
-workspace and rejects revoked or expired tokens — the same tenancy guarantee
-`requireAuth()` gives the UI, from a header instead of a cookie. A Settings →
-Integrations panel mints and revokes.
+#### Static bearer tokens, not OAuth
+
+Authentication happens once, out of band, and never during a request:
+
+1. The operator logs into the Studio in a browser (existing iron-session login).
+2. Settings → Integrations → "New agent token" → copies the `rss_…` value once.
+3. That value goes into the client's MCP config as an `Authorization` header.
+4. Every later request carries the header; the server resolves it to a workspace and
+   runs the tool. No login, no consent screen, no browser.
+
+The token *is* the identity — there is no request-time user authentication step, which
+is the requirement: a 6am cron has nobody at a keyboard.
+
+OAuth was considered and rejected on cost, not on unattended operation (it is also
+interactive only once, then refreshes silently). It needs an authorization server,
+consent screen, token endpoint, refresh handling, and — under 2026-07-28, where Dynamic
+Client Registration is deprecated — Client ID Metadata Documents. That is a subproject
+to avoid one paste. It becomes necessary only if the Studio is handed to people who
+should not mint tokens by hand, or if a client's connector UI refuses header auth.
+
+One token per **client**, not one shared: Hermes and Claude each get their own, so they
+have independent spend caps, independent `lastUsedAt` (which shows which agent actually
+ran), and revoking one does not break the other.
+
+#### Generation
+
+In a new `lib/studio/tokens.ts`, using `node:crypto` as `lib/crypto.ts` already does:
+
+```ts
+const secret = randomBytes(32).toString("base64url");   // 256 bits
+const token = `rss_${secret}`;                          // shown once, never stored
+const tokenHash = createHash("sha256").update(token).digest("hex");
+const prefix = token.slice(0, 12);                      // display only
+```
+
+Persist `tokenHash` and `prefix`; return `token` to the caller exactly once. Each
+request hashes the incoming bearer value and does one indexed lookup on `tokenHash` — no
+scan, no secret comparison, and a database dump yields nothing usable.
+
+**sha256, not bcrypt/argon2.** Slow KDFs exist to frustrate brute-forcing low-entropy
+human passwords. This is 256 bits of CSPRNG output, unguessable regardless of hash
+speed, and it is verified on every tool call — a deliberately slow hash would only add
+latency to the hot path.
+
+**Hashed, not encrypted.** `lib/crypto.ts` encrypts provider keys because the app must
+recover the plaintext to call fal.ai. Nothing ever needs to read a token back, so it is
+one-way — strictly stronger. The encrypt-everything reflex is the wrong instinct here.
+
+Revoking sets `revokedAt`; the row is kept for audit and rejected immediately. There is
+no edit — rotation is mint-new-then-revoke-old, so a cron never has a window with no
+valid token.
+
+`/api/mcp` rejects absent, unknown, revoked and expired tokens — the same tenancy
+guarantee `requireAuth()` gives the UI, from a header instead of a cookie.
 
 Provider keys (OpenAI, fal.ai, ElevenLabs) stay in the existing workspace credential
 store. A token grants access to the workspace's *budget*, never to the keys.
@@ -135,6 +186,10 @@ Bearer-token auth is sufficient for a private server; full OAuth 2.1 with protec
 resource metadata is not required. If Claude's connector UI turns out to require OAuth,
 the fallback is Claude Code (which sets headers from config), and a minimal OAuth
 wrapper becomes an additive change.
+
+A leaked token exposes the workspace's fal.ai and ElevenLabs spend, which is why the
+caps below are per token rather than per workspace: bounded daily blast radius, and
+revoking one client does not disturb the other.
 
 ## Tool surface
 
@@ -197,7 +252,21 @@ model Post {
   apiTokenId String?               // which agent made it
 }
 
-model ApiToken { /* see Authentication */ }
+model ApiToken {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  userId        String
+  name          String
+  tokenHash     String    @unique   // sha256 of "rss_…", indexed for single-lookup auth
+  prefix        String              // display only
+  scopes        String[]            // ["draft","media","render"]; "publish" reserved
+  dailyCapCents Int
+  dailyDraftCap Int
+  lastUsedAt    DateTime?
+  expiresAt     DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime  @default(now())
+}
 
 model Job {
   id          String   @id @default(cuid())
