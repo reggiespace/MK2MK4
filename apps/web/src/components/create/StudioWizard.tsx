@@ -22,7 +22,7 @@ import {
 } from "@/app/actions/create";
 import { publishPostAction } from "@/app/actions/publish";
 import { display } from "./styles";
-import type { EditorTab, GenPhase, WizardAccount } from "./types";
+import type { EditorTab, GenPhase, InitialDraft, WizardAccount } from "./types";
 import type { SuggestedIdea } from "@/lib/ai/ideas";
 
 /**
@@ -35,31 +35,33 @@ export function StudioWizard({
   accounts,
   initialAccountId,
   publisherName,
+  initialDraft,
 }: {
   accounts: WizardAccount[];
   initialAccountId: string;
   publisherName: string;
+  initialDraft?: InitialDraft;
 }) {
-  const [step, setStep] = useState(0);
-  const [maxStep, setMaxStep] = useState(0);
-  const [accountId, setAccountId] = useState(initialAccountId);
+  const [step, setStep] = useState(initialDraft ? 4 : 0);
+  const [maxStep, setMaxStep] = useState(initialDraft ? 5 : 0);
+  const [accountId, setAccountId] = useState(initialDraft?.accountId ?? initialAccountId);
   const [channels, setChannels] = useState<Record<string, string[]>>(() =>
     Object.fromEntries(accounts.map((a) => [a.id, a.channels.map((c) => c.platform)])),
   );
-  const [style, setStyle] = useState<TemplateStyleId | null>(null);
-  const [arch, setArch] = useState<string | null>(null);
-  const [topic, setTopic] = useState("");
-  const [pillar, setPillar] = useState<string | null>(null);
+  const [style, setStyle] = useState<TemplateStyleId | null>(initialDraft?.style ?? null);
+  const [arch, setArch] = useState<string | null>(initialDraft?.archetype ?? null);
+  const [topic, setTopic] = useState(initialDraft?.topic ?? "");
+  const [pillar, setPillar] = useState<string | null>(initialDraft?.pillar ?? null);
   const [ideas, setIdeas] = useState<SuggestedIdea[] | null>(null);
   const [suggesting, setSuggesting] = useState(false);
-  const [genPhase, setGenPhase] = useState<GenPhase>("idle");
-  const [postId, setPostId] = useState<string | null>(null);
-  const [doc, setDoc] = useState<PostDoc | null>(null);
+  const [genPhase, setGenPhase] = useState<GenPhase>(initialDraft ? "done" : "idle");
+  const [postId, setPostId] = useState<string | null>(initialDraft?.postId ?? null);
+  const [doc, setDoc] = useState<PostDoc | null>(initialDraft?.doc ?? null);
   const [docVersion, setDocVersion] = useState(0);
   const [activeSlide, setActiveSlide] = useState(0);
   const [editorTab, setEditorTab] = useState<EditorTab>("slides");
-  const [voiceId, setVoiceId] = useState<string>(DEFAULT_VOICE_ID);
-  const [narration, setNarration] = useState<"verbatim" | "condensed">("verbatim");
+  const [voiceId, setVoiceId] = useState<string>(initialDraft?.voiceId ?? DEFAULT_VOICE_ID);
+  const [narration, setNarration] = useState<"verbatim" | "condensed">(initialDraft?.narration ?? "verbatim");
   const [when, setWhen] = useState<"best" | "custom">("best");
   const [customTime, setCustomTime] = useState("");
   const [scheduled, setScheduled] = useState(false);

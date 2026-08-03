@@ -50,3 +50,16 @@ export interface WizardState {
   scheduled: boolean;
   error: string | null;
 }
+
+/** Seeds StudioWizard's state when reopening an existing draft from /pieces. */
+export interface InitialDraft {
+  postId: string;
+  accountId: string;
+  style: TemplateStyleId;
+  archetype: string;
+  topic: string;
+  pillar: string | null;
+  doc: PostDoc;
+  voiceId: string;
+  narration: "verbatim" | "condensed";
+}

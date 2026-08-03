@@ -47,6 +47,27 @@ export default async function PiecePage(props: { params: Promise<{ id: string }>
             </span>
           </div>
         </div>
+        {post.status === "draft" ? (
+          <Link
+            href={`/create?postId=${post.id}`}
+            className="hover-lift"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              background: "var(--accent)",
+              color: "#f4efe0",
+              borderRadius: "11px",
+              padding: "11px 18px",
+              fontSize: "14px",
+              fontWeight: 700,
+              textDecoration: "none",
+            }}
+          >
+            <Icon name="arrowR" size={16} strokeWidth={2.4} />
+            Edit draft
+          </Link>
+        ) : null}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 340px", gap: "26px", alignItems: "start" }}>
