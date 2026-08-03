@@ -283,7 +283,11 @@ model Job {
 }
 ```
 
-`Post.costCents` already exists and is what the spend cap reads.
+**Spend is summed from `Job.costCents`, not `Post.costCents`.** A job row is created
+at the moment money is spent, so the rolling window sees every media call. Summing
+`Post.costCents` over a creation-time window would miss repeated `start_media` calls
+against an older post — which is precisely the unbounded loop the cap exists to stop.
+`Post.costCents` stays as the per-post total for display.
 
 ## Safety
 
@@ -344,9 +348,10 @@ Three layers, no duplication.
 
 ## Testing
 
-1. **Unit** — `lib/studio/` functions against the existing mock LLM provider with fal
-   and ElevenLabs stubbed. Covers budget enforcement, the ownership rule, cap breaches
-   and per-slot idempotency.
+1. **Unit** — `lib/studio/` functions with `lib/ai/client.ts` mocked at the module
+   boundary (there is no mock LLM provider in the current code; `completeJson` always
+   calls OpenAI), and fal/ElevenLabs stubbed the same way. Covers budget enforcement,
+   the ownership rule, cap breaches and per-slot idempotency.
 2. **Transport** — `/api/mcp` with `server/discover`, `tools/list`, `tools/call`, plus
    the negative cases: absent token, revoked token, expired token, foreign-workspace
    post id, over-cap call, and a `createdVia: "ui"` post rejected by a mutating tool.
