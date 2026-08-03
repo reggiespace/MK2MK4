@@ -575,13 +575,17 @@ Expected: PASS, 6 tests.
 Create `apps/web/vitest.integration.config.ts`:
 
 ```ts
+// Loads apps/web/.env, which is where DATABASE_URL lives. Vitest does not read
+// .env for process.env on its own, and lib/db.ts throws without DATABASE_URL —
+// so this import is what makes the DB-backed suite runnable at all.
+import "dotenv/config";
 import { defineConfig } from "vitest/config";
 import path from "node:path";
 
 /**
  * DB-backed tests, kept apart from `pnpm test` so the unit suite stays runnable
- * with no Postgres. These need DATABASE_URL pointing at a database you do not
- * mind writing to — they create a throwaway workspace per test and delete it.
+ * with no Postgres. These write to the local dev database, creating a throwaway
+ * workspace per test and cascade-deleting it afterwards — including on failure.
  */
 export default defineConfig({
   resolve: {
@@ -2733,7 +2737,7 @@ async function seedReel(f: { workspaceId: string; accountId: string }, tokenId: 
   return post.id;
 }
 
-beforeEach(() => vi.clearAllMocks();
+beforeEach(() => vi.clearAllMocks());
 
 describe("plannedImageSlots", () => {
   it("plans one request per empty image slot, with a derived prompt", () => {
@@ -2950,7 +2954,7 @@ describe("jobStatus", () => {
 });
 ```
 
-Note the deliberate syntax error in `beforeEach` above — `beforeEach(() => vi.clearAllMocks();` is missing its closing paren. Fix it to `beforeEach(() => vi.clearAllMocks());` when you create the file.
+Two things in this file will likely need correcting against the real schema on the first run, and both are the test's fault rather than the implementation's: `buildEmptyDoc("reel", "hook")` needs a legal reel cover kind (read `REEL.cover` in `manifests.ts`), and `narration: "verbatim"` must match the `Narration` enum in `schema.prisma`.
 
 - [ ] **Step 3: Run it to verify it fails**
 
@@ -3653,7 +3657,7 @@ describe("POST /api/mcp discovery", () => {
       expect(body.result.capabilities).toHaveProperty("tools");
     }));
 
-  it("lists exactly the ten tools, in a deterministic order", () =>
+  it("lists the four orientation tools first, and no publishing tool", () =>
     withTestWorkspace(async (f) => {
       const { token } = await mintToken({
         workspaceId: f.workspaceId,
@@ -3665,17 +3669,14 @@ describe("POST /api/mcp discovery", () => {
       const { body } = await rpc(token, "tools/list");
       const names = body.result.tools.map((t: { name: string }) => t.name);
 
-      expect(names).toEqual([
+      // Order is asserted rather than membership: the spec asks for a
+      // deterministic tools/list so clients can cache it. Tasks 9 and 10 append
+      // to this list and assert the full surface.
+      expect(names.slice(0, 4)).toEqual([
         "list_accounts",
         "describe_template",
         "list_posts",
         "list_assets",
-        "create_draft",
-        "revise_draft",
-        "check_draft",
-        "start_media",
-        "start_render",
-        "job_status",
       ]);
       expect(names).not.toContain("schedule_post");
       expect(names).not.toContain("publish_now");
@@ -3760,30 +3761,6 @@ describe("orientation tools", () => {
 
       expect(status).toBe(200);
       expect(payload(body)).toMatchObject({ ok: false, code: "not_found", retryable: false });
-    }));
-});
-
-describe("scopes", () => {
-  it("refuses a drafting tool to a media-only token", () =>
-    withTestWorkspace(async (f) => {
-      const { token } = await mintToken({
-        workspaceId: f.workspaceId,
-        userId: f.userId,
-        name: "t",
-        scopes: ["media"],
-      });
-
-      const { body } = await rpc(token, "tools/call", {
-        name: "create_draft",
-        arguments: {
-          accountId: f.accountId,
-          style: "carousel",
-          archetype: "1a-knockout",
-          topic: "t",
-        },
-      });
-
-      expect(payload(body)).toMatchObject({ ok: false, code: "forbidden" });
     }));
 });
 
@@ -3969,20 +3946,13 @@ export function buildStudioServer(caller: StudioCaller): McpServer {
   return server;
 }
 
-/** Defined in Task 9. */
-declare function registerDraftTools(server: McpServer, caller: StudioCaller): void;
-/** Defined in Task 10. */
-declare function registerMediaTools(server: McpServer, caller: StudioCaller): void;
-```
-
-**Important:** the two `declare function` lines are placeholders so this task compiles on its own. Task 9 and Task 10 replace them with real implementations in this same file. If you are executing Task 8 in isolation, stub them as empty functions instead:
-
-```ts
+// Task 9 and Task 10 replace these stubs with the real registrations, in this
+// same file. Empty for now so this task ships with a green suite.
 function registerDraftTools(_server: McpServer, _caller: StudioCaller): void {}
 function registerMediaTools(_server: McpServer, _caller: StudioCaller): void {}
 ```
 
-and expect the `tools/list` ordering test to fail until Task 10 lands. Note that in the test file, and do not weaken the assertion to match the stub.
+**On the two stubs:** they are empty on purpose, and every test in this task passes with them empty — the `tools/list` assertion checks the four orientation tools and their order, not the full surface. Tasks 9 and 10 replace each stub with a real implementation and extend that assertion. Do not delete the stubs, and do not register drafting or media tools in this task.
 
 - [ ] **Step 10: Write the route**
 
@@ -4082,7 +4052,7 @@ Then add a `studioPublicUrl()` accessor to `apps/web/src/lib/env.ts`, following 
 cd apps/web && pnpm exec vitest run --config vitest.integration.config.ts src/lib/studio/__tests__/mcp-transport.itest.ts
 ```
 
-Expected: the auth, discovery-instructions, and orientation-tool tests PASS. The `tools/list` ordering test and the scopes test FAIL until Tasks 9 and 10 land — that is expected and correct. Do not delete or weaken them.
+Expected: PASS, every test. If `tools/list` returns more or fewer than the four orientation tools, the stubs are not empty — that is Task 9 and 10's work, not this task's.
 
 - [ ] **Step 14: Typecheck and commit**
 
@@ -4240,6 +4210,28 @@ describe("drafting tools", () => {
       const result = payload(body);
       expect(result).toMatchObject({ ok: false, code: "bad_request", retryable: false });
       expect(result.message).toMatch(/1a-knockout/);
+    }));
+
+  it("refuses a drafting tool to a media-only token", () =>
+    withTestWorkspace(async (f) => {
+      const { token } = await mintToken({
+        workspaceId: f.workspaceId,
+        userId: f.userId,
+        name: "t",
+        scopes: ["media"],
+      });
+
+      const { body } = await rpc(token, "tools/call", {
+        name: "create_draft",
+        arguments: {
+          accountId: f.accountId,
+          style: "carousel",
+          archetype: "1a-knockout",
+          topic: "t",
+        },
+      });
+
+      expect(payload(body)).toMatchObject({ ok: false, code: "forbidden" });
     }));
 
   it("reports a cap breach as non-retryable", () =>
@@ -4406,7 +4398,13 @@ function registerDraftTools(server: McpServer, caller: StudioCaller): void {
 cd apps/web && pnpm exec vitest run --config vitest.integration.config.ts src/lib/studio/__tests__/mcp-transport.itest.ts -t "drafting tools"
 ```
 
-Expected: PASS, 5 tests. The scopes test from Task 8 should now pass too.
+Expected: PASS, 6 tests. Also re-run the whole file to confirm Task 8's tests still pass:
+
+```bash
+cd apps/web && pnpm exec vitest run --config vitest.integration.config.ts src/lib/studio/__tests__/mcp-transport.itest.ts
+```
+
+Expected: PASS. Task 8's `tools/list` assertion checks only the first four tools and their order, so appending three drafting tools after them does not break it.
 
 - [ ] **Step 5: Commit**
 
@@ -4440,6 +4438,34 @@ the same call."
 Append to `apps/web/src/lib/studio/__tests__/mcp-transport.itest.ts`:
 
 ```ts
+describe("the complete tool surface", () => {
+  it("lists exactly the ten tools, in a deterministic order", () =>
+    withTestWorkspace(async (f) => {
+      const { token } = await mintToken({
+        workspaceId: f.workspaceId,
+        userId: f.userId,
+        name: "t",
+        scopes: ["draft", "media", "render"],
+      });
+
+      const { body } = await rpc(token, "tools/list");
+      const names = body.result.tools.map((t: { name: string }) => t.name);
+
+      expect(names).toEqual([
+        "list_accounts",
+        "describe_template",
+        "list_posts",
+        "list_assets",
+        "create_draft",
+        "revise_draft",
+        "check_draft",
+        "start_media",
+        "start_render",
+        "job_status",
+      ]);
+    }));
+});
+
 describe("media tools", () => {
   it("start_media returns a jobId immediately rather than blocking", () =>
     withTestWorkspace(async (f) => {
@@ -4711,7 +4737,7 @@ function registerDailyPostPrompt(server: McpServer): void {
 cd apps/web && pnpm exec vitest run --config vitest.integration.config.ts src/lib/studio/__tests__/mcp-transport.itest.ts
 ```
 
-Expected: PASS, every test including the Task 8 `tools/list` ordering assertion. If the order assertion fails, the registration order in `buildStudioServer` does not match the expected list — fix the registration order, not the test.
+Expected: PASS, every test. If the ten-tool ordering assertion fails, the registration order in `buildStudioServer` does not match the expected list — fix the registration order, not the test.
 
 - [ ] **Step 5: Verify `registerPrompt`'s actual signature**
 
