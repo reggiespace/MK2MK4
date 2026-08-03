@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createHash } from "node:crypto";
-import { generateToken, hashToken } from "../tokens";
+import { generateToken, hashToken } from "../token-crypto";
 
 /**
  * The pure half of tokens.ts. The DB-backed half is in tokens.itest.ts.

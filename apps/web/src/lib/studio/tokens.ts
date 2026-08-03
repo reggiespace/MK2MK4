@@ -1,39 +1,17 @@
 import "server-only";
-import { createHash, randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { StudioError } from "./errors";
 import { ALL_SCOPES, type StudioCaller } from "./types";
+import { generateToken, hashToken } from "./token-crypto";
 
 /**
- * Agent bearer tokens.
- *
- * sha256 rather than bcrypt/argon2 on purpose: a slow KDF exists to frustrate
- * brute-forcing low-entropy human passwords, and this is 256 bits of CSPRNG
- * output verified on every single tool call. A work factor would only add
- * latency to the hot path.
- *
- * Hashed rather than encrypted (unlike lib/crypto.ts, which must recover
- * provider keys to call fal.ai): nothing ever needs to read a token back.
+ * Agent bearer tokens — the database-backed half. Pure generation/hashing
+ * lives in ./token-crypto so it can be unit-tested without a DATABASE_URL.
  */
 
-const TOKEN_BYTES = 32;
-const PREFIX_LENGTH = 12;
-
-export function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
-
-export interface GeneratedToken {
-  token: string;
-  tokenHash: string;
-  prefix: string;
-}
-
-/** Pure generation, separated from persistence so it is unit-testable. */
-export function generateToken(): GeneratedToken {
-  const token = `rss_${randomBytes(TOKEN_BYTES).toString("base64url")}`;
-  return { token, tokenHash: hashToken(token), prefix: token.slice(0, PREFIX_LENGTH) };
-}
+// Re-exported so existing importers of `hashToken`/`generateToken` from this
+// module keep working after the split.
+export { generateToken, hashToken };
 
 export interface MintTokenInput {
   workspaceId: string;
