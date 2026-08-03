@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;0,700;0,800;1,600;1,700&family=Albert+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ece6d6; --surface:#f4efe0; --surface-2:#faf7ec; --ink:#1a2230;
+  --moss:#5c7556; --moss-d:#4c6247; --slate:#3b5a78; --brass:#b89251;
+  --muted:#6e6952; --border:#d9d1b6; --border-2:#cabf9d;
+  --font-display:'Spectral',Georgia,serif; --font-sans:'Albert Sans',system-ui,sans-serif; --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --accent:#5c7556;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+a{color:var(--slate);text-decoration:none}
+a:hover{color:var(--moss)}
+::selection{background:rgba(92,117,86,.22)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes shimmer{0%{background-position:-180% 0}100%{background-position:180% 0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pop{0%{opacity:0;transform:scale(.94)}60%{transform:scale(1.02)}100%{opacity:1;transform:scale(1)}}
+@keyframes vpulse{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+</style>
+</helmet>
+
+<div style="--accent:{{ accent }};display:flex;min-height:100vh;background:var(--bg)">
+
+  <nav style="width:236px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:22px 16px;gap:22px;position:sticky;top:0;height:100vh">
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="font-family:var(--font-display);font-size:19px;font-weight:700;line-height:1;color:var(--ink)">Reggie<span style="color:var(--moss)">Space</span></div>
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">Social Studio</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="6">
+        <div style="{{ n.style }}" onClick="{{ n.onClick }}">{{ n.iconEl }}<span>{{ n.label }}</span></div>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);padding:0 4px">Accounts</div>
+      <sc-for list="{{ clients }}" as="c" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;font-size:13px;color:var(--ink)">
+          <span style="width:24px;height:24px;border-radius:7px;background:{{ c.mark }};color:#f4efe0;font-family:var(--font-display);font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ c.initials }}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.name }}</span>
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--moss);flex-shrink:0"></span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top:auto">
+      <button style="width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:9px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:var(--bg)">Sign out</button>
+    </div>
+  </nav>
+
+  <main style="flex:1;overflow-y:auto;min-width:0">
+    <div style="max-width:1140px;margin:0 auto;padding:32px 40px 56px;display:flex;flex-direction:column;gap:26px">
+
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);margin-bottom:6px">New post</div>
+          <h1 style="font-family:var(--font-display);font-size:32px;font-weight:700;margin:0;line-height:1.1;color:var(--ink)">Create content</h1>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:6px 8px 6px 14px">
+          <span style="font-size:13px;color:var(--muted)">Publishing via</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:var(--surface);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:600;font-family:var(--font-mono);letter-spacing:.04em">{{ ic.link }}Postiz</span>
+        </div>
+      </div>
+
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:28px 30px;box-shadow:0 1px 0 rgba(255,255,255,.6) inset">
+
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:28px;padding-bottom:22px;border-bottom:1px solid var(--border)">
+          <sc-for list="{{ stepperCells }}" as="cell" hint-placeholder-count="6">
+            <sc-if value="{{ cell.isStep }}" hint-placeholder-val="{{ true }}">
+              <div style="{{ cell.rowStyle }}" onClick="{{ cell.onClick }}">
+                <span style="{{ cell.dotStyle }}">
+                  <sc-if value="{{ cell.done }}" hint-placeholder-val="{{ false }}">{{ ic.checkSm }}</sc-if>
+                  <sc-if value="{{ cell.showNum }}" hint-placeholder-val="{{ true }}">{{ cell.n }}</sc-if>
+                </span>
+                <span style="{{ cell.labelStyle }}">{{ cell.label }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ cell.isConn }}" hint-placeholder-val="{{ false }}"><span style="{{ cell.connStyle }}"></span></sc-if>
+          </sc-for>
+        </div>
+
+        <div style="min-width:0">
+
+          <!-- STEP 0 · ACCOUNT -->
+          <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ true }}">
+            <div style="animation:fadeUp .35s ease both">
+              <div style="margin-bottom:18px"><h2 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin:0 0 4px">Choose an account</h2><p style="margin:0;color:var(--muted);font-size:14px">Pick the brand you're creating for, then confirm which channels this post goes to.</p></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <sc-for list="{{ accountsVM }}" as="a" hint-placeholder-count="2">
+                  <button style="{{ a.style }}" style-hover="border-color:var(--border-2)" onClick="{{ a.onSelect }}">
+                    <div style="display:flex;align-items:center;gap:12px;width:100%">
+                      <span style="width:44px;height:44px;border-radius:12px;background:{{ a.mark }};color:#f4efe0;font-family:var(--font-display);font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ a.initials }}</span>
+                      <div style="text-align:left;min-width:0">
+                        <div style="font-family:var(--font-display);font-size:17px;font-weight:700;line-height:1.2">{{ a.name }}</div>
+                        <div style="font-size:12.5px;color:var(--muted);font-family:var(--font-mono)">{{ a.locale }} · {{ a.channelCount }} channels</div>
+                      </div>
+                      <sc-if value="{{ a.selected }}" hint-placeholder-val="{{ false }}"><span style="margin-left:auto;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#f4efe0;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ a.checkEl }}</span></sc-if>
+                    </div>
+                  </button>
+                </sc-for>
+              </div>
+              <div style="margin-top:26px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px 22px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                  <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass)">Channels · {{ account.name }}</div>
+                  <button style="display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px dashed var(--border-2);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--slate);cursor:pointer" style-hover="background:var(--surface-2)" onClick="{{ toggleConnect }}">{{ ic.plus }}Connect channel</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:10px">
+                  <sc-for list="{{ channelsVM }}" as="ch" hint-placeholder-count="2">
+                    <button style="{{ ch.style }}" onClick="{{ ch.onToggle }}">
+                      {{ ch.iconEl }}
+                      <span style="display:flex;flex-direction:column;text-align:left;line-height:1.15"><span style="font-size:13.5px;font-weight:600">{{ ch.name }}</span><span style="font-size:11.5px;color:var(--muted);font-family:var(--font-mono)">{{ ch.handle }}</span></span>
+                      <span style="{{ ch.tickStyle }}">{{ ch.tickEl }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ showConnect }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);animation:fadeUp .25s ease both">
+                    <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Connect another platform to {{ account.name }} via Postiz:</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:9px">
+                      <sc-for list="{{ connectVM }}" as="p" hint-placeholder-count="4">
+                        <button style="display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer" style-hover="border-color:var(--slate)" onClick="{{ p.onAdd }}"><span style="display:flex;color:var(--slate)">{{ p.iconEl }}</span>{{ p.name }}<span style="color:var(--moss);display:flex">{{ ic.plusSm }}</span></button>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- STEP 1 · STYLE -->
+          <sc-if value="{{ isStyle }}" hint-placeholder-val="{{ false }}">
+            <div style="animation:fadeUp .35s ease both">
+              <div style="margin-bottom:18px"><h2 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin:0 0 4px">Choose a style</h2><p style="margin:0;color:var(--muted);font-size:14px">What kind of post are we making?</p></div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:16px">
+                <sc-for list="{{ stylesVM }}" as="st" hint-placeholder-count="5">
+                  <button style="{{ st.style }}" style-hover="border-color:var(--border-2)" onClick="{{ st.onSelect }}">
+                    <div style="{{ st.preview }}">{{ st.iconEl }}</div>
+                    <div style="padding:12px 4px 2px;text-align:left">
+                      <div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--font-display);font-size:16px;font-weight:700">{{ st.name }}</span><sc-if value="{{ st.selected }}" hint-placeholder-val="{{ false }}"><span style="width:19px;height:19px;border-radius:50%;background:var(--accent);color:#f4efe0;display:flex;align-items:center;justify-content:center">{{ st.checkEl }}</span></sc-if></div>
+                      <div style="font-size:12.5px;color:var(--muted);margin-top:2px">{{ st.desc }}</div>
+                      <div style="font-size:11px;color:var(--brass);font-family:var(--font-mono);margin-top:5px;letter-spacing:.03em">{{ st.meta }}</div>
+                    </div>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- STEP 2 · TEMPLATE -->
+          <sc-if value="{{ isTemplate }}" hint-placeholder-val="{{ false }}">
+            <div style="animation:fadeUp .35s ease both">
+              <div style="margin-bottom:16px"><h2 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin:0 0 4px">Pick a template</h2><p style="margin:0;color:var(--muted);font-size:14px">{{ templateCountLabel }}</p></div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(206px,1fr));gap:18px">
+                <sc-for list="{{ archetypesVM }}" as="t" hint-placeholder-count="4">
+                  <button style="{{ t.style }}" style-hover="border-color:var(--border-2)" onClick="{{ t.onSelect }}">
+                    <div style="position:relative;display:flex;justify-content:center;padding:4px 4px 0">
+                      {{ t.el }}
+                      <sc-if value="{{ t.selected }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#f4efe0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.25)">{{ t.checkEl }}</span></sc-if>
+                    </div>
+                    <div style="padding:12px 6px 3px;text-align:left">
+                      <div style="font-family:var(--font-display);font-size:16px;font-weight:700;line-height:1.15">{{ t.name }}</div>
+                      <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);margin-top:4px">{{ t.role }}</div>
+                      <div style="font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.4">{{ t.desc }}</div>
+                    </div>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- STEP 3 · TOPIC -->
+          <sc-if value="{{ isTopic }}" hint-placeholder-val="{{ false }}">
+            <div style="animation:fadeUp .35s ease both;max-width:640px">
+              <div style="margin-bottom:18px"><h2 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin:0 0 4px">What's it about?</h2><p style="margin:0;color:var(--muted);font-size:14px">Give a theme, tap a content pillar, or let AI suggest a topic.</p></div>
+              <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-bottom:10px">Content pillars</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px">
+                <sc-for list="{{ pillarsVM }}" as="p" hint-placeholder-count="5">
+                  <button style="{{ p.style }}" onClick="{{ p.onPick }}">{{ p.name }}</button>
+                </sc-for>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-bottom:10px">Theme or topic</div>
+              <textarea value="{{ topic }}" onInput="{{ onTopic }}" rows="3" placeholder="e.g. Why food noise gets louder mid-cycle — calm, shame-free explainer" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:13px 15px;background:#fff;color:var(--ink);font-size:14px;font-family:var(--font-sans);resize:vertical;line-height:1.5;outline:none"></textarea>
+              <div style="display:flex;align-items:center;gap:12px;margin:16px 0 4px">
+                <button style="display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border-2);border-radius:999px;padding:9px 16px;font-size:13.5px;font-weight:600;color:var(--slate);cursor:pointer" style-hover="background:var(--surface-2)" onClick="{{ onSuggest }}">{{ ic.sparkS }}{{ suggestLabel }}</button>
+                <span style="font-size:12.5px;color:var(--muted)">Not sure? Let AI pitch a few.</span>
+              </div>
+              <sc-if value="{{ hasIdeas }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+                  <sc-for list="{{ ideasVM }}" as="idea" hint-placeholder-count="3">
+                    <button style="{{ idea.style }}" style-hover="border-color:var(--border-2)" onClick="{{ idea.onPick }}">
+                      <div style="display:flex;align-items:flex-start;gap:12px;text-align:left">
+                        <span style="{{ idea.dot }}"><sc-if value="{{ idea.selected }}" hint-placeholder-val="{{ false }}">{{ idea.checkEl }}</sc-if></span>
+                        <div style="min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-family:var(--font-display);font-size:15.5px;font-weight:700;line-height:1.2">{{ idea.title }}</span><span style="font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;background:#e8e2d0;color:var(--muted);padding:2px 7px;border-radius:999px;flex-shrink:0">{{ idea.fmt }}</span></div><div style="font-size:13px;color:var(--muted);line-height:1.5">{{ idea.angle }}</div></div>
+                      </div>
+                    </button>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <!-- STEP 4 · GENERATE / FILL -->
+          <sc-if value="{{ isGenerate }}" hint-placeholder-val="{{ false }}">
+            <div style="animation:fadeUp .35s ease both">
+
+              <sc-if value="{{ genIdle }}" hint-placeholder-val="{{ true }}">
+                <div style="max-width:620px">
+                  <div style="margin-bottom:20px"><h2 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin:0 0 4px">Ready to generate</h2><p style="margin:0;color:var(--muted);font-size:14px">AI drafts the copy in your brand voice, then flows it into the template's slots. You'll fill and edit everything before it goes out.</p></div>
+                  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:6px 20px;margin-bottom:22px">
+                    <sc-for list="{{ summaryVM }}" as="row" hint-placeholder-count="5">
+                      <div style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid {{ row.rule }}">
+                        <span style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);width:88px;flex-shrink:0">{{ row.k }}</span>
+                        <span style="font-size:14px;font-weight:600;color:var(--ink)">{{ row.v }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <button style="display:inline-flex;align-items:center;gap:9px;background:var(--accent);color:#f4efe0;border:none;border-radius:12px;padding:14px 24px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(92,117,86,.28)" style-hover="filter:brightness(1.06)" onClick="{{ onGenerate }}">{{ ic.sparkL }}Generate draft</button>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ genWorking }}" hint-placeholder-val="{{ false }}">
+                <div style="max-width:640px;display:flex;flex-direction:column;gap:20px">
+                  <div style="display:flex;align-items:center;gap:14px">
+                    <span style="width:38px;height:38px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--accent);animation:spin .8s linear infinite;flex-shrink:0"></span>
+                    <div><div style="font-family:var(--font-display);font-size:19px;font-weight:700;line-height:1.2">{{ genTitle }}</div><div style="font-size:13px;color:var(--muted)">{{ genSub }}</div></div>
+                  </div>
+                  <sc-if value="{{ phaseWriting }}" hint-placeholder-val="{{ false }}">
+                    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:18px">
+                      <sc-for list="{{ writeBlocks }}" as="b" hint-placeholder-count="4">
+                        <div style="animation:fadeUp .4s ease both;animation-delay:{{ b.delay }}">
+                          <div style="height:9px;width:{{ b.w1 }};border-radius:5px;background:linear-gradient(90deg,var(--border) 25%,var(--surface-2) 45%,var(--border) 65%);background-size:200% 100%;animation:shimmer 1.4s linear infinite;margin-bottom:9px"></div>
+                          <div style="height:9px;width:{{ b.w2 }};border-radius:5px;background:linear-gradient(90deg,var(--border) 25%,var(--surface-2) 45%,var(--border) 65%);background-size:200% 100%;animation:shimmer 1.4s linear infinite"></div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ phaseAssets }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;gap:12px;flex-wrap:wrap">
+                      <sc-for list="{{ assetFrames }}" as="f" hint-placeholder-count="4">
+                        <div style="width:118px;aspect-ratio:{{ f.ar }};border-radius:12px;border:1px solid var(--border);background:linear-gradient(135deg,var(--surface-2),var(--surface));overflow:hidden;position:relative;animation:pop .5s ease both;animation-delay:{{ f.delay }}">
+                          <div style="position:absolute;inset:0;background:linear-gradient(90deg,transparent 25%,rgba(255,255,255,.5) 45%,transparent 65%);background-size:200% 100%;animation:shimmer 1.3s linear infinite"></div>
+                          <span style="position:absolute;top:9px;left:9px;right:9px;height:3px;border-radius:2px;background:var(--accent);opacity:.5"></span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ genDone }}" hint-placeholder-val="{{ false }}">
+                <div style="animation:fadeUp .4s ease both">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+                    <span style="width:26px;height:26px;border-radius:50%;background:#d8ecd6;color:#2d6b28;display:flex;align-items:center;justify-content:center">{{ ic.checkSm }}</span>
+                    <h2 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin:0">Fill your {{ styleName }}</h2>
+                    <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--border);padding:4px 10px;border-radius:999px">{{ archName }}</span>
+                    <button style="margin-left:auto;display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--border);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer" style-hover="border-color:var(--slate);color:var(--slate)" onClick="{{ onRegenerate }}">{{ ic.refresh }}Regenerate</button>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start">
+
+                    <div style="display:flex;flex-direction:column;gap:16px;position:sticky;top:14px;min-width:0">
+                      <div ref="{{ previewRef }}" style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px;display:flex;align-items:center;justify-content:center;min-height:470px;box-shadow:inset 0 2px 12px rgba(26,34,48,.05);overflow:hidden">
+                        <div style="border-radius:14px;overflow:hidden;box-shadow:0 18px 44px rgba(26,34,48,.24)">{{ activeSlideEl }}</div>
+                      </div>
+                      <sc-if value="{{ isMulti }}" hint-placeholder-val="{{ true }}">
+                        <div>
+                          <div style="display:flex;align-items:center;gap:10px;overflow-x:auto;padding:4px 2px 10px">
+                            <sc-for list="{{ stripVM }}" as="st" hint-placeholder-count="4">
+                              <button style="{{ st.style }}" onClick="{{ st.onClick }}">
+                                <div style="border-radius:7px;overflow:hidden;pointer-events:none">{{ st.el }}</div>
+                                <span style="{{ st.tagStyle }}">{{ st.tag }}</span>
+                              </button>
+                            </sc-for>
+                            <sc-if value="{{ canAdd }}" hint-placeholder-val="{{ true }}">
+                              <button style="flex-shrink:0;width:64px;align-self:stretch;min-height:120px;border:1.5px dashed var(--border-2);background:var(--surface);border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);cursor:pointer;font-size:11px;font-weight:600" style-hover="border-color:var(--accent);color:var(--accent)" onClick="{{ toggleAddMenu }}">{{ ic.plus }}Add</button>
+                            </sc-if>
+                          </div>
+                          <sc-if value="{{ addMenuOpen }}" hint-placeholder-val="{{ false }}">
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;background:var(--surface);border:1px solid var(--border-2);border-radius:12px;padding:12px;margin-bottom:10px;animation:fadeUp .2s ease both">
+                              <span style="width:100%;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2px">Add a slide</span>
+                              <sc-for list="{{ addKindsVM }}" as="k" hint-placeholder-count="4">
+                                <button style="display:inline-flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer" style-hover="border-color:var(--accent)" onClick="{{ k.onAdd }}">{{ k.label }}</button>
+                              </sc-for>
+                            </div>
+                          </sc-if>
+                          <sc-if value="{{ showSlideCtl }}" hint-placeholder-val="{{ false }}">
+                            <div style="display:flex;align-items:center;gap:8px">
+                              <span style="font-size:12px;color:var(--muted);font-family:var(--font-mono)">{{ activeTag }}</span>
+                              <span style="flex:1"></span>
+                              <button style="{{ moveLeftStyle }}" onClick="{{ onMoveLeft }}" title="Move earlier">{{ ic.chevL }}</button>
+                              <button style="{{ moveRightStyle }}" onClick="{{ onMoveRight }}" title="Move later">{{ ic.chevR }}</button>
+                              <button style="{{ delStyle }}" onClick="{{ onDeleteSlide }}" title="Delete slide">{{ ic.trash }}</button>
+                            </div>
+                          </sc-if>
+                        </div>
+                      </sc-if>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;gap:16px">
+                      <div style="display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:4px">
+                        <sc-for list="{{ editorTabsVM }}" as="t" hint-placeholder-count="2">
+                          <button style="{{ t.style }}" onClick="{{ t.onClick }}">{{ t.label }}</button>
+                        </sc-for>
+                      </div>
+
+                      <sc-if value="{{ slidesTab }}" hint-placeholder-val="{{ true }}">
+                        <div style="display:flex;flex-direction:column;gap:16px">
+                          <sc-if value="{{ hasArchSwap }}" hint-placeholder-val="{{ false }}">
+                            <div>
+                              <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);margin-bottom:9px">{{ archSwapLabel }}</div>
+                              <div style="display:flex;flex-wrap:wrap;gap:7px">
+                                <sc-for list="{{ archSwapVM }}" as="a" hint-placeholder-count="4">
+                                  <button style="{{ a.style }}" onClick="{{ a.onClick }}">{{ a.name }}</button>
+                                </sc-for>
+                              </div>
+                            </div>
+                          </sc-if>
+                          <div style="display:flex;flex-direction:column;gap:15px">
+                            <sc-for list="{{ fieldsVM }}" as="f" hint-placeholder-count="3">
+                              <div>
+                                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:6px">
+                                  <span style="font-size:12.5px;font-weight:700;color:var(--ink)">{{ f.label }}<sc-if value="{{ f.req }}" hint-placeholder-val="{{ false }}"><span style="color:var(--brass)"> *</span></sc-if></span>
+                                  <sc-if value="{{ f.hasCounter }}" hint-placeholder-val="{{ false }}"><span style="{{ f.counterStyle }}">{{ f.counter }}</span></sc-if>
+                                </div>
+                                <sc-if value="{{ f.isText }}" hint-placeholder-val="{{ true }}">
+                                  <input value="{{ f.value }}" onInput="{{ f.onInput }}" placeholder="{{ f.ph }}" style="{{ f.inputStyle }}">
+                                </sc-if>
+                                <sc-if value="{{ f.isArea }}" hint-placeholder-val="{{ false }}">
+                                  <textarea value="{{ f.value }}" onInput="{{ f.onInput }}" rows="{{ f.rows }}" placeholder="{{ f.ph }}" style="{{ f.areaStyle }}"></textarea>
+                                </sc-if>
+                                <sc-if value="{{ f.isImage }}" hint-placeholder-val="{{ false }}">
+                                  <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px">
+                                    <div style="{{ f.thumbStyle }}">{{ f.thumbEl }}</div>
+                                    <div style="min-width:0;flex:1">
+                                      <div style="font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.imgName }}</div>
+                                      <div style="display:flex;gap:8px;margin-top:7px">
+                                        <button style="display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;color:var(--slate);cursor:pointer" style-hover="border-color:var(--slate)" onClick="{{ f.onPick }}">{{ ic.image }}Library</button>
+                                        <button style="display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;color:var(--moss);cursor:pointer" style-hover="border-color:var(--moss)" onClick="{{ f.onGen }}">{{ ic.wand }}Generate</button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </sc-if>
+                                <sc-if value="{{ f.isList }}" hint-placeholder-val="{{ false }}">
+                                  <div style="display:flex;flex-direction:column;gap:8px">
+                                    <sc-for list="{{ f.items }}" as="it" hint-placeholder-count="3">
+                                      <div style="display:flex;align-items:center;gap:7px">
+                                        <sc-if value="{{ it.hasCorrect }}" hint-placeholder-val="{{ false }}"><button style="{{ it.correctStyle }}" onClick="{{ it.onCorrect }}" title="Mark correct">{{ it.correctEl }}</button></sc-if>
+                                        <div style="flex:1;display:flex;gap:6px">
+                                          <sc-for list="{{ it.parts }}" as="pt" hint-placeholder-count="1">
+                                            <input value="{{ pt.value }}" onInput="{{ pt.onInput }}" placeholder="{{ pt.ph }}" style="{{ pt.style }}">
+                                          </sc-for>
+                                        </div>
+                                        <sc-if value="{{ it.canRemove }}" hint-placeholder-val="{{ true }}"><button style="width:28px;height:28px;flex-shrink:0;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="border-color:#b4574f;color:#b4574f" onClick="{{ it.onRemove }}">{{ ic.close }}</button></sc-if>
+                                      </div>
+                                    </sc-for>
+                                    <sc-if value="{{ f.canAddItem }}" hint-placeholder-val="{{ false }}">
+                                      <button style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px dashed var(--border-2);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;color:var(--slate);cursor:pointer" style-hover="background:var(--surface-2)" onClick="{{ f.onAddItem }}">{{ ic.plusSm }}Add item</button>
+                                    </sc-if>
+                                  </div>
+                                </sc-if>
+                              </div>
+                            </sc-for>
+                          </div>
+                        </div>
+                      </sc-if>
+
+                      <sc-if value="{{ voiceTab }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex;flex-direction:column;gap:18px">
+                          <div style="display:flex;align-items:flex-start;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px">
+                            <span style="display:flex;color:var(--slate);margin-top:1px">{{ ic.wave }}</span>
+                            <div style="font-size:12.5px;color:var(--muted);line-height:1.5">On-screen text is the narration script. ElevenLabs reads it aloud over your frames.</div>
+                          </div>
+                          <div>
+                            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);margin-bottom:9px">Voice</div>
+                            <div style="display:flex;flex-direction:column;gap:8px">
+                              <sc-for list="{{ voicesVM }}" as="v" hint-placeholder-count="3">
+                                <button style="{{ v.style }}" onClick="{{ v.onClick }}">
+                                  <span style="{{ v.dotStyle }}"></span>
+                                  <span style="text-align:left;flex:1"><span style="display:block;font-size:13.5px;font-weight:700;color:var(--ink)">{{ v.name }}</span><span style="display:block;font-size:11.5px;color:var(--muted)">{{ v.desc }}</span></span>
+                                  <span style="{{ v.tickStyle }}">{{ v.tickEl }}</span>
+                                </button>
+                              </sc-for>
+                            </div>
+                          </div>
+                          <div>
+                            <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);margin-bottom:9px">On-screen text</div>
+                            <div style="display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:4px;gap:2px">
+                              <sc-for list="{{ narrationVM }}" as="n" hint-placeholder-count="2">
+                                <button style="{{ n.style }}" onClick="{{ n.onClick }}">{{ n.label }}</button>
+                              </sc-for>
+                            </div>
+                          </div>
+                          <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:15px 16px">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+                              <button style="{{ playStyle }}" onClick="{{ onPreviewRead }}">{{ playIconEl }}</button>
+                              <div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">{{ playLabel }}</div><div style="font-size:11.5px;color:var(--muted)">{{ readMeta }}</div></div>
+                              <div style="margin-left:auto;display:flex;align-items:flex-end;gap:2px;height:22px">
+                                <sc-for list="{{ waveBars }}" as="b" hint-placeholder-count="7"><span style="{{ b.style }}"></span></sc-for>
+                              </div>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:9px;max-height:230px;overflow-y:auto">
+                              <sc-for list="{{ scriptVM }}" as="ln" hint-placeholder-count="4">
+                                <div style="{{ ln.style }}">
+                                  <span style="font-family:var(--font-mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);flex-shrink:0;width:26px">{{ ln.n }}</span>
+                                  <span style="font-size:12.5px;color:var(--ink);line-height:1.5">{{ ln.text }}</span>
+                                </div>
+                              </sc-for>
+                            </div>
+                          </div>
+                        </div>
+                      </sc-if>
+
+                      <sc-if value="{{ postTab }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex;flex-direction:column;gap:16px">
+                          <sc-if value="{{ isStory }}" hint-placeholder-val="{{ false }}">
+                            <div style="display:flex;align-items:flex-start;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px">
+                              <span style="display:flex;color:var(--brass);margin-top:1px">{{ ic.info }}</span>
+                              <div style="font-size:12.5px;color:var(--muted);line-height:1.5">Stories carry no caption — the download link rides the link sticker or your bio.</div>
+                            </div>
+                            <div><div style="font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:6px">Link sticker URL</div><input value="{{ linkSticker }}" onInput="{{ onLinkSticker }}" placeholder="https://…" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 13px;background:#fff;font-family:var(--font-mono);font-size:12.5px;color:var(--ink);outline:none"></div>
+                            <div><div style="font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:6px">Mention / collab tag</div><input value="{{ mention }}" onInput="{{ onMention }}" placeholder="@handle" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 13px;background:#fff;font-size:13px;color:var(--ink);outline:none"></div>
+                          </sc-if>
+                          <sc-if value="{{ isNotStory }}" hint-placeholder-val="{{ true }}">
+                            <div>
+                              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px"><span style="font-size:12.5px;font-weight:700;color:var(--ink)">Caption</span><span style="font-size:11.5px;color:var(--muted);font-family:var(--font-mono)">ends "→ link in bio"</span></div>
+                              <textarea value="{{ draftCaption }}" onInput="{{ onCaption }}" rows="6" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:#fff;color:var(--ink);font-size:13.5px;font-family:var(--font-sans);line-height:1.6;resize:vertical;outline:none"></textarea>
+                            </div>
+                            <div>
+                              <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px"><span style="font-size:12.5px;font-weight:700;color:var(--ink)">First comment</span><span style="font-size:11px;color:var(--muted)">Auto-posts via Postiz · carries the download link</span></div>
+                              <textarea value="{{ draftFirst }}" onInput="{{ onFirst }}" rows="3" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:#fff;color:var(--ink);font-size:13.5px;font-family:var(--font-sans);line-height:1.6;resize:vertical;outline:none"></textarea>
+                            </div>
+                            <div>
+                              <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:9px"><span style="font-size:12.5px;font-weight:700;color:var(--ink)">Hashtags</span><span style="font-size:11.5px;color:var(--muted)">· {{ tagCount }}</span></div>
+                              <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center">
+                                <sc-for list="{{ hashtagsVM }}" as="h" hint-placeholder-count="5">
+                                  <span style="display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:12px;color:var(--slate);background:#e0eaf4;padding:5px 6px 5px 11px;border-radius:999px">{{ h.label }}<span style="display:flex;cursor:pointer;color:var(--slate);opacity:.65;border-radius:999px;width:16px;height:16px;align-items:center;justify-content:center" style-hover="opacity:1;background:rgba(59,90,120,.14)" onClick="{{ h.onRemove }}">{{ h.xEl }}</span></span>
+                                </sc-for>
+                                <span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px dashed var(--border-2);border-radius:999px;padding:3px 4px 3px 11px">
+                                  <input value="{{ newTag }}" onInput="{{ onNewTag }}" onKeyDown="{{ onTagKey }}" placeholder="add tag" style="border:none;background:transparent;outline:none;font-family:var(--font-mono);font-size:12px;color:var(--ink);width:70px">
+                                  <button style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;border:none;background:var(--accent);color:#f4efe0;cursor:pointer" style-hover="filter:brightness(1.06)" onClick="{{ onAddTag }}">{{ ic.plusSm }}</button>
+                                </span>
+                              </div>
+                            </div>
+                          </sc-if>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <!-- STEP 5 · REVIEW -->
+          <sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+            <div style="animation:fadeUp .35s ease both">
+              <sc-if value="{{ scheduled }}" hint-placeholder-val="{{ false }}">
+                <div style="max-width:520px;margin:24px auto;text-align:center;animation:pop .5s ease both">
+                  <span style="width:64px;height:64px;border-radius:50%;background:#d8ecd6;color:#2d6b28;display:inline-flex;align-items:center;justify-content:center;margin-bottom:18px">{{ ic.checkLg }}</span>
+                  <h2 style="font-family:var(--font-display);font-size:26px;font-weight:700;margin:0 0 8px">Scheduled</h2>
+                  <p style="margin:0 0 22px;color:var(--muted);font-size:14.5px;line-height:1.6">{{ scheduledMsg }}</p>
+                  <div style="display:flex;gap:10px;justify-content:center">
+                    <button style="background:var(--accent);color:#f4efe0;border:none;border-radius:11px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer" style-hover="filter:brightness(1.06)" onClick="{{ onReset }}">Create another</button>
+                    <button style="background:transparent;color:var(--ink);border:1px solid var(--border);border-radius:11px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:var(--surface)">View queue</button>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ notScheduled }}" hint-placeholder-val="{{ true }}">
+                <div>
+                  <div style="margin-bottom:18px"><h2 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin:0 0 4px">Review &amp; publish</h2><p style="margin:0;color:var(--muted);font-size:14px">This is exactly how the post appears live. Approve to schedule it via Postiz.</p></div>
+                  <div style="display:grid;grid-template-columns:minmax(0,392px) 1fr;gap:28px;align-items:start">
+                    <div style="background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(26,34,48,.08)">
+                      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px">
+                        <span style="width:34px;height:34px;border-radius:50%;background:{{ account.mark }};color:#f4efe0;font-family:var(--font-display);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center">{{ account.initials }}</span>
+                        <div style="line-height:1.2"><div style="font-size:13px;font-weight:700;color:var(--ink)">{{ igHandle }}</div><div style="font-size:11px;color:var(--muted)">Sponsored</div></div>
+                        <span style="margin-left:auto;color:var(--muted);font-weight:700;letter-spacing:1px">···</span>
+                      </div>
+                      <div style="position:relative;background:var(--ink);display:flex;align-items:center;justify-content:center">
+                        {{ coverEl }}
+                        <sc-if value="{{ isMultiReview }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;bottom:12px;right:12px;z-index:2;font-family:var(--font-mono);font-size:10px;background:rgba(0,0,0,.4);color:#fff;padding:2px 8px;border-radius:999px">1/{{ slideCount }}</span></sc-if>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:16px;padding:12px 14px 6px;color:var(--ink)">
+                        {{ ic.heart }}{{ ic.comment }}{{ ic.send }}<span style="margin-left:auto;display:flex">{{ ic.save }}</span>
+                      </div>
+                      <div style="padding:2px 14px 16px">
+                        <div style="font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:5px">2,418 likes</div>
+                        <sc-if value="{{ isNotStory }}" hint-placeholder-val="{{ true }}">
+                          <p style="margin:0;font-size:13px;line-height:1.5;color:var(--ink);white-space:pre-wrap"><span style="font-weight:700">{{ igHandle }}</span> {{ captionShort }}</p>
+                          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px"><sc-for list="{{ hashtags }}" as="h" hint-placeholder-count="5"><span style="font-size:12.5px;color:var(--slate)">{{ h }}</span></sc-for></div>
+                          <div style="font-size:12.5px;color:var(--muted);margin-top:8px">View all 96 comments</div>
+                          <p style="margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--ink)"><span style="font-weight:700">{{ igHandle }}</span> {{ firstComment }}</p>
+                        </sc-if>
+                        <sc-if value="{{ isStory }}" hint-placeholder-val="{{ false }}">
+                          <p style="margin:0;font-size:13px;line-height:1.5;color:var(--muted)">Story · {{ slideCount }} frames · tap-through with an interactive sticker on each.</p>
+                        </sc-if>
+                      </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:18px">
+                      <div style="display:inline-flex;align-items:center;gap:8px;background:#d8ecd6;color:#2d6b28;border-radius:10px;padding:9px 13px;font-size:13px;font-weight:600;align-self:flex-start">{{ ic.checkSm }}Cleared to publish · claims check passed</div>
+                      <div>
+                        <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-bottom:10px">Publishing to</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:9px">
+                          <sc-for list="{{ publishChips }}" as="c" hint-placeholder-count="2">
+                            <span style="display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--ink)"><span style="display:flex;color:var(--slate)">{{ c.iconEl }}</span>{{ c.name }}</span>
+                          </sc-for>
+                        </div>
+                      </div>
+                      <div>
+                        <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-bottom:10px">When</div>
+                        <div style="display:flex;flex-direction:column;gap:9px">
+                          <button style="{{ whenBest.style }}" onClick="{{ whenBest.onClick }}"><span style="display:flex;color:var(--moss)">{{ ic.sparkM }}</span><span style="text-align:left;flex:1"><span style="display:block;font-size:13.5px;font-weight:600">Best time · {{ bestTime }}</span><span style="display:block;font-size:11.5px;color:var(--muted)">Recommended for {{ igHandle }}</span></span><span style="{{ whenBest.tick }}"></span></button>
+                          <button style="{{ whenCustom.style }}" onClick="{{ whenCustom.onClick }}"><span style="display:flex;color:var(--muted)">{{ ic.clock }}</span><span style="text-align:left;flex:1"><span style="display:block;font-size:13.5px;font-weight:600">Custom time</span><span style="display:block;font-size:11.5px;color:var(--muted)">Choose your own slot</span></span><span style="{{ whenCustom.tick }}"></span></button>
+                        </div>
+                      </div>
+                      <div style="display:flex;flex-direction:column;gap:9px;margin-top:2px">
+                        <button style="display:inline-flex;align-items:center;justify-content:center;gap:9px;background:var(--accent);color:#f4efe0;border:none;border-radius:12px;padding:15px 22px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(92,117,86,.28)" style-hover="filter:brightness(1.06)" onClick="{{ onSchedule }}">{{ ic.check19 }}Approve &amp; schedule</button>
+                        <button style="background:transparent;color:var(--ink);border:1px solid var(--border-2);border-radius:12px;padding:13px 22px;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:var(--surface)" onClick="{{ onSchedule }}">Publish now</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showFooter }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:34px;padding-top:20px;border-top:1px solid var(--border)">
+              <button style="{{ backStyle }}" onClick="{{ onBack }}">{{ ic.chevL }}Back</button>
+              <span style="font-size:12.5px;color:var(--muted);font-family:var(--font-mono);letter-spacing:.04em">{{ stepLabel }}</span>
+              <sc-if value="{{ showContinue }}" hint-placeholder-val="{{ true }}">
+                <button style="{{ continueStyle }}" onClick="{{ onNext }}">{{ continueLabel }}{{ ic.arrowR }}</button>
+              </sc-if>
+              <sc-if value="{{ hideContinue }}" hint-placeholder-val="{{ false }}"><span style="width:120px"></span></sc-if>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <sc-if value="{{ pickerOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:60;background:rgba(20,26,36,.5);display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .18s ease both" onClick="{{ onClosePicker }}">
+      <div style="width:min(720px,100%);max-height:86vh;overflow-y:auto;background:var(--surface);border:1px solid var(--border-2);border-radius:20px;padding:22px 24px;box-shadow:0 30px 80px rgba(0,0,0,.35);animation:pop .22s ease both" onClick="{{ stop }}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <span style="display:flex;color:var(--accent)">{{ ic.image }}</span>
+          <h3 style="font-family:var(--font-display);font-size:19px;font-weight:700;margin:0">Fill the image slot</h3>
+          <button style="margin-left:auto;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="border-color:var(--slate);color:var(--slate)" onClick="{{ onClosePicker }}">{{ ic.close }}</button>
+        </div>
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:15px 16px;margin-bottom:18px">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px"><span style="display:flex;color:var(--moss)">{{ ic.wand }}</span><span style="font-family:var(--font-display);font-size:15px;font-weight:700">Generate with fal.ai</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-left:auto">FLUX 1.1 · auto-saves to Assets</span></div>
+          <textarea value="{{ genPrompt }}" onInput="{{ onGenPrompt }}" rows="2" placeholder="Describe the image — e.g. warm overhead shot of a protein-first plate on linen, soft daylight" style="width:100%;border:1px solid var(--border);border-radius:11px;padding:11px 13px;background:#fff;color:var(--ink);font-size:13.5px;font-family:var(--font-sans);resize:vertical;line-height:1.5;outline:none;margin-bottom:11px"></textarea>
+          <button style="{{ genImgBtnStyle }}" onClick="{{ onGenImage }}">{{ genImgBtnLabel }}</button>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);margin-bottom:11px">From your Assets library</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px">
+          <sc-for list="{{ pickerAssetsVM }}" as="a" hint-placeholder-count="6">
+            <button style="background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:7px;cursor:pointer;text-align:left" style-hover="border-color:var(--accent)" onClick="{{ a.onPick }}">
+              <div style="aspect-ratio:1/1;border-radius:9px;overflow:hidden;position:relative;background:{{ a.tint }};border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
+                <span style="position:absolute;top:6px;left:6px;font-family:var(--font-mono);font-size:8px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;background:rgba(26,34,48,.6);color:#f4efe0;padding:2px 6px;border-radius:999px">{{ a.kind }}</span>
+                <sc-if value="{{ a.ai }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:6px;right:6px;font-family:var(--font-mono);font-size:8px;font-weight:700;background:var(--accent);color:#f4efe0;padding:2px 6px;border-radius:999px">AI</span></sc-if>
+              </div>
+              <div style="font-size:12px;font-weight:600;color:var(--ink);margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.name }}</div>
+              <div style="font-size:10.5px;color:var(--muted);font-family:var(--font-mono)">{{ a.meta }}</div>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:70;display:inline-flex;align-items:center;gap:9px;background:var(--ink);color:var(--surface);border-radius:999px;padding:11px 18px;font-size:13.5px;font-weight:600;box-shadow:0 12px 34px rgba(0,0,0,.3);animation:fadeUp .25s ease both">{{ ic.checkSm }}{{ toast }}</div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:860}}">
+class Component extends DCLogic {
+  state = {
+    step:0, maxStep:0,
+    accountId:'giq',
+    channels:{ giq:{ instagram:true, facebook:true }, giqbr:{ instagram:true, facebook:true } },
+    extra:{ giq:[], giqbr:[] },
+    showConnect:false,
+    style:null, arch:null,
+    topic:'', pillar:null, ideas:null, suggesting:false,
+    genPhase:'idle',
+    doc:null, activeSlide:0, editorTab:'slides',
+    addMenuOpen:false,
+    pickerOpen:false, picker:null, genPrompt:'', genBusy:false,
+    voiceId:'aria', narration:'verbatim', voicePlaying:false,
+    newTag:'', toast:'',
+    when:'best', scheduled:false,
+    lib:null, previewW:0,
+  };
+  setPreviewRef=(el)=>{ if(!el){ if(this._ro){this._ro.disconnect();this._ro=null;} return; } if(this._ro) this._ro.disconnect(); this._ro=new ResizeObserver(es=>{ const w=es[0].contentRect.width; if(Math.abs(w-(this.state.previewW||0))>1) this.setState({previewW:w}); }); this._ro.observe(el); const w0=el.clientWidth; if(w0&&Math.abs(w0-(this.state.previewW||0))>1) this.setState({previewW:w0}); };
+
+  PATHS = {
+    sparkles:[['path',{d:'M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z'}],['path',{d:'M20 3v4'}],['path',{d:'M22 5h-4'}]],
+    dash:[['rect',{width:7,height:9,x:3,y:3,rx:1}],['rect',{width:7,height:5,x:14,y:3,rx:1}],['rect',{width:7,height:9,x:14,y:12,rx:1}],['rect',{width:7,height:5,x:3,y:16,rx:1}]],
+    layers:[['path',{d:'M12 2 2 7l10 5 10-5-10-5Z'}],['path',{d:'m2 17 10 5 10-5'}],['path',{d:'m2 12 10 5 10-5'}]],
+    cal:[['path',{d:'M8 2v4'}],['path',{d:'M16 2v4'}],['rect',{width:18,height:18,x:3,y:4,rx:2}],['path',{d:'M3 10h18'}]],
+    sliders:[['line',{x1:21,x2:14,y1:4,y2:4}],['line',{x1:10,x2:3,y1:4,y2:4}],['line',{x1:21,x2:12,y1:12,y2:12}],['line',{x1:8,x2:3,y1:12,y2:12}],['line',{x1:21,x2:16,y1:20,y2:20}],['line',{x1:12,x2:3,y1:20,y2:20}],['line',{x1:14,x2:14,y1:2,y2:6}],['line',{x1:8,x2:8,y1:10,y2:14}],['line',{x1:16,x2:16,y1:18,y2:22}]],
+    ig:[['rect',{width:20,height:20,x:2,y:2,rx:5.5}],['circle',{cx:12,cy:12,r:4}],['line',{x1:17.5,x2:17.51,y1:6.5,y2:6.5}]],
+    fb:[['path',{d:'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z'}]],
+    yt:[['path',{d:'M2.5 17a24 24 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.6 49.6 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24 24 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.6 49.6 0 0 1-16.2 0A2 2 0 0 1 2.5 17'}],['path',{d:'m10 15 5-3-5-3z'}]],
+    tt:[['path',{d:'M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5'}]],
+    in:[['path',{d:'M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z'}],['rect',{width:4,height:12,x:2,y:9}],['circle',{cx:4,cy:4,r:2}]],
+    xt:[['path',{d:'M4 4l16 16'}],['path',{d:'M20 4 4 20'}]],
+    close:[['path',{d:'M18 6 6 18'}],['path',{d:'m6 6 12 12'}]],
+    check:[['polyline',{points:'20 6 9 17 4 12'}]],
+    chevL:[['path',{d:'m15 18-6-6 6-6'}]],
+    chevR:[['path',{d:'m9 18 6-6-6-6'}]],
+    arrowR:[['path',{d:'M5 12h14'}],['path',{d:'m12 5 7 7-7 7'}]],
+    plus:[['path',{d:'M5 12h14'}],['path',{d:'M12 5v14'}]],
+    refresh:[['path',{d:'M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8'}],['path',{d:'M21 3v5h-5'}],['path',{d:'M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16'}],['path',{d:'M8 16H3v5'}]],
+    image:[['rect',{width:18,height:18,x:3,y:3,rx:2}],['circle',{cx:9,cy:9,r:2}],['path',{d:'m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21'}]],
+    film:[['rect',{width:18,height:18,x:3,y:3,rx:2}],['path',{d:'M7 3v18'}],['path',{d:'M3 7.5h4'}],['path',{d:'M3 12h18'}],['path',{d:'M3 16.5h4'}],['path',{d:'M17 3v18'}],['path',{d:'M17 7.5h4'}],['path',{d:'M17 16.5h4'}]],
+    book:[['path',{d:'M12 7v14'}],['path',{d:'M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z'}]],
+    story:[['circle',{cx:12,cy:12,r:9,strokeDasharray:'3 3'}],['circle',{cx:12,cy:12,r:3.5}]],
+    photo:[['rect',{width:18,height:18,x:3,y:3,rx:2}],['circle',{cx:8.5,cy:8.5,r:1.5}],['path',{d:'m21 15-4.35-4.35a2 2 0 0 0-2.8 0L4 21'}]],
+    clock:[['circle',{cx:12,cy:12,r:9}],['polyline',{points:'12 7 12 12 15.5 14'}]],
+    heart:[['path',{d:'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z'}]],
+    comment:[['path',{d:'M7.9 20A9 9 0 1 0 4 16.1L2 22Z'}]],
+    send:[['path',{d:'m22 2-7 20-4-9-9-4Z'}],['path',{d:'M22 2 11 13'}]],
+    save:[['path',{d:'m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'}]],
+    link:[['path',{d:'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'}],['path',{d:'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'}]],
+    wand:[['path',{d:'m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.66a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72'}],['path',{d:'m14 7 3 3'}],['path',{d:'M5 6v4'}],['path',{d:'M19 14v4'}],['path',{d:'M3 8h4'}],['path',{d:'M17 16h4'}]],
+    trash:[['path',{d:'M3 6h18'}],['path',{d:'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6'}],['path',{d:'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'}]],
+    play:[['polygon',{points:'6 3 20 12 6 21 6 3'}]],
+    pause:[['rect',{width:4,height:16,x:6,y:4,rx:1}],['rect',{width:4,height:16,x:14,y:4,rx:1}]],
+    wave:[['path',{d:'M2 13v-2'}],['path',{d:'M6 17V7'}],['path',{d:'M10 20V4'}],['path',{d:'M14 17V7'}],['path',{d:'M18 15V9'}],['path',{d:'M22 13v-2'}]],
+    info:[['circle',{cx:12,cy:12,r:10}],['path',{d:'M12 16v-4'}],['path',{d:'M12 8h.01'}]],
+  };
+  icon(key,size,sw,fill){
+    const c=this.PATHS[key]||[];
+    return React.createElement('svg',{width:size,height:size,viewBox:'0 0 24 24',fill:fill||'none',stroke:'currentColor',strokeWidth:sw||2,strokeLinecap:'round',strokeLinejoin:'round',style:{display:'block',flexShrink:0}},
+      c.map((ch,i)=>React.createElement(ch[0],Object.assign({key:i},ch[1]))));
+  }
+
+  _lum(hex){ const h=hex.replace('#',''); const n=h.length===3?h.split('').map(x=>x+x).join(''):h; const c=[0,2,4].map(i=>{ let v=parseInt(n.slice(i,i+2),16)/255; return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4); }); return .2126*c[0]+.7152*c[1]+.0722*c[2]; }
+  _contrast(a,b){ const L1=this._lum(a),L2=this._lum(b); return (Math.max(L1,L2)+.05)/(Math.min(L1,L2)+.05); }
+  safeOn(accent,bg,min){ if(this._contrast(accent,bg)>=(min||2.2)) return accent; const fb=['#e7c98a','#b89251','#f4efe0','#a5524a','#141a24']; let best=fb[0],bc=0; for(const f of fb){ const c=this._contrast(f,bg); if(c>bc){bc=c;best=f;} } return best; }
+
+  ACCOUNTS=[
+    { id:'giq', name:'Gastric IQ', locale:'EN', mark:'linear-gradient(135deg,#3b5a78,#5c7556)', initials:'IQ', ig:'@gastric_iq' },
+    { id:'giqbr', name:'Gastric IQ Brasil', locale:'PT-BR', mark:'linear-gradient(135deg,#5c7556,#b89251)', initials:'BR', ig:'@gastric_iq_brasil' },
+  ];
+  PLAT={ instagram:{name:'Instagram',icon:'ig'}, facebook:{name:'Facebook',icon:'fb'}, tiktok:{name:'TikTok',icon:'tt'}, youtube:{name:'YouTube',icon:'yt'}, linkedin:{name:'LinkedIn',icon:'in'}, x:{name:'X',icon:'xt'} };
+  STYLES=[
+    { id:'carousel', name:'Carousel', desc:'Multi-slide swipeable post', meta:'3–8 SLIDES · 4:5', icon:'book', ratio:'4 / 5' },
+    { id:'reel', name:'Reel', desc:'Short vertical video, voiced', meta:'15–30S · 9:16', icon:'film', ratio:'9 / 16' },
+    { id:'story', name:'Story', desc:'Full-screen, interactive, 24h', meta:'1–5 FRAMES · 9:16', icon:'story', ratio:'9 / 16' },
+    { id:'single', name:'Single image', desc:'One-frame feed post', meta:'1 IMAGE · 4:5', icon:'image', ratio:'4 / 5' },
+    { id:'photo', name:'Photo', desc:'Image-led, washed treatment', meta:'PHOTO · 4:5', icon:'photo', ratio:'4 / 5' },
+  ];
+  VOICES=[ {id:'aria',name:'Aria',desc:'Warm · calm · unhurried'}, {id:'sage',name:'Sage',desc:'Evidence-led · steady'}, {id:'nova',name:'Nova',desc:'Bright · upbeat'} ];
+  PILLARS={ en:['Medication-cycle education','Side-effect readiness','Protein & lean mass','Bariatric guidance','Trust & privacy'], pt:['Ciclo da medicação','Efeitos colaterais','Proteína e massa magra','Orientação bariátrica','Confiança e privacidade'] };
+  IDEAS={
+    en:[ {title:'Why food noise peaks on fade days',angle:'Explain the GLP-1 peak-and-fade rhythm and when appetite signals return — calmly, no willpower framing.',fmt:'Carousel'}, {title:'The 3 p.m. protein checkpoint',angle:'A simple afternoon habit to steady energy, framed around lean-mass awareness.',fmt:'Reel'}, {title:'Bedtime gastric load, explained',angle:'Why late meals feel heavier, and how to read your own evening window.',fmt:'Single'} ],
+    pt:[ {title:'Por que a fome sobe nos dias de queda',angle:'Explique o ritmo de pico e queda do GLP-1 e quando os sinais de apetite voltam — de forma calma, sem culpa.',fmt:'Carousel'}, {title:'O checkpoint de proteína das 15h',angle:'Um hábito simples da tarde para estabilizar a energia, com foco em massa magra.',fmt:'Reel'}, {title:'Carga gástrica noturna, explicada',angle:'Por que refeições tardias pesam mais e como ler sua própria janela da noite.',fmt:'Single'} ],
+  };
+  ASSETS={
+    giq:[
+      { id:'p1', name:'Kitchen · plates', kind:'photo', meta:'JPG · 2400×3000', tint:'linear-gradient(160deg,#9c8d6b,#4b4433)' },
+      { id:'p2', name:'Protein bowl', kind:'photo', meta:'JPG · 2400×2400', tint:'linear-gradient(150deg,#b0925f,#6a5b3c)' },
+      { id:'p3', name:'Evening table', kind:'photo', meta:'JPG · 3000×2000', tint:'linear-gradient(160deg,#7f8a6a,#3f4632)' },
+      { id:'s1', name:'Cycle timeline', kind:'screen', meta:'PNG · 1080×1920', tint:'linear-gradient(160deg,#233246,#0e141b)' },
+      { id:'s2', name:'Fade-day dashboard', kind:'screen', meta:'PNG · 1080×1920', tint:'linear-gradient(160deg,#1d3340,#12202b)' },
+      { id:'l1', name:'Gastric IQ mark', kind:'logo', meta:'SVG · brand', tint:'linear-gradient(135deg,#3b5a78,#5c7556)' },
+    ],
+    giqbr:[
+      { id:'p4', name:'Cozinha · pratos', kind:'photo', meta:'JPG · 2400×3000', tint:'linear-gradient(160deg,#a58b5c,#5b4a2f)' },
+      { id:'p5', name:'Mesa da noite', kind:'photo', meta:'JPG · 3000×2000', tint:'linear-gradient(160deg,#8a8560,#3f4632)' },
+      { id:'s3', name:'Painel do ciclo', kind:'screen', meta:'PNG · 1080×1920', tint:'linear-gradient(160deg,#1d3340,#12202b)' },
+      { id:'l2', name:'Marca Gastric IQ', kind:'logo', meta:'SVG · brand', tint:'linear-gradient(135deg,#5c7556,#b89251)' },
+    ],
+  };
+
+  C={
+    en:{
+      cover:{ kicker:'THE PATTERN', hook:'Food noise peaks before it fades', hookLong:'The 3 p.m. window nobody warns you about', lead:'Why appetite creeps back mid-cycle — and the 90-second habit that steadies it.', statValue:'3PM', statLine:'is when most fade-day cravings quietly spike', source:'Gastric IQ cycle data, 2026', quote:'It’s a rhythm, not a flaw in your willpower.', attribution:'— what we tell every new member' },
+      point:{ index:'01', label:'THE WINDOW', heading:'Name the hour it hits', body:'Cravings aren’t random. Track the clock for three days and the fade-day pattern shows itself.' },
+      stat:{ label:'THE LIFT', statValue:'+90s', statLine:'of protein-first eating steadies the whole afternoon' },
+      list:{ heading:'Three moves for the 3 p.m. dip', items:[{lead:'Protein before carbs',detail:'20g takes the edge off fast.'},{lead:'Water, then wait ten',detail:'Thirst mimics the craving.'},{lead:'Log the hour',detail:'Naming it shrinks it.'}] },
+      image:{ caption:'A plate built protein-first', captionSub:'Same food, different order — the afternoon holds.', prompt:'warm overhead shot of a protein-first plate on a linen table, soft daylight' },
+      myth:{ myth:'Cravings mean you lack willpower', fact:'They’re a scheduled dip in the medication cycle.' },
+      cta:{ kicker:'Keep this', hook:'Save it for your next fade day', recap:['Name the hour','Protein before carbs','Log it, shrink it'], followLine:'Follow @gastric_iq for the rhythm.' },
+      reel:{ hookKicker:'Stop scrolling if', hook:'Your hunger runs on a schedule', hookVoice:'If your hunger feels louder some days than others, it’s not willpower — it’s your medication cycle.', q:'Why is 3 p.m. always the hardest?', qSub:'It’s not just in your head', preWord:'It’s not', bigWord:'willpower', kSub:'It’s your medication cycle', titleKicker:'A 30-second read', title:'The peak-and-fade rhythm', titleSub:'What shifts across your dosing week', titleVoice:'Here’s the peak-and-fade rhythm, and what shifts across your dosing week.', caption:'Food noise gets loud right before the fade', captionVoice:'Food noise gets loud right before the dose fades.', endKicker:'Your next fade day', endHook:'Save this before it hits', endRecap:['Name the hour','Protein first','Log it'], endVoice:'Save this before your next fade day, and follow for the rhythm.' },
+      story:{ pollKicker:'Quick gut check', pollPrompt:'Does 3 p.m. hit you too?', optionA:'Every fade day', optionB:'Not really', qPrompt:'Ask us about your GLP-1 week', stickerLabel:'Type your question…', quizKicker:'True or false', quizPrompt:'Cravings mean weak willpower', quizOptions:[{t:'True',correct:false},{t:'False',correct:true}], sliderPrompt:'How loud is your food noise today?', emoji:'🔊', cdKicker:'Launching soon', cdHeadline:'The fade-day planner', targetTime:'Aug 1, 9:00 AM', linkLabel:'Get the app', linkUrl:'https://gastriciq.app', flag:'New post', postRef:'ig:post/3p-checkpoint' },
+      announce:{ headline:'Your fade-day planner is here', sub:'Plan protein around the dip → link in bio' },
+      photo:{ kicker:'IN THE KITCHEN', headline:'Smaller plates, steadier week', tag:'Field note · 07', caption:'Bedtime load, lightened', captionSub:'Why late meals feel heavier — and the evening window to watch.', body:'Same portions, earlier clock — the night holds.', quote:'The evening window changed everything for me.', attribution:'— A. R., member since 2025', prompt:'warm lifestyle kitchen photo, protein-first plate on linen, soft daylight, washed tones' },
+      caption:"Food noise isn't a willpower problem — it's a rhythm. Here's a calm way to read your GLP-1 week and plan around the fade.\n\nModel-estimated gastric load is based on your logged data and published GLP-1 pharmacokinetic parameters — not a medical diagnosis.\n\n→ link in bio",
+      first:'Save this for your next fade day. What time does your food noise usually peak? Tell us below — we read every reply.\n\nGet Gastric IQ → https://gastriciq.app',
+      hashtags:['#GLP1','#FoodNoise','#DigestionIntelligence','#GastricIQ','#ProteinFirst'],
+      linkSticker:'https://gastriciq.app', mention:'@gastric_iq',
+    },
+    pt:{
+      cover:{ kicker:'O PADRÃO', hook:'A fome dá pico antes de cair', hookLong:'A janela das 15h que ninguém te avisa', lead:'Por que o apetite volta no meio do ciclo — e o hábito de 90 segundos que estabiliza.', statValue:'15H', statLine:'é quando a maioria dos picos de fome aparece', source:'Dados de ciclo Gastric IQ, 2026', quote:'É um ritmo, não uma falha na sua força de vontade.', attribution:'— o que dizemos a cada novo membro' },
+      point:{ index:'01', label:'A JANELA', heading:'Dê nome à hora do pico', body:'A fome não é aleatória. Anote o relógio por três dias e o padrão dos dias de queda aparece.' },
+      stat:{ label:'O GANHO', statValue:'+90s', statLine:'de comer proteína primeiro estabiliza toda a tarde' },
+      list:{ heading:'Três passos para a queda das 15h', items:[{lead:'Proteína antes dos carbos',detail:'20g tiram o pico rápido.'},{lead:'Água e espere dez',detail:'A sede imita a fome.'},{lead:'Anote a hora',detail:'Dar nome diminui.'}] },
+      image:{ caption:'Um prato com proteína primeiro', captionSub:'A mesma comida, outra ordem — a tarde se mantém.', prompt:'foto aérea quente de um prato com proteína primeiro sobre linho, luz suave' },
+      myth:{ myth:'Fome é falta de força de vontade', fact:'É uma queda programada no ciclo da medicação.' },
+      cta:{ kicker:'Guarde isto', hook:'Salve para o seu próximo dia de queda', recap:['Dê nome à hora','Proteína antes dos carbos','Anote e diminua'], followLine:'Siga @gastric_iq_brasil pelo ritmo.' },
+      reel:{ hookKicker:'Pare se', hook:'Sua fome segue um horário', hookVoice:'Se sua fome parece mais alta em alguns dias, não é força de vontade — é o ciclo da sua medicação.', q:'Por que as 15h são sempre as mais difíceis?', qSub:'Não é só impressão sua', preWord:'Não é', bigWord:'vontade', kSub:'É o ciclo da medicação', titleKicker:'Uma leitura de 30s', title:'O ritmo de pico e queda', titleSub:'O que muda na sua semana de dose', titleVoice:'Aqui está o ritmo de pico e queda, e o que muda na sua semana de dose.', caption:'A fome fica alta bem antes da queda', captionVoice:'A fome fica alta bem antes da dose cair.', endKicker:'Seu próximo dia de queda', endHook:'Salve antes de acontecer', endRecap:['Dê nome à hora','Proteína primeiro','Anote'], endVoice:'Salve antes do seu próximo dia de queda e siga pelo ritmo.' },
+      story:{ pollKicker:'Teste rápido', pollPrompt:'As 15h pegam você também?', optionA:'Todo dia de queda', optionB:'Nem tanto', qPrompt:'Pergunte sobre sua semana de GLP-1', stickerLabel:'Escreva sua pergunta…', quizKicker:'Verdadeiro ou falso', quizPrompt:'Fome significa vontade fraca', quizOptions:[{t:'Verdadeiro',correct:false},{t:'Falso',correct:true}], sliderPrompt:'Quão alta está sua fome hoje?', emoji:'🔊', cdKicker:'Em breve', cdHeadline:'O planejador de dias de queda', targetTime:'1 ago, 09:00', linkLabel:'Baixar o app', linkUrl:'https://gastriciq.app', flag:'Novo post', postRef:'ig:post/checkpoint-15h' },
+      announce:{ headline:'Seu planejador de dias de queda chegou', sub:'Planeje a proteína na queda → link na bio' },
+      photo:{ kicker:'NA COZINHA', headline:'Pratos menores, semana estável', tag:'Nota de campo · 07', caption:'Carga da noite, aliviada', captionSub:'Por que refeições tardias pesam mais — e a janela da noite para observar.', body:'As mesmas porções, mais cedo — a noite se mantém.', quote:'A janela da noite mudou tudo para mim.', attribution:'— A. R., membro desde 2025', prompt:'foto lifestyle de cozinha aquecida, prato com proteína primeiro sobre linho, luz suave' },
+      caption:'A fome não é falta de força de vontade — é um ritmo. Uma forma calma de ler sua semana de GLP-1 e planejar em torno da queda.\n\nA carga gástrica estimada por modelo tem base nos seus registros e em parâmetros farmacocinéticos publicados de GLP-1 — não é um diagnóstico médico.\n\n→ link na bio',
+      first:'Salve para o seu próximo dia de queda. Que horas sua fome costuma dar pico? Conta pra gente nos comentários — a gente lê todas.\n\nBaixe o Gastric IQ → https://gastriciq.app',
+      hashtags:['#GLP1','#FomeEmocional','#InteligenciaDaDigestao','#GastricIQ','#ProteinaPrimeiro'],
+      linkSticker:'https://gastriciq.app', mention:'@gastric_iq_brasil',
+    },
+  };
+
+  slot(id,type,max,req,label,ph){ return {id,type,max:max||0,req:!!req,label,ph:ph||''}; }
+  get MANIFEST(){
+    const S=(a,b,c,d,e,f)=>this.slot(a,b,c,d,e,f);
+    return {
+      carousel:{ aspect:'4:5', label:'carousel',
+        kinds:{
+          '1a-knockout':{role:'cover',ground:'dark',name:'Knockout',desc:'Huge type, dark ground, one-phrase hook',slots:[S('kicker','text',18,0,'Kicker'),S('hook','text',42,1,'Hook')]},
+          '1b-editorial':{role:'cover',ground:'light',name:'Editorial dispatch',desc:'Magazine kicker + serif headline',slots:[S('kicker','text',22,0,'Kicker'),S('hook','text',60,1,'Hook'),S('lead','text',90,0,'Lead')]},
+          '1c-bigstat':{role:'cover',ground:'primary',name:'Big-stat',desc:'Dominant number + line',slots:[S('kicker','text',18,0,'Kicker'),S('statValue','text',8,1,'Stat'),S('statLine','text',64,1,'What it means'),S('source','text',48,0,'Source')]},
+          '1d-quote':{role:'cover',ground:'secondary',name:'Quote',desc:'Pull quote, in-their-words',slots:[S('kicker','text',18,0,'Kicker'),S('quote','area',80,1,'Quote'),S('attribution','text',48,0,'Attribution')]},
+          '2a-point':{role:'interior',ground:'light',name:'Point / step',desc:'One idea',slots:[S('index','text',3,0,'No.'),S('label','text',18,0,'Eyebrow'),S('heading','text',40,1,'Heading'),S('body','area',130,0,'Body')]},
+          '2b-stat':{role:'interior',ground:'light',name:'Stat callout',desc:'Figure in a card',slots:[S('label','text',18,0,'Eyebrow'),S('statValue','text',8,1,'Stat'),S('statLine','text',70,1,'What it means')]},
+          '2c-list':{role:'interior',ground:'light',name:'Checklist',desc:'3–4 items',slots:[S('heading','text',44,1,'Heading'),S('items','pair',0,1,'Items')]},
+          '2d-image':{role:'interior',ground:'light',name:'Image + caption',desc:'Fillable image slot',slots:[S('image','image',0,1,'Image'),S('caption','text',40,1,'Caption'),S('captionSub','text',56,0,'Sub-caption')]},
+          '2e-myth':{role:'interior',ground:'light',name:'Myth vs fact',desc:'Correct a misconception',slots:[S('myth','text',60,1,'Myth'),S('fact','area',80,1,'Fact')]},
+          '2f-cta':{role:'end',ground:'dark',name:'CTA end',desc:'Save & follow',slots:[S('kicker','text',16,0,'Kicker'),S('hook','text',40,1,'Hook'),S('recap','list',0,1,'Recap'),S('followLine','text',48,1,'Follow line')]},
+        },
+        cover:['1a-knockout','1b-editorial','1c-bigstat','1d-quote'], interior:['2a-point','2b-stat','2c-list','2d-image','2e-myth'], end:'2f-cta' },
+      reel:{ aspect:'9:16', label:'reel', voice:true,
+        kinds:{
+          '1a-statement':{role:'cover',ground:'photo',name:'Statement hook',desc:'Image + scrim',slots:[S('kicker','text',20,0,'Kicker'),S('hook','text',46,1,'Hook'),S('image','image',0,0,'Background'),S('voiceScript','area',140,1,'Voice script')]},
+          '1b-question':{role:'cover',ground:'primary',name:'Question hook',desc:'Opens a curiosity gap',slots:[S('hook','text',44,1,'Hook'),S('sub','text',52,0,'Tension line'),S('voiceScript','area',140,1,'Voice script')]},
+          '1c-kinetic':{role:'cover',ground:'dark',name:'Kinetic word',desc:'One animated word',slots:[S('preWord','text',24,0,'Lead-in'),S('bigWord','text',10,1,'Big word'),S('sub','text',46,0,'Payoff'),S('voiceScript','area',140,1,'Voice script')]},
+          '1d-title':{role:'frame',ground:'photo',name:'Title card',desc:'Topic title over image',slots:[S('kicker','text',20,0,'Kicker'),S('title','text',40,1,'Title'),S('sub','text',48,0,'Sub'),S('image','image',0,0,'Background'),S('voiceScript','area',200,1,'Voice script')]},
+          '1e-caption':{role:'frame',ground:'photo',name:'Voice caption',desc:'Lower-third spoken line',slots:[S('caption','text',90,1,'Caption'),S('image','image',0,0,'Background'),S('voiceScript','area',200,1,'Voice script')]},
+          '1f-cta':{role:'end',ground:'dark',name:'End CTA',desc:'Save & follow',slots:[S('kicker','text',20,0,'Kicker'),S('hook','text',40,1,'Hook'),S('recap','list',0,1,'Recap'),S('voiceScript','area',160,1,'Voice script')]},
+        },
+        cover:['1a-statement','1b-question','1c-kinetic'], interior:['1d-title','1e-caption'], end:'1f-cta' },
+      story:{ aspect:'9:16', label:'story', noCaption:true,
+        kinds:{
+          '1a-poll':{role:'cover',ground:'primary',name:'Poll',desc:'Lowest-effort tap',slots:[S('kicker','text',20,0,'Kicker'),S('prompt','text',44,1,'Prompt'),S('optionA','text',20,1,'Option A'),S('optionB','text',20,1,'Option B'),S('image','image',0,0,'Background')]},
+          '1b-question':{role:'cover',ground:'secondary',name:'Question',desc:'Opens a DM reply',slots:[S('prompt','text',40,1,'Prompt'),S('stickerLabel','text',40,1,'Sticker label')]},
+          '1c-quiz':{role:'cover',ground:'dark',name:'Quiz',desc:'True / false',slots:[S('kicker','text',20,0,'Kicker'),S('prompt','text',48,1,'Claim'),S('options','quiz',0,1,'Answers')]},
+          '1d-slider':{role:'cover',ground:'primary',name:'Emoji slider',desc:'Feeling scale',slots:[S('prompt','text',44,1,'Prompt'),S('emoji','text',2,1,'Emoji')]},
+          '1e-countdown':{role:'frame',ground:'dark',name:'Countdown + link',desc:'Launch + tap link',slots:[S('kicker','text',20,0,'Kicker'),S('headline','text',40,1,'Headline'),S('targetTime','text',0,1,'Target time'),S('linkLabel','text',24,1,'Link label'),S('linkUrl','text',0,1,'Link URL')]},
+          '1f-reshare':{role:'frame',ground:'secondary',name:'Reshare post',desc:'Amplify a feed post',slots:[S('flag','text',18,0,'Banner'),S('postRef','text',0,1,'Post ref')]},
+        },
+        cover:['1a-poll','1b-question','1c-quiz','1d-slider'], interior:['1c-quiz','1d-slider','1e-countdown','1f-reshare'], end:null },
+      single:{ aspect:'4:5', label:'single', single:true,
+        kinds:{
+          '1a-stat':{role:'cover',ground:'primary',name:'Stat',desc:'Dominant figure',slots:[S('kicker','text',18,0,'Kicker'),S('statValue','text',8,1,'Stat'),S('statLine','text',64,1,'What it means'),S('source','text',48,0,'Source')]},
+          '1b-quote':{role:'cover',ground:'secondary',name:'Quote',desc:'Pull quote',slots:[S('kicker','text',18,0,'Kicker'),S('quote','area',84,1,'Quote'),S('attribution','text',48,0,'Attribution')]},
+          '1c-myth':{role:'cover',ground:'light',name:'Myth vs fact',desc:'One correction',slots:[S('myth','text',56,1,'Myth'),S('fact','text',64,1,'Fact')]},
+          '1d-announce':{role:'cover',ground:'dark',name:'Announcement',desc:'Launch flag',slots:[S('pill','text',12,0,'Pill'),S('kicker','text',20,0,'Kicker'),S('headline','text',48,1,'Headline'),S('sub','text',80,0,'Sub')]},
+        },
+        cover:['1a-stat','1b-quote','1c-myth','1d-announce'], interior:[], end:null },
+      photo:{ aspect:'4:5', label:'photo', single:true,
+        kinds:{
+          '1a-lifestyle':{role:'cover',ground:'photo',name:'Lifestyle',desc:'Full-bleed image',slots:[S('image','image',0,1,'Image'),S('imagePrompt','area',200,0,'fal.ai prompt'),S('kicker','text',18,0,'Kicker'),S('headline','text',52,1,'Headline')]},
+          '1b-fieldnote':{role:'cover',ground:'light',name:'Field note',desc:'Framed photo',slots:[S('image','image',0,1,'Image'),S('imagePrompt','area',200,0,'fal.ai prompt'),S('tag','text',22,0,'Tag'),S('caption','text',40,1,'Caption'),S('captionSub','text',90,0,'Sub-caption')]},
+          '1c-split':{role:'cover',ground:'light',name:'Split panel',desc:'Image over panel',slots:[S('image','image',0,1,'Image'),S('imagePrompt','area',200,0,'fal.ai prompt'),S('kicker','text',18,0,'Kicker'),S('headline','text',44,1,'Headline'),S('body','text',80,0,'Body')]},
+          '1d-photoquote':{role:'cover',ground:'photo',name:'Photo quote',desc:'Testimonial over image',slots:[S('image','image',0,1,'Image'),S('imagePrompt','area',200,0,'fal.ai prompt'),S('quote','area',80,1,'Quote'),S('attribution','text',48,0,'Attribution')]},
+        },
+        cover:['1a-lifestyle','1b-fieldnote','1c-split','1d-photoquote'], interior:[], end:null },
+    };
+  }
+
+  account(){ return this.ACCOUNTS.find(a=>a.id===this.state.accountId); }
+  loc(){ return this.account().locale==='PT-BR'?'pt':'en'; }
+  content(){ return this.C[this.loc()]; }
+  channelKeys(id){ return ['instagram','facebook', ...this.state.extra[id]]; }
+  activeKeys(){ const id=this.state.accountId; return this.channelKeys(id).filter(k=>this.state.channels[id][k]); }
+  lib(){ const id=this.state.accountId; const l=this.state.lib||this.ASSETS; return l[id]||[]; }
+  styleObj(){ return this.STYLES.find(s=>s.id===this.state.style); }
+
+  fieldsFor(style,kind){
+    const C=this.content();
+    const m={
+      '1a-knockout':{kicker:C.cover.kicker,hook:C.cover.hook},
+      '1b-editorial':{kicker:'Dispatch · No.04',hook:C.cover.hookLong,lead:C.cover.lead},
+      '1c-bigstat':{kicker:C.cover.kicker,statValue:C.cover.statValue,statLine:C.cover.statLine,source:C.cover.source},
+      '1d-quote':{kicker:'In our words',quote:C.cover.quote,attribution:C.cover.attribution},
+      '2a-point':{index:C.point.index,label:C.point.label,heading:C.point.heading,body:C.point.body},
+      '2b-stat':{label:C.stat.label,statValue:C.stat.statValue,statLine:C.stat.statLine},
+      '2c-list':{heading:C.list.heading,items:C.list.items.map(i=>({...i}))},
+      '2d-image':{image:null,caption:C.image.caption,captionSub:C.image.captionSub},
+      '2e-myth':{myth:C.myth.myth,fact:C.myth.fact},
+      '2f-cta':{kicker:C.cta.kicker,hook:C.cta.hook,recap:[...C.cta.recap],followLine:C.cta.followLine},
+      '1a-statement':{kicker:C.reel.hookKicker,hook:C.reel.hook,image:null,voiceScript:C.reel.hookVoice},
+      '1c-kinetic':{preWord:C.reel.preWord,bigWord:C.reel.bigWord,sub:C.reel.kSub,voiceScript:C.reel.hookVoice},
+      '1d-title':{kicker:C.reel.titleKicker,title:C.reel.title,sub:C.reel.titleSub,image:null,voiceScript:C.reel.titleVoice},
+      '1e-caption':{caption:C.reel.caption,image:null,voiceScript:C.reel.captionVoice},
+      '1f-cta':{kicker:C.reel.endKicker,hook:C.reel.endHook,recap:[...C.reel.endRecap],voiceScript:C.reel.endVoice},
+      '1a-poll':{kicker:C.story.pollKicker,prompt:C.story.pollPrompt,optionA:C.story.optionA,optionB:C.story.optionB,image:null},
+      '1c-quiz':{kicker:C.story.quizKicker,prompt:C.story.quizPrompt,options:C.story.quizOptions.map(o=>({...o}))},
+      '1d-slider':{prompt:C.story.sliderPrompt,emoji:C.story.emoji},
+      '1e-countdown':{kicker:C.story.cdKicker,headline:C.story.cdHeadline,targetTime:C.story.targetTime,linkLabel:C.story.linkLabel,linkUrl:C.story.linkUrl},
+      '1f-reshare':{flag:C.story.flag,postRef:C.story.postRef},
+      '1a-stat':{kicker:C.cover.kicker,statValue:C.cover.statValue,statLine:C.cover.statLine,source:C.cover.source},
+      '1d-announce':{pill:'New',kicker:'Just launched',headline:C.announce.headline,sub:C.announce.sub},
+      '1c-myth':{myth:C.myth.myth,fact:C.myth.fact},
+      '1a-lifestyle':{image:null,imagePrompt:C.photo.prompt,kicker:C.photo.kicker,headline:C.photo.headline},
+      '1b-fieldnote':{image:null,imagePrompt:C.photo.prompt,tag:C.photo.tag,caption:C.photo.caption,captionSub:C.photo.captionSub},
+      '1c-split':{image:null,imagePrompt:C.photo.prompt,kicker:C.photo.kicker,headline:C.photo.headline,body:C.photo.body},
+      '1d-photoquote':{image:null,imagePrompt:C.photo.prompt,quote:C.photo.quote,attribution:C.photo.attribution},
+    };
+    if(kind==='1b-question') return style==='reel'?{hook:C.reel.q,sub:C.reel.qSub,voiceScript:C.reel.hookVoice}:{prompt:C.story.qPrompt,stickerLabel:C.story.stickerLabel};
+    if(style==='single'&&kind==='1b-quote') return {kicker:'In our words',quote:C.cover.quote,attribution:C.cover.attribution};
+    return JSON.parse(JSON.stringify(m[kind]||{}));
+  }
+  buildDoc(){
+    const style=this.state.style, arch=this.state.arch, C=this.content();
+    const mk=(k)=>({kind:k,f:this.fieldsFor(style,k)});
+    let slides=[];
+    if(style==='carousel') slides=[mk(arch),mk('2a-point'),mk('2e-myth'),mk('2d-image'),mk('2f-cta')];
+    else if(style==='reel') slides=[mk(arch),mk('1d-title'),mk('1e-caption'),mk('1f-cta')];
+    else if(style==='story') slides=[mk(arch),mk('1c-quiz'),mk('1e-countdown')];
+    else slides=[mk(arch)];
+    return { slides, caption:C.caption, first:C.first, hashtags:[...C.hashtags], linkSticker:C.linkSticker, mention:C.mention };
+  }
+
+  go(n){ if(n<=this.state.maxStep) this.setState({step:n}); }
+  next(){ const n=Math.min(this.state.step+1,5); this.setState({step:n,maxStep:Math.max(this.state.maxStep,n)}); }
+  back(){ this.setState({step:Math.max(this.state.step-1,0)}); }
+  selectAccount(id){ this.setState({accountId:id,showConnect:false,ideas:null,pillar:null,lib:null}); }
+  toggleChannel(k){ const id=this.state.accountId; this.setState({channels:{...this.state.channels,[id]:{...this.state.channels[id],[k]:!this.state.channels[id][k]}}}); }
+  addChannel(k){ const id=this.state.accountId; if(this.state.extra[id].includes(k)) return; this.setState({extra:{...this.state.extra,[id]:[...this.state.extra[id],k]},channels:{...this.state.channels,[id]:{...this.state.channels[id],[k]:true}},showConnect:false}); }
+  selectStyle(id){ this.setState({style:id,arch:this.MANIFEST[id].cover[0]}); }
+  selectArch(id){ this.setState({arch:id}); }
+  suggest(){ this.setState({suggesting:true,ideas:null}); setTimeout(()=>this.setState({suggesting:false,ideas:this.IDEAS[this.loc()]}),900); }
+  pickIdea(i){ this.setState({topic:i.title,pillar:null}); }
+  generate(){ this.setState({genPhase:'writing',doc:this.buildDoc(),activeSlide:0,editorTab:'slides'}); clearTimeout(this._t1); clearTimeout(this._t2); this._t1=setTimeout(()=>this.setState({genPhase:'assets'}),2200); this._t2=setTimeout(()=>this.setState({genPhase:'done'}),4600); }
+  reset(){ clearTimeout(this._t1); clearTimeout(this._t2); this.setState({step:0,maxStep:0,style:null,arch:null,topic:'',pillar:null,ideas:null,genPhase:'idle',doc:null,activeSlide:0,editorTab:'slides',scheduled:false,when:'best',newTag:'',pickerOpen:false,addMenuOpen:false,lib:null}); }
+
+  setField(id,val){ const d=JSON.parse(JSON.stringify(this.state.doc)); d.slides[this.state.activeSlide].f[id]=val; this.setState({doc:d}); }
+  setPair(fid,i,key,val){ const d=JSON.parse(JSON.stringify(this.state.doc)); d.slides[this.state.activeSlide].f[fid][i][key]=val; this.setState({doc:d}); }
+  setQuizText(fid,i,val){ const d=JSON.parse(JSON.stringify(this.state.doc)); d.slides[this.state.activeSlide].f[fid][i].t=val; this.setState({doc:d}); }
+  setQuizCorrect(fid,i){ const d=JSON.parse(JSON.stringify(this.state.doc)); d.slides[this.state.activeSlide].f[fid].forEach((o,j)=>o.correct=j===i); this.setState({doc:d}); }
+  setListStr(fid,i,val){ const d=JSON.parse(JSON.stringify(this.state.doc)); d.slides[this.state.activeSlide].f[fid][i]=val; this.setState({doc:d}); }
+  addItem(fid,kind){ const d=JSON.parse(JSON.stringify(this.state.doc)); const arr=d.slides[this.state.activeSlide].f[fid]; if(kind==='pair') arr.push({lead:'',detail:''}); else if(kind==='quiz') arr.push({t:'',correct:false}); else arr.push(''); this.setState({doc:d}); }
+  removeItem(fid,i){ const d=JSON.parse(JSON.stringify(this.state.doc)); d.slides[this.state.activeSlide].f[fid].splice(i,1); this.setState({doc:d}); }
+  addSlide(kind){ const d=JSON.parse(JSON.stringify(this.state.doc)); const m=this.MANIFEST[this.state.style]; let at=d.slides.length; if(m.end && d.slides[d.slides.length-1].kind===m.end) at=d.slides.length-1; d.slides.splice(at,0,{kind,f:this.fieldsFor(this.state.style,kind)}); this.setState({doc:d,activeSlide:at,addMenuOpen:false}); }
+  deleteSlide(){ const i=this.state.activeSlide; const d=JSON.parse(JSON.stringify(this.state.doc)); if(d.slides.length<=1) return; d.slides.splice(i,1); this.setState({doc:d,activeSlide:Math.max(0,i-1)}); }
+  moveSlide(dir){ const i=this.state.activeSlide,j=i+dir; const d=JSON.parse(JSON.stringify(this.state.doc)); if(j<0||j>=d.slides.length) return; const t=d.slides[i]; d.slides[i]=d.slides[j]; d.slides[j]=t; this.setState({doc:d,activeSlide:j}); }
+  swapArch(kind){ const d=JSON.parse(JSON.stringify(this.state.doc)); const i=this.state.activeSlide; d.slides[i]={kind,f:this.fieldsFor(this.state.style,kind)}; this.setState({doc:d,arch:i===0?kind:this.state.arch}); }
+
+  openPicker(fid){ this.setState({pickerOpen:true,picker:{slide:this.state.activeSlide,fid},genPrompt:''}); }
+  closePicker(){ this.setState({pickerOpen:false,picker:null,genBusy:false}); }
+  pickAsset(a){ const p=this.state.picker; if(!p) return; const d=JSON.parse(JSON.stringify(this.state.doc)); d.slides[p.slide].f[p.fid]={id:a.id,name:a.name,tint:a.tint,kind:a.kind,ai:!!a.ai}; this.setState({doc:d,pickerOpen:false,picker:null}); }
+  genImage(){ if(this.state.genBusy) return; const p=this.state.picker; const prompt=this.state.genPrompt.trim(); this.setState({genBusy:true}); clearTimeout(this._gt); this._gt=setTimeout(()=>{ const id=this.state.accountId; const name=(prompt.replace(/\s+/g,' ').slice(0,24))||'Generated image'; const asset={id:'g'+Date.now(),name,kind:'photo',ai:true,meta:'PNG · 1024×1280 · AI',tint:'linear-gradient(150deg,#6f7f5c,#3b4a4f)'}; const base=this.state.lib||JSON.parse(JSON.stringify(this.ASSETS)); const lib={...base,[id]:[asset,...(base[id]||[])]}; const d=JSON.parse(JSON.stringify(this.state.doc)); if(p) d.slides[p.slide].f[p.fid]={id:asset.id,name:asset.name,tint:asset.tint,kind:'photo',ai:true}; this.setState({lib,doc:d,genBusy:false,pickerOpen:false,picker:null,toast:'Generated · saved to Assets'}); this.flashToast(); },1600); }
+  flashToast(){ clearTimeout(this._toast); this._toast=setTimeout(()=>this.setState({toast:''}),2200); }
+  previewRead(){ if(this.state.voicePlaying){ this.setState({voicePlaying:false}); clearTimeout(this._vt); return; } this.setState({voicePlaying:true}); clearTimeout(this._vt); this._vt=setTimeout(()=>this.setState({voicePlaying:false}),3600); }
+
+  addTag(){ let t=this.state.newTag.trim().replace(/[#\s]+/g,''); if(!t) return; const tag='#'+t; const d=JSON.parse(JSON.stringify(this.state.doc)); if(d.hashtags.some(x=>x.toLowerCase()===tag.toLowerCase())){ this.setState({newTag:''}); return; } d.hashtags.push(tag); this.setState({doc:d,newTag:''}); }
+  removeTag(t){ const d=JSON.parse(JSON.stringify(this.state.doc)); d.hashtags=d.hashtags.filter(x=>x!==t); this.setState({doc:d}); }
+  setDoc(key,val){ const d=JSON.parse(JSON.stringify(this.state.doc)); d[key]=val; this.setState({doc:d}); }
+
+  componentWillUnmount(){ [this._t1,this._t2,this._gt,this._vt,this._toast].forEach(t=>clearTimeout(t)); if(this._ro) this._ro.disconnect(); }
+
+  // ── slide render helpers ──
+  el(t,s,k){ return React.createElement(t, s?{style:s}:{}, k); }
+  sf(size,w,ex){ return Object.assign({fontFamily:"'Spectral',Georgia,serif",fontWeight:w,fontSize:size+'px'}, ex||{}); }
+  mn(size,ex){ return Object.assign({fontFamily:"'IBM Plex Mono',monospace",fontSize:size+'px',letterSpacing:'.14em',textTransform:'uppercase'}, ex||{}); }
+  sans(size,w,ex){ return Object.assign({fontFamily:"'Albert Sans',sans-serif",fontWeight:w||400,fontSize:size+'px'}, ex||{}); }
+  bd(style){ return (style==='reel'||style==='story')?{w:252,h:448}:{w:340,h:425}; }
+  ground(g){
+    const map={ dark:{bg:'radial-gradient(120% 90% at 50% 0%,#20293a 0%,#141a24 62%)',fg:'#f4efe0',base:'#141a24'}, light:{bg:'#ece6d6',fg:'#1a2230',sub:'#4a4636',base:'#ece6d6'}, primary:{bg:'#3b5a78',fg:'#f4efe0',base:'#3b5a78'}, secondary:{bg:'#5c7556',fg:'#f4efe0',base:'#5c7556'}, photo:{bg:'linear-gradient(150deg,#6b5f43,#2a2a20)',fg:'#f7f2e6',base:'#3a352a'} };
+    return map[g]||map.light;
+  }
+  imgFill(img){
+    if(img&&img.tint) return this.el('div',{position:'absolute',inset:0,background:img.tint}, img.ai?this.el('span',{position:'absolute',top:8,left:8,...this.mn(8,{letterSpacing:'.06em'}),background:'#5c7556',color:'#f4efe0',padding:'2px 7px',borderRadius:999},'AI'):null);
+    return this.el('div',{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:6,color:'rgba(244,239,224,.5)',...this.mn(8,{letterSpacing:'.18em'})}, ['IMAGE','fal.ai'].map((t,i)=>this.el('span',{key:i},t)));
+  }
+  scaled(node,bw,bh,tw){ const k=tw/bw; return this.el('div',{width:tw+'px',height:(bh*k)+'px',position:'relative',flexShrink:0}, this.el('div',{width:bw+'px',height:bh+'px',transform:'scale('+k+')',transformOrigin:'top left',position:'absolute',top:0,left:0},node)); }
+  fitSvg(node,bw,bh,maxW){ return this.el('div',{width:'100%',maxWidth:maxW+'px',margin:'0 auto'}, React.createElement('svg',{viewBox:'0 0 '+bw+' '+bh,style:{width:'100%',height:'auto',display:'block'}}, React.createElement('foreignObject',{x:0,y:0,width:bw,height:bh}, node))); }
+
+  renderSlide(sd,i,total,ctx){
+    const style=ctx.style, {w,h}=this.bd(style), acc=ctx.accent, brand=ctx.brand, handle=ctx.handle;
+    const k=sd.kind, f=sd.f||{}, g=this.ground(this.MANIFEST[style].kinds[k].ground);
+    const pad=(style==='reel'||style==='story')?18:26;
+    const p2=(n)=>String(n).padStart(2,'0'), counter=`${p2(i+1)}/${p2(total)}`;
+    const root=(kids,extra)=>this.el('div',Object.assign({position:'relative',width:w+'px',height:h+'px',overflow:'hidden',background:g.bg,color:g.fg,fontFamily:"'Albert Sans',sans-serif"},extra||{}),kids);
+    const inset=(kids)=>this.el('div',{position:'absolute',inset:pad+'px',display:'flex',flexDirection:'column'},kids);
+    const cHdr=()=>this.el('div',{key:'h',display:'flex',justifyContent:'space-between',alignItems:'center'},[this.el('span',Object.assign({key:0},this.sf(11,700)),brand),this.el('span',Object.assign({key:1},this.mn(8,{color:g.sub||'rgba(244,239,224,.7)'})),counter)]);
+    const bar=(pct)=>this.el('div',{key:'b',height:'3px',borderRadius:999,background:'rgba(26,34,48,.12)',marginTop:'7px'},this.el('div',{height:'100%',width:pct,background:acc,borderRadius:999}));
+    const swipe=()=>this.el('div',{key:'s',marginTop:'auto',display:'flex',justifyContent:'flex-end',paddingTop:'8px'},this.el('span',this.sans(9,600,{color:g.sub||'#6e6952'}),'Swipe →'));
+    const dots=()=>this.el('div',{key:'d',display:'flex',gap:'4px',alignItems:'center'},Array.from({length:total},(_,d)=>this.el('span',{key:d,width:(d===0?'11px':'4px'),height:'4px',borderRadius:999,background:d===0?acc:'rgba(244,239,224,.32)'})));
+
+    // ── CAROUSEL ──
+    if(k==='1a-knockout') return root(inset([ cHdr(),
+      this.el('div',{key:1,marginTop:'auto'},[ f.kicker?this.el('div',Object.assign({key:0},this.mn(8,{color:acc,marginBottom:'10px'})),f.kicker):null, this.el('h2',Object.assign({key:1},this.sf(40,800,{margin:0,lineHeight:.97,letterSpacing:'-.01em'})),f.hook||'') ]),
+      this.el('div',{key:2,marginTop:'auto',paddingTop:'11px',borderTop:'1.5px solid rgba(244,239,224,.22)',display:'flex',justifyContent:'space-between',alignItems:'center'},[dots(),this.el('span',{key:1,...this.sans(9,600),color:'#f4efe0'},'Swipe →')]) ]));
+    if(k==='1b-editorial') return root(inset([
+      this.el('div',{key:0,display:'flex',justifyContent:'space-between',alignItems:'baseline',borderBottom:'2px solid #1a2230',paddingBottom:'7px'},[this.el('span',Object.assign({key:0},this.mn(8,{color:acc})),f.kicker||''),this.el('span',Object.assign({key:1},this.mn(8,{color:g.sub})),counter)]),
+      this.el('h2',Object.assign({key:1},this.sf(30,700,{margin:'16px 0 0',lineHeight:1,letterSpacing:'-.01em'})),f.hook||''),
+      this.el('div',{key:2,width:'56px',height:'3px',background:acc,margin:'14px 0',borderRadius:999}),
+      f.lead?this.el('p',Object.assign({key:3},this.sans(12,500,{margin:0,lineHeight:1.4,color:g.sub,maxWidth:'22ch'})),f.lead):null,
+      this.el('div',{key:4,marginTop:'auto',display:'flex',justifyContent:'space-between',alignItems:'center'},[this.el('span',Object.assign({key:0},this.sf(11,700)),brand),this.el('span',{key:1,...this.sans(9,600),color:g.sub},'Swipe →')]) ]));
+    if(k==='1c-bigstat'||k==='1a-stat'){ const ac=this.safeOn(acc,g.base); return root(inset([
+      this.el('div',{key:0,display:'flex',justifyContent:'space-between',alignItems:'center'},[this.el('span',Object.assign({key:0},this.mn(8,{color:ac})),f.kicker||''),this.el('span',Object.assign({key:1},this.mn(8,{color:'rgba(244,239,224,.7)'})),style==='single'?brand:counter)]),
+      this.el('div',{key:1,margin:'auto 0'},[ this.el('div',Object.assign({key:0},this.sf(94,800,{lineHeight:.8,letterSpacing:'-.03em',color:ac})),f.statValue||''), this.el('h2',Object.assign({key:1},this.sf(20,700,{margin:'12px 0 0',lineHeight:1.08,maxWidth:'17ch'})),f.statLine||'') ]),
+      this.el('div',{key:2,marginTop:'auto',paddingTop:'10px',borderTop:'1.5px solid rgba(244,239,224,.24)',display:'flex',justifyContent:'space-between',alignItems:'center'},[this.el('span',{key:0,...this.sans(8),color:'rgba(244,239,224,.8)'},f.source?('Source: '+f.source):''),this.el('span',Object.assign({key:1},this.sf(10,700)),brand)]) ])); }
+    if(k==='1d-quote'||(style==='single'&&k==='1b-quote')){ const ac=this.safeOn(acc,g.base); return root(inset([
+      this.el('div',{key:0,display:'flex',justifyContent:'space-between',alignItems:'center'},[this.el('span',Object.assign({key:0},this.mn(8,{color:ac})),f.kicker||''),this.el('span',Object.assign({key:1},this.mn(8,{color:'rgba(244,239,224,.7)'})),style==='single'?brand:counter)]),
+      this.el('div',{key:1,margin:'auto 0'},[ this.el('div',Object.assign({key:0},this.sf(72,800,{lineHeight:.5,height:'34px',color:ac})),'“'), this.el('h2',Object.assign({key:1},this.sf(26,700,{fontStyle:'italic',margin:0,lineHeight:1.14})),f.quote||''), f.attribution?this.el('div',Object.assign({key:2},this.sans(11,600,{color:'rgba(244,239,224,.82)',marginTop:'16px'})),f.attribution):null ]),
+      this.el('div',{key:2,marginTop:'auto',paddingTop:'10px',borderTop:'1.5px solid rgba(244,239,224,.24)',display:'flex',justifyContent:'space-between',alignItems:'center'},[this.el('span',Object.assign({key:0},this.sf(10,700)),brand),this.el('span',{key:1,...this.sans(9,600),color:'rgba(244,239,224,.85)'},'Swipe →')]) ])); }
+    if(k==='2a-point') return root(inset([ cHdr(), bar('43%'),
+      this.el('div',{key:2,margin:'auto 0'},[ this.el('div',Object.assign({key:0},this.sf(46,800,{lineHeight:.8,color:acc})),f.index||''), f.label?this.el('div',Object.assign({key:1},this.mn(8,{color:g.sub,margin:'12px 0 6px'})),f.label):null, this.el('h2',Object.assign({key:2},this.sf(24,700,{margin:0,lineHeight:1.04})),f.heading||''), f.body?this.el('p',Object.assign({key:3},this.sans(11,400,{margin:'10px 0 0',lineHeight:1.42,color:g.sub,maxWidth:'26ch'})),f.body):null ]), swipe() ]));
+    if(k==='2b-stat') return root(inset([ cHdr(), bar('57%'),
+      this.el('div',{key:2,margin:'auto 0',background:'#faf7ec',border:'2px solid rgba(26,34,48,.1)',borderRadius:'16px',padding:'22px 20px'},[ f.label?this.el('div',Object.assign({key:0},this.mn(8,{color:acc,marginBottom:'8px'})),f.label):null, this.el('div',Object.assign({key:1},this.sf(60,800,{lineHeight:.82,letterSpacing:'-.02em'})),f.statValue||''), this.el('h2',Object.assign({key:2},this.sf(19,600,{margin:'12px 0 0',lineHeight:1.1,maxWidth:'18ch'})),f.statLine||'') ]), swipe() ]));
+    if(k==='2c-list') return root(inset([ cHdr(), bar('71%'),
+      this.el('h2',Object.assign({key:2},this.sf(23,700,{margin:'16px 0 14px',lineHeight:1.02,maxWidth:'16ch'})),f.heading||''),
+      this.el('div',{key:3,display:'flex',flexDirection:'column',gap:'11px'},(f.items||[]).map((it,j)=>this.el('div',{key:j,display:'flex',gap:'9px',alignItems:'flex-start'},[ this.el('span',{key:0,width:'18px',height:'18px',borderRadius:999,background:acc,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',fontWeight:700,flexShrink:0},'✓'), this.el('div',{key:1},[this.el('div',Object.assign({key:0},this.sf(15,700,{lineHeight:1.1})),it.lead||''),it.detail?this.el('div',Object.assign({key:1},this.sans(11,400,{color:g.sub,marginTop:'2px'})),it.detail):null]) ]))), swipe() ]));
+    if(k==='2d-image') return root(inset([ cHdr(), bar('86%'),
+      this.el('div',{key:2,flex:1,marginTop:'12px',borderRadius:'14px',overflow:'hidden',position:'relative',border:(f.image&&f.image.tint)?'none':'3px dashed rgba(26,34,48,.28)',background:'#e0dac9'},this.imgFill(f.image)),
+      this.el('div',{key:3,marginTop:'12px'},[this.el('div',Object.assign({key:0},this.sf(16,700,{lineHeight:1.08})),f.caption||''),f.captionSub?this.el('div',Object.assign({key:1},this.sans(11,400,{color:g.sub,marginTop:'4px'})),f.captionSub):null]) ]));
+    if(k==='2e-myth'||(style==='single'&&k==='1c-myth')) return root(inset([
+      style==='single'?this.el('div',Object.assign({key:0},this.mn(8,{color:acc})),'Myth vs fact'):cHdr(),
+      style==='single'?null:bar('57%'),
+      this.el('div',{key:2,margin:'auto 0',display:'flex',flexDirection:'column',gap:'14px'},[
+        this.el('div',{key:0,background:'#e0dac9',borderRadius:'14px',padding:'16px 18px'},[this.el('div',Object.assign({key:0},this.mn(8,{color:'#8a8672',marginBottom:'6px'})),'Myth'),this.el('div',Object.assign({key:1},this.sf(18,600,{lineHeight:1.08,color:'#6e6952',textDecoration:'line-through',textDecorationThickness:'2px'})),f.myth||'')]),
+        this.el('div',{key:1,background:acc,borderRadius:'14px',padding:'16px 18px',color:'#fff'},[this.el('div',Object.assign({key:0},this.mn(8,{opacity:.85,marginBottom:'6px'})),'Fact'),this.el('div',Object.assign({key:1},this.sf(20,700,{lineHeight:1.06})),f.fact||'')]) ]),
+      style==='single'?this.el('div',{key:3,marginTop:'auto',...this.sf(10,700),color:acc},brand):swipe() ]));
+    if(k==='2f-cta'||k==='1f-cta'){ const rc=f.recap||[]; return root(inset([
+      this.el('div',{key:0,display:'flex',justifyContent:'space-between',alignItems:'center'},[this.el('span',Object.assign({key:0},this.sf(11,700)),brand),this.el('span',Object.assign({key:1},this.mn(8,{color:acc})),counter)]),
+      this.el('div',{key:1,margin:'auto 0'},[ f.kicker?this.el('div',Object.assign({key:0},this.mn(8,{color:acc,marginBottom:'10px'})),f.kicker):null, this.el('h2',Object.assign({key:1},this.sf(30,800,{margin:'0 0 14px',lineHeight:.98,maxWidth:'15ch'})),f.hook||''), this.el('div',{key:2,display:'flex',flexDirection:'column',gap:'7px'},rc.map((r,j)=>this.el('div',{key:j,display:'flex',gap:'9px',alignItems:'center',...this.sans(12,500)},[this.el('span',{key:0,color:acc,fontSize:'14px'},'✓'),r]))) ]),
+      this.el('div',{key:2,marginTop:'auto',paddingTop:'11px',borderTop:'1.5px solid rgba(244,239,224,.22)',display:'flex',justifyContent:'space-between',alignItems:'center',gap:'8px'},[ this.el('span',{key:0,...this.sans(10,600)},f.followLine||('Follow '+handle)), this.el('span',{key:1,display:'inline-flex',alignItems:'center',gap:'6px',background:acc,color:'#141a24',...this.sans(11,700),padding:'8px 12px',borderRadius:999},'Save ⤓') ]) ])); }
+
+    // ── REEL ──
+    const brandChip=()=>this.el('div',{display:'inline-flex',alignItems:'center',gap:'6px',background:'rgba(20,26,36,.5)',borderRadius:999,padding:'4px 10px 4px 5px'},[this.el('span',{key:0,width:'16px',height:'16px',borderRadius:'5px',background:acc,color:'#141a24',display:'flex',alignItems:'center',justifyContent:'center',...this.sf(8,800)},'IQ'),this.el('span',{key:1,...this.sans(9,700),color:'#f4efe0'},brand)]);
+    const ticks=(active)=>this.el('div',{key:'t',position:'absolute',top:'16px',left:pad+'px',right:pad+'px',display:'flex',gap:'5px'},Array.from({length:total},(_,d)=>this.el('span',{key:d,flex:1,height:'3px',borderRadius:999,background:d===active?acc:'rgba(255,255,255,.32)'})));
+    if(style==='reel'){
+      const scrim=this.el('div',{key:'sc',position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(10,12,16,.5) 0%,rgba(10,12,16,.12) 40%,rgba(10,12,16,.72) 100%)'});
+      if(k==='1a-statement') return root([ this.imgFill(f.image), scrim, ticks(i), this.el('div',{key:'br',position:'absolute',left:pad+'px',top:'34px'},brandChip()), this.el('div',{key:'c',position:'absolute',left:pad+'px',right:'44px',top:'150px'},[ f.kicker?this.el('div',Object.assign({key:0},this.mn(8,{color:acc,marginBottom:'8px'})),f.kicker):null, this.el('h2',Object.assign({key:1},this.sf(30,800,{margin:0,lineHeight:1.0,color:'#f4efe0'})),f.hook||'') ]) ]);
+      if(k==='1b-question') return root([ ticks(i), this.el('div',{key:'br',position:'absolute',left:pad+'px',top:'34px'},brandChip()), this.el('div',{key:'c',position:'absolute',left:pad+'px',right:'36px',top:'150px'},[ this.el('h2',Object.assign({key:0},this.sf(30,800,{margin:0,lineHeight:1.02})),f.hook||''), f.sub?this.el('p',Object.assign({key:1},this.sans(13,600,{margin:'14px 0 0',color:'rgba(244,239,224,.85)'})),f.sub):null ]) ]);
+      if(k==='1c-kinetic') return root([ ticks(i), this.el('div',{key:'br',position:'absolute',left:pad+'px',top:'34px'},brandChip()), this.el('div',{key:'c',position:'absolute',left:pad+'px',right:'36px',top:'150px'},[ f.preWord?this.el('div',Object.assign({key:0},this.sans(14,600,{color:acc,marginBottom:'2px'})),f.preWord):null, this.el('div',Object.assign({key:1},this.sf(56,800,{lineHeight:.92,letterSpacing:'-.02em'})),f.bigWord||''), f.sub?this.el('div',Object.assign({key:2},this.sans(13,600,{marginTop:'12px',color:'rgba(244,239,224,.85)'})),f.sub):null ]) ]);
+      if(k==='1d-title') return root([ this.imgFill(f.image), scrim, ticks(i), this.el('div',{key:'br',position:'absolute',left:pad+'px',top:'34px'},brandChip()), this.el('div',{key:'c',position:'absolute',left:pad+'px',right:'40px',top:'190px'},[ f.kicker?this.el('div',Object.assign({key:0},this.mn(7,{color:acc,marginBottom:'8px'})),f.kicker):null, this.el('h2',Object.assign({key:1},this.sf(26,800,{margin:0,lineHeight:1.04,color:'#f4efe0'})),f.title||''), f.sub?this.el('p',Object.assign({key:2},this.sans(12,600,{margin:'10px 0 0',color:'rgba(244,239,224,.85)'})),f.sub):null ]) ]);
+      if(k==='1e-caption') return root([ this.imgFill(f.image), scrim, ticks(i), this.el('div',{key:'br',position:'absolute',left:pad+'px',top:'34px'},brandChip()), this.el('div',{key:'c',position:'absolute',left:pad+'px',right:pad+'px',bottom:'150px',background:'rgba(20,26,36,.62)',borderRadius:'12px',padding:'12px 14px'},this.el('div',this.sans(15,700,{lineHeight:1.28,color:'#f4efe0'}),f.caption||'')) ]);
+    }
+
+    // ── STORY ──
+    if(style==='story'){
+      const segs=this.el('div',{key:'sg',position:'absolute',top:'14px',left:'16px',right:'16px',display:'flex',gap:'5px'},Array.from({length:total},(_,d)=>this.el('span',{key:d,flex:1,height:'3px',borderRadius:999,background:d<=i?'#fff':'rgba(255,255,255,.32)'})));
+      const topbar=this.el('div',{key:'tb',position:'absolute',top:'26px',left:'16px',display:'flex',alignItems:'center',gap:'7px'},[this.el('span',{key:0,width:'20px',height:'20px',borderRadius:'6px',background:acc,color:'#141a24',display:'flex',alignItems:'center',justifyContent:'center',...this.sf(9,800)},'IQ'),this.el('span',{key:1,...this.sans(10,700),color:'#fff'},brand)]);
+      const wrap=(kids)=>root([segs,topbar,f.image?this.imgFill(f.image):null,kids],{background:f.image&&f.image.tint?f.image.tint:g.bg});
+      if(k==='1a-poll') return wrap(this.el('div',{key:'c',position:'absolute',left:'22px',right:'22px',top:'150px'},[ f.kicker?this.el('div',Object.assign({key:0},this.mn(8,{color:this.safeOn(acc,g.base),marginBottom:'10px'})),f.kicker):null, this.el('h2',Object.assign({key:1},this.sf(28,800,{margin:'0 0 20px',lineHeight:1.0,color:'#f4efe0'})),f.prompt||''), this.el('div',{key:2,background:'#fff',borderRadius:'14px',padding:'6px',boxShadow:'0 12px 30px rgba(0,0,0,.3)'},[this.el('div',Object.assign({key:0},this.sans(15,700,{textAlign:'center',color:'#1a2230',padding:'11px 0'})),f.optionA||''),this.el('div',{key:1,height:'1.5px',background:'rgba(26,34,48,.12)'}),this.el('div',Object.assign({key:2},this.sans(15,700,{textAlign:'center',color:'#1a2230',padding:'11px 0'})),f.optionB||'')]) ]));
+      if(k==='1b-question') return wrap(this.el('div',{key:'c',position:'absolute',left:'22px',right:'22px',top:'170px'},[ this.el('h2',Object.assign({key:0},this.sf(28,800,{margin:'0 0 18px',lineHeight:1.02,color:'#f4efe0'})),f.prompt||''), this.el('div',{key:1,background:'#fff',borderRadius:'14px',padding:'16px 16px 20px',boxShadow:'0 12px 30px rgba(0,0,0,.3)'},[this.el('div',Object.assign({key:0},this.sans(13,700,{color:'#1a2230',marginBottom:'12px'})),f.stickerLabel||''),this.el('div',{key:1,height:'34px',borderRadius:'9px',background:'#eee7d7'})]) ]));
+      if(k==='1c-quiz'){ const opts=f.options||[]; return wrap(this.el('div',{key:'c',position:'absolute',left:'22px',right:'22px',top:'160px'},[ f.kicker?this.el('div',Object.assign({key:0},this.mn(8,{color:acc,marginBottom:'10px'})),f.kicker):null, this.el('h2',Object.assign({key:1},this.sf(26,800,{margin:'0 0 18px',lineHeight:1.04,color:'#f4efe0'})),f.prompt||''), this.el('div',{key:2,display:'flex',flexDirection:'column',gap:'9px'},opts.map((o,j)=>this.el('div',{key:j,background:o.correct?acc:'#fff',color:o.correct?'#fff':'#1a2230',borderRadius:'11px',padding:'12px 14px',...this.sans(14,700),display:'flex',alignItems:'center',gap:'8px',boxShadow:'0 8px 20px rgba(0,0,0,.22)'},[o.t||'',o.correct?this.el('span',{key:1,marginLeft:'auto'},'✓'):null]))) ])); }
+      if(k==='1d-slider') return wrap(this.el('div',{key:'c',position:'absolute',left:'22px',right:'22px',top:'190px'},[ this.el('h2',Object.assign({key:0},this.sf(26,800,{margin:'0 0 20px',lineHeight:1.04,color:'#f4efe0'})),f.prompt||''), this.el('div',{key:1,background:'#fff',borderRadius:'14px',padding:'20px 16px',boxShadow:'0 12px 30px rgba(0,0,0,.3)'},this.el('div',{position:'relative',height:'8px',borderRadius:999,background:'linear-gradient(90deg,#e0d6bf,'+acc+')'},this.el('span',{position:'absolute',left:'58%',top:'-11px',fontSize:'26px'},f.emoji||'🔊'))) ]));
+      if(k==='1e-countdown') return wrap(this.el('div',{key:'c',position:'absolute',left:'22px',right:'22px',top:'160px'},[ f.kicker?this.el('div',Object.assign({key:0},this.mn(8,{color:acc,marginBottom:'10px'})),f.kicker):null, this.el('h2',Object.assign({key:1},this.sf(26,800,{margin:'0 0 18px',lineHeight:1.04,color:'#f4efe0'})),f.headline||''), this.el('div',{key:2,background:'rgba(255,255,255,.14)',border:'1px solid rgba(255,255,255,.25)',borderRadius:'12px',padding:'14px',textAlign:'center',marginBottom:'14px'},[this.el('div',{key:0,...this.mn(8),color:'rgba(255,255,255,.75)',marginBottom:'6px'},f.targetTime||''),this.el('div',Object.assign({key:1},this.sf(24,800,{color:'#fff'})),'06 : 12 : 40')]), this.el('div',{key:3,background:acc,color:'#141a24',borderRadius:999,padding:'11px',textAlign:'center',...this.sans(13,700)},f.linkLabel||'') ]));
+      if(k==='1f-reshare') return wrap(this.el('div',{key:'c',position:'absolute',left:'22px',right:'22px',top:'170px'},[ f.flag?this.el('div',{key:0,display:'inline-block',background:acc,color:'#141a24',...this.sans(11,700),padding:'5px 11px',borderRadius:999,marginBottom:'12px'},f.flag):null, this.el('div',{key:1,background:'#fff',borderRadius:'14px',padding:'12px',boxShadow:'0 12px 30px rgba(0,0,0,.3)'},[this.el('div',{key:0,display:'flex',alignItems:'center',gap:'7px',marginBottom:'10px'},[this.el('span',{key:0,width:'22px',height:'22px',borderRadius:999,background:acc},''),this.el('span',Object.assign({key:1},this.sans(11,700,{color:'#1a2230'})),handle)]),this.el('div',{key:1,aspectRatio:'4/5',borderRadius:'9px',background:'linear-gradient(150deg,#3b5a78,#5c7556)'})]) ]));
+    }
+
+    // ── SINGLE announce ──
+    if(k==='1d-announce') return root(inset([
+      f.pill?this.el('div',{key:0,display:'inline-block',alignSelf:'flex-start',background:acc,color:'#141a24',...this.sans(11,800),padding:'5px 12px',borderRadius:999},f.pill):null,
+      this.el('div',{key:1,margin:'auto 0'},[ f.kicker?this.el('div',Object.assign({key:0},this.mn(8,{color:acc,marginBottom:'10px'})),f.kicker):null, this.el('h2',Object.assign({key:1},this.sf(34,800,{margin:0,lineHeight:.98,letterSpacing:'-.01em'})),f.headline||''), f.sub?this.el('p',Object.assign({key:2},this.sans(13,600,{margin:'14px 0 0',color:'rgba(244,239,224,.85)',maxWidth:'24ch'})),f.sub):null ]),
+      this.el('div',{key:2,marginTop:'auto',paddingTop:'11px',borderTop:'1.5px solid rgba(244,239,224,.22)',...this.sf(11,700)},brand) ]));
+
+    // ── PHOTO ──
+    if(style==='photo'){
+      const scrim=this.el('div',{key:'sc',position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(20,20,14,.15) 0%,rgba(20,20,14,.05) 45%,rgba(20,20,14,.78) 100%)'});
+      const chip=this.el('div',{key:'ch',position:'absolute',top:pad+'px',left:pad+'px',display:'inline-flex',alignItems:'center',gap:'6px',background:'rgba(20,26,36,.42)',borderRadius:999,padding:'4px 11px 4px 5px'},[this.el('span',{key:0,width:'16px',height:'16px',borderRadius:'5px',background:acc,color:'#141a24',display:'flex',alignItems:'center',justifyContent:'center',...this.sf(8,800)},'IQ'),this.el('span',{key:1,...this.sans(9,700),color:'#f4efe0'},brand)]);
+      if(k==='1a-lifestyle') return root([ this.imgFill(f.image), scrim, chip, this.el('div',{key:'c',position:'absolute',left:pad+'px',right:pad+'px',bottom:pad+'px'},[ f.kicker?this.el('div',Object.assign({key:0},this.mn(8,{color:acc,marginBottom:'8px'})),f.kicker):null, this.el('h2',Object.assign({key:1},this.sf(30,800,{margin:0,lineHeight:1.0,color:'#f7f2e6'})),f.headline||'') ]) ]);
+      if(k==='1d-photoquote') return root([ this.imgFill(f.image), scrim, chip, this.el('div',{key:'c',position:'absolute',left:pad+'px',right:pad+'px',bottom:pad+'px'},[ this.el('div',Object.assign({key:0},this.sf(60,800,{lineHeight:.5,height:'28px',color:acc})),'“'), this.el('h2',Object.assign({key:1},this.sf(24,700,{fontStyle:'italic',margin:0,lineHeight:1.14,color:'#f7f2e6'})),f.quote||''), f.attribution?this.el('div',Object.assign({key:2},this.sans(11,600,{color:'rgba(247,242,230,.85)',marginTop:'14px'})),f.attribution):null ]) ]);
+      if(k==='1b-fieldnote') return root(this.el('div',{position:'absolute',inset:pad+'px',display:'flex',flexDirection:'column'},[
+        this.el('div',{key:0,display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'12px'},[this.el('span',Object.assign({key:0},this.sf(12,700,{color:'#1a2230'})),brand),f.tag?this.el('span',Object.assign({key:1},this.mn(8,{color:acc})),f.tag):null]),
+        this.el('div',{key:1,flex:1,borderRadius:'12px',overflow:'hidden',position:'relative',border:(f.image&&f.image.tint)?'none':'3px dashed rgba(26,34,48,.24)',background:'#e0dac9'},this.imgFill(f.image)),
+        this.el('div',{key:2,marginTop:'12px'},[this.el('div',Object.assign({key:0},this.sf(19,700,{color:'#1a2230',lineHeight:1.06})),f.caption||''),f.captionSub?this.el('div',Object.assign({key:1},this.sans(11.5,400,{color:'#4a4636',marginTop:'5px',lineHeight:1.4})),f.captionSub):null]) ]),{background:'#ece6d6',color:'#1a2230'});
+      if(k==='1c-split') return root(this.el('div',{position:'absolute',inset:0,display:'flex',flexDirection:'column'},[
+        this.el('div',{key:0,flex:1.2,position:'relative',overflow:'hidden',background:'#e0dac9'},this.imgFill(f.image)),
+        this.el('div',{key:1,flex:1,padding:pad+'px',display:'flex',flexDirection:'column',justifyContent:'center'},[ f.kicker?this.el('div',Object.assign({key:0},this.mn(8,{color:acc,marginBottom:'8px'})),f.kicker):null, this.el('h2',Object.assign({key:1},this.sf(24,700,{margin:0,lineHeight:1.04,color:'#1a2230'})),f.headline||''), f.body?this.el('p',Object.assign({key:2},this.sans(12,400,{margin:'10px 0 0',color:'#4a4636',lineHeight:1.42,maxWidth:'26ch'})),f.body):null ]) ]),{background:'#ece6d6',color:'#1a2230'});
+    }
+
+    // fallback
+    return root(inset([ cHdr(), this.el('div',{key:1,margin:'auto 0',...this.sf(24,700)},f.hook||f.headline||f.prompt||'') ]));
+  }
+
+  // ── VM ──
+  renderVals(){
+    const S=this.state, acc='#5c7556', C=this.content(), account=this.account();
+    const style=S.style, styleObj=this.styleObj();
+    const man=style?this.MANIFEST[style]:null;
+    const doc=S.doc;
+    const igHandle=account.ig;
+    const steps=['Account','Style','Template','Topic','Create','Review'];
+    const ic={
+      link:this.icon('link',13,2.4), plus:this.icon('plus',15,2.6), plusSm:this.icon('plus',13,2.8),
+      checkSm:this.icon('check',13,3), chevL:this.icon('chevL',16,2.6), chevR:this.icon('chevR',16,2.6),
+      arrowR:this.icon('arrowR',16,2.4), refresh:this.icon('refresh',14,2.4), image:this.icon('image',14,2.4),
+      wand:this.icon('wand',14,2.4), trash:this.icon('trash',15,2.3), wave:this.icon('wave',16,2.4),
+      info:this.icon('info',15,2.4), close:this.icon('close',15,2.6), heart:this.icon('heart',22,2),
+      comment:this.icon('comment',22,2), send:this.icon('send',22,2), save:this.icon('save',22,2),
+      sparkS:this.icon('sparkles',15,2.2), sparkL:this.icon('sparkles',18,2.2), sparkM:this.icon('sparkles',16,2.2),
+      checkLg:this.icon('check',30,3), check19:this.icon('check',18,2.8), clock:this.icon('clock',16,2.4),
+    };
+
+    // nav
+    const navItems=[['Dashboard','dash','Dashboard.dc.html'],['Create','sparkles','Studio.dc.html'],['Pieces','layers','Pieces.dc.html'],['Assets','image','Assets.dc.html'],['Algorithm','cal','Algorithm Report.dc.html'],['Settings','sliders','Settings.dc.html']];
+    const nav=navItems.map(([label,icon,href])=>{ const active=label==='Create'; return { label, iconEl:this.icon(icon,17,active?2.7:2.4), style:`display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:10px;font-size:13.5px;font-weight:${active?700:500};cursor:pointer;text-decoration:none;color:${active?'#f4efe0':'var(--ink)'};background:${active?'var(--moss)':'transparent'}`, onClick:()=>{ if(!active) window.location.href=href; } }; });
+    const clients=this.ACCOUNTS.map(a=>({name:a.name,initials:a.initials,mark:a.mark}));
+
+    // stepper
+    const stepperCells=[]; steps.forEach((label,idx)=>{
+      const done=idx<S.maxStep&&idx!==S.step, active=idx===S.step, reachable=idx<=S.maxStep;
+      stepperCells.push({ isStep:true, isConn:false, done, showNum:!done, n:String(idx+1), label,
+        rowStyle:`display:flex;align-items:center;gap:8px;padding:5px 9px;border-radius:999px;cursor:${reachable?'pointer':'default'};${active?'background:var(--surface)':''}`,
+        dotStyle:`width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:var(--font-mono);flex-shrink:0;${active?'background:var(--accent);color:#f4efe0':done?'background:var(--moss);color:#f4efe0':'background:var(--surface);border:1.5px solid var(--border-2);color:var(--muted)'}`,
+        labelStyle:`font-size:13px;font-weight:${active?700:600};color:${active?'var(--ink)':reachable?'var(--muted)':'var(--border-2)'}`,
+        onClick:()=>reachable&&this.go(idx) });
+      if(idx<steps.length-1) stepperCells.push({ isStep:false, isConn:true, connStyle:`flex:1;min-width:12px;height:1.5px;background:${idx<S.maxStep?'var(--moss)':'var(--border)'};margin:0 2px` });
+    });
+
+    const commonHelp={ ic, nav, clients, account, igHandle, accent:acc,
+      isAccount:S.step===0, isStyle:S.step===1, isTemplate:S.step===2, isTopic:S.step===3, isGenerate:S.step===4, isReview:S.step===5,
+      stepperCells,
+      toggleConnect:()=>this.setState({showConnect:!S.showConnect}), showConnect:S.showConnect,
+      topic:S.topic, onTopic:e=>this.setState({topic:e.target.value}),
+      stop:e=>e.stopPropagation(),
+    };
+
+    // ACCOUNT
+    const accountsVM=this.ACCOUNTS.map(a=>({ name:a.name, initials:a.initials, mark:a.mark, locale:a.locale, channelCount:this.channelKeys(a.id).length, selected:a.id===S.accountId, checkEl:this.icon('check',13,3), onSelect:()=>this.selectAccount(a.id), style:`text-align:left;cursor:pointer;background:var(--surface);border:2px solid ${a.id===S.accountId?'var(--accent)':'var(--border)'};border-radius:16px;padding:16px 18px` }));
+    const channelsVM=this.channelKeys(S.accountId).map(k=>{ const p=this.PLAT[k]; const on=S.channels[S.accountId][k]; const handle=k==='instagram'?igHandle:(k==='facebook'?account.name:igHandle.replace('@','')); return { name:p.name, handle, iconEl:this.el('span',{display:'flex',color:on?'var(--slate)':'var(--muted)'},this.icon(p.icon,20,2.4)), tickStyle:`width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;${on?'background:var(--accent);color:#f4efe0':'border:1.5px solid var(--border-2)'}`, tickEl:on?this.icon('check',12,3):null, onToggle:()=>this.toggleChannel(k), style:`display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--surface-2);border:1.5px solid ${on?'var(--accent)':'var(--border)'};border-radius:12px;padding:10px 14px` }; });
+    const already=this.channelKeys(S.accountId);
+    const connectVM=Object.keys(this.PLAT).filter(k=>!already.includes(k)).map(k=>({ name:this.PLAT[k].name, iconEl:this.icon(this.PLAT[k].icon,16,2.4), onAdd:()=>this.addChannel(k) }));
+
+    // STYLE
+    const stylesVM=this.STYLES.map(st=>({ name:st.name, desc:st.desc, meta:st.meta, selected:st.id===S.style, checkEl:this.icon('check',12,3), iconEl:this.el('span',{color:st.id===S.style?'var(--moss)':'var(--muted)',display:'flex'},this.icon(st.icon,30,2.4)), preview:`aspect-ratio:${st.ratio};max-height:150px;border-radius:12px;background:${st.id===S.style?'#e8efe4':'var(--surface)'};border:1.5px solid ${st.id===S.style?'var(--moss)':'var(--border)'};display:flex;align-items:center;justify-content:center`, onSelect:()=>this.selectStyle(st.id), style:`background:var(--surface-2);border:2px solid ${st.id===S.style?'var(--accent)':'var(--border)'};border-radius:16px;padding:12px;cursor:pointer` }));
+
+    // TEMPLATE
+    let archetypesVM=[], templateCountLabel='';
+    if(man){ const covers=man.cover; templateCountLabel=`${covers.length} cover layouts for your ${styleObj.name.toLowerCase()} — the AI drafts the rest of the slides to match.`;
+      archetypesVM=covers.map(k=>{ const kd=man.kinds[k]; const sample={kind:k,f:this.fieldsFor(style,k)}; return { name:kd.name, role:kd.role, desc:kd.desc, selected:k===S.arch, checkEl:this.icon('check',13,3), el:this.scaled(this.renderSlide(sample,0,style==='carousel'?5:(style==='reel'?4:(style==='story'?3:1)),{style,accent:acc,brand:'Gastric IQ',handle:igHandle}),this.bd(style).w,this.bd(style).h,158), onSelect:()=>this.selectArch(k), style:`background:var(--surface-2);border:2px solid ${k===S.arch?'var(--accent)':'var(--border)'};border-radius:16px;padding:12px;cursor:pointer` }; }); }
+
+    // TOPIC
+    const pillars=this.PILLARS[this.loc()];
+    const pillarsVM=pillars.map(p=>({ name:p, onPick:()=>this.setState({pillar:p,topic:p}), style:`cursor:pointer;border:1.5px solid ${S.pillar===p?'var(--accent)':'var(--border-2)'};background:${S.pillar===p?'#e8efe4':'var(--surface)'};color:${S.pillar===p?'var(--moss-d)':'var(--ink)'};border-radius:999px;padding:9px 15px;font-size:13px;font-weight:600` }));
+    const hasIdeas=!!S.ideas;
+    const ideasVM=(S.ideas||[]).map(idea=>({ title:idea.title, angle:idea.angle, fmt:idea.fmt, selected:S.topic===idea.title, checkEl:this.icon('check',12,3), dot:`width:22px;height:22px;border-radius:50%;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;${S.topic===idea.title?'background:var(--accent);color:#f4efe0':'border:1.5px solid var(--border-2)'}`, onPick:()=>this.pickIdea(idea), style:`text-align:left;cursor:pointer;background:var(--surface);border:1.5px solid ${S.topic===idea.title?'var(--accent)':'var(--border)'};border-radius:14px;padding:14px 16px` }));
+    const suggestLabel=S.suggesting?'Thinking…':(hasIdeas?'Suggest more':'Suggest topics');
+
+    // GENERATE
+    const genIdle=S.genPhase==='idle', genWorking=S.genPhase==='writing'||S.genPhase==='assets', genDone=S.genPhase==='done';
+    const summaryVM=[['Account',account.name],['Style',styleObj?styleObj.name:''],['Template',man&&S.arch?man.kinds[S.arch].name:''],['Topic',S.topic||'(none set — AI will pick)'],['Channels',this.activeKeys().map(k=>this.PLAT[k].name).join(', ')||'—']].map((r,i,arr)=>({k:r[0],v:r[1],rule:i===arr.length-1?'transparent':'var(--border)'}));
+    const genTitle=S.genPhase==='writing'?'Writing your copy…':'Composing slides…';
+    const genSub=S.genPhase==='writing'?'Drafting in your brand voice, within each slot’s budget':'Flowing text into the template and staging image slots';
+    const writeBlocks=[{delay:'0s',w1:'70%',w2:'52%'},{delay:'.15s',w1:'88%',w2:'40%'},{delay:'.3s',w1:'60%',w2:'74%'},{delay:'.45s',w1:'80%',w2:'46%'}];
+    const assetFrames=[{ar:style==='reel'||style==='story'?'9/16':'4/5',delay:'0s'},{ar:style==='reel'||style==='story'?'9/16':'4/5',delay:'.12s'},{ar:style==='reel'||style==='story'?'9/16':'4/5',delay:'.24s'}];
+
+    // FILL workspace
+    let fillVals={};
+    if(genDone&&doc){
+      const active=doc.slides[S.activeSlide]||doc.slides[0];
+      const kd=man.kinds[active.kind];
+      const isMulti=!man.single, isStory=style==='story', hasVoice=!!man.voice;
+      const brand=account.name; const total=doc.slides.length;
+      const ctx={style,accent:acc,brand,handle:igHandle};
+      const bdim=this.bd(style);
+      const activeSlideEl=this.fitSvg(this.renderSlide(active,S.activeSlide,total,ctx),bdim.w,bdim.h, style==='reel'||style==='story'?272:344);
+
+      const stripVM=doc.slides.map((sd,idx)=>{ const on=idx===S.activeSlide; const r=man.kinds[sd.kind].role; const tag=r==='cover'?'Cover':(r==='end'?'End':String(idx+1)); return { el:this.scaled(this.renderSlide(sd,idx,total,ctx),this.bd(style).w,this.bd(style).h,style==='reel'||style==='story'?58:76), tag, tagStyle:`display:block;text-align:center;font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;margin-top:5px;color:${on?'var(--moss-d)':'var(--muted)'}`, onClick:()=>this.setState({activeSlide:idx,editorTab:S.editorTab==='post'?'post':'slides'}), style:`flex-shrink:0;cursor:pointer;background:transparent;border:2px solid ${on?'var(--accent)':'transparent'};border-radius:11px;padding:4px` }; });
+      const interiorKinds=man.interior||[];
+      const addKindsVM=interiorKinds.map(k=>({ label:man.kinds[k].name, onAdd:()=>this.addSlide(k) }));
+      const activeRole=kd.role;
+      const showSlideCtl=isMulti; const activeTag=`Slide ${S.activeSlide+1} of ${total} · ${kd.name}`;
+      const canMoveL=S.activeSlide>0, canMoveR=S.activeSlide<total-1, canDel=total>1&&activeRole!=='cover';
+      const ctlBtn=(on)=>`width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;color:${on?'var(--slate)':'var(--border-2)'};cursor:${on?'pointer':'default'}`;
+
+      const editorTabs=[{id:'slides',label:'Slots'}]; if(hasVoice) editorTabs.push({id:'voice',label:'Voice'}); editorTabs.push({id:'post',label:isStory?'Sticker':'Post'});
+      const editorTabsVM=editorTabs.map(t=>({ label:t.label, onClick:()=>this.setState({editorTab:t.id}), style:`flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;border-radius:8px;border:none;cursor:pointer;font-size:12.5px;font-weight:700;${S.editorTab===t.id?'background:var(--accent);color:#f4efe0':'background:transparent;color:var(--muted)'}` }));
+      const slidesTab=S.editorTab==='slides', voiceTab=S.editorTab==='voice'&&hasVoice, postTab=S.editorTab==='post';
+
+      // arch swap (cover slide only)
+      const hasArchSwap=slidesTab&&activeRole==='cover'&&man.cover.length>1;
+      const archSwapVM=man.cover.map(k=>({ name:man.kinds[k].name, onClick:()=>this.swapArch(k), style:`cursor:pointer;border:1.5px solid ${active.kind===k?'var(--accent)':'var(--border-2)'};background:${active.kind===k?'#e8efe4':'var(--surface)'};color:${active.kind===k?'var(--moss-d)':'var(--ink)'};border-radius:999px;padding:7px 13px;font-size:12px;font-weight:600` }));
+
+      // fields from manifest slots
+      const inputBase='width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 13px;background:#fff;color:var(--ink);font-size:13.5px;font-family:var(--font-sans);outline:none';
+      const fieldsVM=[];
+      if(slidesTab){ kd.slots.forEach(sl=>{
+        if(sl.type==='image'){ const img=active.f[sl.id]; fieldsVM.push({ label:sl.label, req:sl.req, hasCounter:false, isText:false,isArea:false,isImage:true,isList:false, imgName:img?(img.name+(img.ai?' · AI':'')):'No image yet — pick or generate', thumbStyle:`width:52px;height:52px;border-radius:9px;flex-shrink:0;overflow:hidden;position:relative;border:1px solid var(--border);background:${img?img.tint:'#e0dac9'}`, thumbEl:img?null:this.el('span',{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'},this.icon('image',18,2.2)), onPick:()=>this.openPicker(sl.id), onGen:()=>{ this.openPicker(sl.id); } }); return; }
+        if(sl.type==='pair'||sl.type==='list'||sl.type==='quiz'){ const arr=active.f[sl.id]||[]; const isQuiz=sl.type==='quiz'; const isPair=sl.type==='pair';
+          const items=arr.map((it,idx)=>{ let parts; if(isPair) parts=[{value:it.lead,ph:'Lead',style:'flex:1;'+inputBase+';font-weight:600',onInput:e=>this.setPair(sl.id,idx,'lead',e.target.value)},{value:it.detail,ph:'Detail',style:'flex:1;'+inputBase,onInput:e=>this.setPair(sl.id,idx,'detail',e.target.value)}]; else if(isQuiz) parts=[{value:it.t,ph:'Answer',style:'flex:1;'+inputBase,onInput:e=>this.setQuizText(sl.id,idx,e.target.value)}]; else parts=[{value:it,ph:'Item',style:'flex:1;'+inputBase,onInput:e=>this.setListStr(sl.id,idx,e.target.value)}];
+            return { parts, hasCorrect:isQuiz, correctEl:isQuiz&&it.correct?this.icon('check',13,3):null, correctStyle:`width:28px;height:28px;flex-shrink:0;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;${isQuiz&&it.correct?'background:var(--moss);color:#f4efe0;border:none':'border:1.5px solid var(--border-2);background:transparent;color:transparent'}`, onCorrect:()=>this.setQuizCorrect(sl.id,idx), canRemove:arr.length>2, onRemove:()=>this.removeItem(sl.id,idx) }; });
+          fieldsVM.push({ label:sl.label, req:sl.req, hasCounter:false, isText:false,isArea:false,isImage:false,isList:true, items, canAddItem:arr.length<(isQuiz?4:5), onAddItem:()=>this.addItem(sl.id,sl.type) }); return; }
+        // text / area
+        const val=active.f[sl.id]||''; const over=sl.max>0&&val.length>sl.max; const isArea=sl.type==='area';
+        fieldsVM.push({ label:sl.label, req:sl.req, isText:!isArea, isArea:isArea, isImage:false, isList:false, value:val, ph:sl.ph||('Enter '+sl.label.toLowerCase()), rows:isArea?3:1, hasCounter:sl.max>0, counter:val.length+'/'+sl.max, counterStyle:`font-family:var(--font-mono);font-size:10.5px;${over?'color:#b4574f':'color:var(--muted)'}`, onInput:e=>this.setField(sl.id,e.target.value), inputStyle:inputBase+(over?';border-color:#d99b8f':''), areaStyle:inputBase+';line-height:1.5;resize:vertical'+(over?';border-color:#d99b8f':'') });
+      }); }
+
+      // voice tab
+      const voicesVM=this.VOICES.map(v=>({ name:v.name, desc:v.desc, onClick:()=>this.setState({voiceId:v.id}), dotStyle:`width:30px;height:30px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--moss),var(--slate));opacity:${S.voiceId===v.id?1:.5}`, tickStyle:`width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;${S.voiceId===v.id?'background:var(--accent);color:#f4efe0':'border:1.5px solid var(--border-2)'}`, tickEl:S.voiceId===v.id?this.icon('check',12,3):null, style:`display:flex;align-items:center;gap:11px;cursor:pointer;background:var(--surface);border:1.5px solid ${S.voiceId===v.id?'var(--accent)':'var(--border)'};border-radius:12px;padding:10px 13px` }));
+      const narrationVM=[['verbatim','Verbatim'],['condensed','Condensed']].map(([id,label])=>({ label, onClick:()=>this.setState({narration:id}), style:`border:none;cursor:pointer;border-radius:999px;padding:7px 15px;font-size:12.5px;font-weight:700;${S.narration===id?'background:var(--accent);color:#f4efe0':'background:transparent;color:var(--muted)'}` }));
+      const scriptLines=doc.slides.map(sd=>sd.f.voiceScript).filter(Boolean).map(t=>S.narration==='condensed'?t.split(/[—,]/)[0].trim().replace(/\.$/,'')+'.':t);
+      const scriptVM=scriptLines.map((t,idx)=>({ n:String(idx+1).padStart(2,'0'), text:t, style:`display:flex;gap:9px;padding:8px 10px;border-radius:9px;${S.voicePlaying&&idx===0?'background:#e8efe4':''}` }));
+      const words=scriptLines.join(' ').split(/\s+/).length; const secs=Math.max(8,Math.round(words/2.6));
+      const waveBars=[10,17,7,20,12,15,8].map((hh,idx)=>({ style:`width:3px;border-radius:2px;background:var(--slate);height:${hh}px;transform-origin:bottom;${S.voicePlaying?`animation:vpulse .7s ease-in-out ${idx*0.08}s infinite`:''}` }));
+
+      // post tab
+      const isNotStory=!isStory;
+      const hashtagsVM=doc.hashtags.map(h=>({ label:h, xEl:this.icon('close',11,2.8), onRemove:()=>this.removeTag(h) }));
+
+      fillVals={ genDone:true, genIdle:false, genWorking:false,
+        styleName:styleObj.name, archName:man.kinds[doc.slides[0].kind].name,
+        onRegenerate:()=>this.generate(), previewRef:this.setPreviewRef,
+        activeSlideEl, isMulti, stripVM, canAdd:isMulti&&man.interior.length>0&&total<8, toggleAddMenu:()=>this.setState({addMenuOpen:!S.addMenuOpen}), addMenuOpen:S.addMenuOpen, addKindsVM,
+        showSlideCtl, activeTag,
+        moveLeftStyle:ctlBtn(canMoveL), moveRightStyle:ctlBtn(canMoveR), delStyle:ctlBtn(canDel),
+        onMoveLeft:()=>canMoveL&&this.moveSlide(-1), onMoveRight:()=>canMoveR&&this.moveSlide(1), onDeleteSlide:()=>canDel&&this.deleteSlide(),
+        editorTabsVM, slidesTab, voiceTab, postTab,
+        hasArchSwap, archSwapLabel:'Cover layout', archSwapVM,
+        fieldsVM,
+        voicesVM, narrationVM, scriptVM,
+        playStyle:`width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--accent);color:#f4efe0`, playIconEl:this.icon(S.voicePlaying?'pause':'play',15,2.4,S.voicePlaying?'none':'#f4efe0'), onPreviewRead:()=>this.previewRead(), playLabel:S.voicePlaying?'Playing preview…':'Preview the read', readMeta:`${this.VOICES.find(v=>v.id===S.voiceId).name} · ~${secs}s · ElevenLabs`, waveBars,
+        isStory, isNotStory,
+        linkSticker:doc.linkSticker, onLinkSticker:e=>this.setDoc('linkSticker',e.target.value),
+        mention:doc.mention, onMention:e=>this.setDoc('mention',e.target.value),
+        draftCaption:doc.caption, onCaption:e=>this.setDoc('caption',e.target.value),
+        draftFirst:doc.first, onFirst:e=>this.setDoc('first',e.target.value),
+        hashtagsVM, tagCount:doc.hashtags.length+' tags', newTag:S.newTag, onNewTag:e=>this.setState({newTag:e.target.value}), onAddTag:()=>this.addTag(), onTagKey:e=>{ if(e.key==='Enter'){e.preventDefault();this.addTag();} },
+      };
+    }
+
+    // picker
+    const pickerAssetsVM=this.lib().filter(a=>a.kind!=='video').map(a=>({ name:a.name, meta:a.meta, kind:a.kind, tint:a.tint, ai:!!a.ai, onPick:()=>this.pickAsset(a) }));
+    const genImgBtnLabel=S.genBusy?'Generating…':'Generate image';
+    const genImgBtnStyle=`width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:10px;padding:11px;font-size:13.5px;font-weight:700;cursor:${S.genBusy?'default':'pointer'};background:${S.genBusy?'var(--border-2)':'var(--moss)'};color:#f4efe0`;
+
+    // REVIEW
+    let reviewVals={};
+    if(S.step===5){
+      const isStory=style==='story';
+      const total=doc?doc.slides.length:1;
+      const ctx={style,accent:acc,brand:account.name,handle:igHandle};
+      const cover=doc?this.renderSlide(doc.slides[0],0,total,ctx):null;
+      const bd=this.bd(style);
+      reviewVals={ scheduled:S.scheduled, notScheduled:!S.scheduled,
+        scheduledMsg:S.when==='best'?`Queued for the next best window and lined up across ${this.activeKeys().length} channel${this.activeKeys().length>1?'s':''}. Postiz will post the first comment automatically.`:`Added to your queue. Postiz will publish it and drop the first comment.`,
+        onReset:()=>this.reset(),
+        coverEl:doc?this.fitSvg(cover,bd.w,bd.h, style==='reel'||style==='story'?300:460):null,
+        isMultiReview:doc&&doc.slides.length>1, slideCount:total,
+        isStory, isNotStory:!isStory,
+        captionShort:doc?doc.caption.split('\n')[0]:'', firstComment:doc?doc.first.split('\n')[0]:'', hashtags:doc?doc.hashtags:[],
+        publishChips:this.activeKeys().map(k=>({ name:this.PLAT[k].name, iconEl:this.icon(this.PLAT[k].icon,15,2.4) })),
+        bestTime:this.loc()==='pt'?'Amanhã, 19:00':'Tomorrow, 6:30 PM',
+        whenBest:{ onClick:()=>this.setState({when:'best'}), style:`display:flex;align-items:center;gap:11px;cursor:pointer;text-align:left;background:var(--surface);border:1.5px solid ${S.when==='best'?'var(--accent)':'var(--border)'};border-radius:12px;padding:12px 14px`, tick:`margin-left:auto;width:18px;height:18px;border-radius:50%;flex-shrink:0;${S.when==='best'?'background:var(--accent);border:5px solid var(--accent);box-shadow:inset 0 0 0 2px #fff':'border:2px solid var(--border-2)'}` },
+        whenCustom:{ onClick:()=>this.setState({when:'custom'}), style:`display:flex;align-items:center;gap:11px;cursor:pointer;text-align:left;background:var(--surface);border:1.5px solid ${S.when==='custom'?'var(--accent)':'var(--border)'};border-radius:12px;padding:12px 14px`, tick:`margin-left:auto;width:18px;height:18px;border-radius:50%;flex-shrink:0;${S.when==='custom'?'background:var(--accent);border:5px solid var(--accent);box-shadow:inset 0 0 0 2px #fff':'border:2px solid var(--border-2)'}` },
+        onSchedule:()=>{ this.setState({scheduled:true}); },
+      };
+    }
+
+    // footer
+    const canContinue=(()=>{ if(S.step===0) return this.activeKeys().length>0; if(S.step===1) return !!S.style; if(S.step===2) return !!S.arch; if(S.step===3) return true; if(S.step===4) return genDone; return false; })();
+    const showFooter=!(S.step===5&&S.scheduled);
+    const showContinue=S.step<5&&!(S.step===4&&!genDone);
+    const continueLabel=S.step===3?'Continue to create':(S.step===4?'Review post':'Continue');
+    const stepLabel=`Step ${S.step+1} of 6 · ${steps[S.step]}`;
+
+    return Object.assign({}, commonHelp, {
+      accountsVM, channelsVM, connectVM, channelCount:this.channelKeys(S.accountId).length,
+      stylesVM,
+      archetypesVM, templateCountLabel,
+      pillarsVM, hasIdeas, ideasVM, suggestLabel, onSuggest:()=>this.suggest(),
+      genIdle, genWorking, genDone, phaseWriting:S.genPhase==='writing', phaseAssets:S.genPhase==='assets',
+      summaryVM, genTitle, genSub, writeBlocks, assetFrames, onGenerate:()=>this.generate(),
+      pickerOpen:S.pickerOpen, onClosePicker:()=>this.closePicker(), pickerAssetsVM, genPrompt:S.genPrompt, onGenPrompt:e=>this.setState({genPrompt:e.target.value}), onGenImage:()=>this.genImage(), genImgBtnLabel, genImgBtnStyle,
+      toast:S.toast,
+      showFooter, showContinue, hideContinue:!showContinue, continueLabel, stepLabel,
+      onNext:()=>this.next(), onBack:()=>this.back(),
+      backStyle:`display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--border-2);border-radius:11px;padding:11px 18px;font-size:14px;font-weight:600;color:var(--ink);cursor:${S.step===0?'default':'pointer'};opacity:${S.step===0?.4:1}`,
+      continueStyle:`display:inline-flex;align-items:center;gap:8px;border:none;border-radius:11px;padding:12px 22px;font-size:14px;font-weight:700;cursor:${canContinue?'pointer':'default'};background:${canContinue?'var(--accent)':'var(--border-2)'};color:#f4efe0`,
+      onNext:()=>{ if(canContinue) this.next(); },
+    }, fillVals, reviewVals);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+{
+  "template": "reels",
+  "version": "1.0",
+  "canvas": {
+    "width": 1080,
+    "height": 1920,
+    "aspect": "9:16"
+  },
+  "safeZone": {
+    "note": "Instagram UI overlays the frame. Keep ALL text/logo/CTA inside a centered ~900x1440 box: clear the top ~220px, bottom ~480px (caption + audio bar), and right ~120px (action rail).",
+    "safeBoxPx": {
+      "left": 90,
+      "right": 90,
+      "top": 240,
+      "bottom": 240
+    },
+    "hookBand": {
+      "note": "Primary hook text sits high, in the y=200-600 band, so it reads before the caption bar loads."
+    }
+  },
+  "aiContract": "Fill only the slots below and the brand tokens. Never move, add, remove, resize, or restyle elements. On-screen text = the ElevenLabs voice script (voiceScript per frame drives narration AND the visible caption). Backgrounds marked image are fal.ai slots. On-screen copy is engagement-only — the app-download CTA belongs in postDelivery, never on a frame.",
+  "brandTokens": {
+    "accent": {
+      "type": "color",
+      "role": "single accent across every frame (kicker, pivot word, ticks, brand chip, buttons, safe box)",
+      "default": "#b89251",
+      "required": true
+    },
+    "brandName": {
+      "type": "text",
+      "role": "wordmark in the brand chip",
+      "default": "Gastric IQ",
+      "maxChars": 22,
+      "required": true
+    },
+    "handle": {
+      "type": "text",
+      "role": "@handle on the end CTA and ghost caption bar",
+      "default": "@gastric_iq",
+      "maxChars": 30,
+      "required": true
+    },
+    "logo": {
+      "type": "image",
+      "role": "optional; replaces the chip wordmark",
+      "aspect": "any",
+      "required": false
+    }
+  },
+  "voice": {
+    "note": "Reels are voice-ready. Each frame carries a voiceScript; the app sends the concatenated scripts to ElevenLabs and the visible on-screen text is the same words.",
+    "provider": "elevenlabs",
+    "voiceId": {
+      "type": "text",
+      "role": "chosen ElevenLabs voice; set once per reel",
+      "required": false
+    },
+    "narration": {
+      "type": "enum",
+      "role": "on-screen text vs narration",
+      "options": [
+        "verbatim",
+        "condensed"
+      ],
+      "default": "verbatim",
+      "required": false
+    }
+  },
+  "hookCovers": {
+    "note": "Exactly ONE opening hook frame. Must land in <3s. Hook is the largest element, 6-10 words, a curiosity gap.",
+    "archetypes": {
+      "1a-statement": {
+        "ground": "image+scrim",
+        "slots": {
+          "kicker": {
+            "type": "text",
+            "role": "e.g. 'Stop scrolling if'",
+            "maxChars": 20,
+            "required": false
+          },
+          "hook": {
+            "type": "text",
+            "role": "statement hook; wrap pivot word in accent",
+            "maxChars": 46,
+            "required": true
+          },
+          "image": {
+            "type": "image",
+            "role": "background; fal.ai",
+            "aspect": "9:16",
+            "required": true
+          },
+          "voiceScript": {
+            "type": "text",
+            "role": "opening narration line",
+            "maxChars": 140,
+            "required": true
+          }
+        }
+      },
+      "1b-question": {
+        "ground": "primary",
+        "slots": {
+          "hook": {
+            "type": "text",
+            "role": "question hook",
+            "maxChars": 44,
+            "required": true
+          },
+          "sub": {
+            "type": "text",
+            "role": "tension line under the question",
+            "maxChars": 52,
+            "required": false
+          },
+          "voiceScript": {
+            "type": "text",
+            "role": "opening narration line",
+            "maxChars": 140,
+            "required": true
+          }
+        }
+      },
+      "1c-kinetic": {
+        "ground": "dark",
+        "slots": {
+          "preWord": {
+            "type": "text",
+            "role": "lead-in above the big word",
+            "maxChars": 24,
+            "required": false
+          },
+          "bigWord": {
+            "type": "text",
+            "role": "one kinetic word (animated in motion)",
+            "maxChars": 10,
+            "required": true
+          },
+          "sub": {
+            "type": "text",
+            "role": "payoff line",
+            "maxChars": 46,
+            "required": false
+          },
+          "voiceScript": {
+            "type": "text",
+            "role": "opening narration line",
+            "maxChars": 140,
+            "required": true
+          }
+        }
+      }
+    }
+  },
+  "frames": {
+    "note": "Body frames between hook and end CTA. 2-6 frames; one idea each. Progress ticks auto-fill from frame count.",
+    "kinds": {
+      "1d-title": {
+        "ground": "image+scrim",
+        "slots": {
+          "kicker": {
+            "type": "text",
+            "role": "format promise, e.g. 'A 30-second read'",
+            "maxChars": 20,
+            "required": false
+          },
+          "title": {
+            "type": "text",
+            "role": "episode/topic title",
+            "maxChars": 40,
+            "required": true
+          },
+          "sub": {
+            "type": "text",
+            "role": "one supporting line",
+            "maxChars": 48,
+            "required": false
+          },
+          "image": {
+            "type": "image",
+            "role": "background; fal.ai",
+            "aspect": "9:16",
+            "required": true
+          },
+          "voiceScript": {
+            "type": "text",
+            "role": "narration for this frame",
+            "maxChars": 200,
+            "required": true
+          }
+        }
+      },
+      "1e-caption": {
+        "ground": "image+scrim",
+        "slots": {
+          "caption": {
+            "type": "text",
+            "role": "lower-third caption = spoken line; keep in safe zone",
+            "maxChars": 90,
+            "required": true
+          },
+          "image": {
+            "type": "image",
+            "role": "background; fal.ai",
+            "aspect": "9:16",
+            "required": false
+          },
+          "voiceScript": {
+            "type": "text",
+            "role": "narration = caption text",
+            "maxChars": 200,
+            "required": true
+          }
+        }
+      }
+    }
+  },
+  "endCta": {
+    "id": "1f-cta",
+    "note": "ALWAYS the last frame. Engagement-only: save + follow. Never a download button.",
+    "ground": "dark",
+    "slots": {
+      "kicker": {
+        "type": "text",
+        "role": "e.g. 'Your next fade day'",
+        "maxChars": 20,
+        "required": false
+      },
+      "hook": {
+        "type": "text",
+        "role": "save-worthy line",
+        "maxChars": 40,
+        "required": true
+      },
+      "recap": {
+        "type": "list",
+        "role": "2-3 one-line takeaways",
+        "min": 2,
+        "max": 3,
+        "required": true
+      },
+      "voiceScript": {
+        "type": "text",
+        "role": "closing narration incl. 'save this / follow'",
+        "maxChars": 160,
+        "required": true
+      }
+    }
+  },
+  "postDelivery": {
+    "note": "Post-level fields the Create page assembles — NOT drawn on any frame. This is where the app-download / external CTA lives.",
+    "caption": {
+      "type": "text",
+      "role": "post caption; hook-led, ends with soft CTA '→ link in bio'; include the download ask here",
+      "maxChars": 2200,
+      "required": true
+    },
+    "firstComment": {
+      "type": "text",
+      "role": "auto-posted by Postiz; carries the actual download link + pitch",
+      "maxChars": 2200,
+      "required": true
+    },
+    "hashtags": {
+      "type": "list",
+      "role": "5-10 niche tags, weighted under 100K posts",
+      "min": 5,
+      "max": 10,
+      "required": false
+    },
+    "audio": {
+      "type": "text",
+      "role": "trending-audio note or 'Original audio'",
+      "required": false
+    }
+  },
+  "accentGuardrail": "Accent legibility is auto-guarded: when the chosen accent collides with a slide's ground color, the template substitutes a legible sibling (contrast >= 2.2). The AI/user may pick any brand accent freely; do not hand-tune per slide."
+}

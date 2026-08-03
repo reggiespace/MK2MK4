@@ -1,0 +1,170 @@
+{
+  "template": "single",
+  "version": "1.0",
+  "canvas": {
+    "options": [
+      {
+        "id": "square",
+        "width": 1080,
+        "height": 1080,
+        "aspect": "1:1"
+      },
+      {
+        "id": "portrait",
+        "width": 1080,
+        "height": 1350,
+        "aspect": "4:5"
+      }
+    ],
+    "default": "portrait"
+  },
+  "safeZone": {
+    "note": "Design inset 84-92px on all sides; keep text inside it for both ratios.",
+    "insetPx": 84
+  },
+  "aiContract": "One standalone post carrying a single idea — no swipe. Pick ONE layout and ONE ratio. Fill only the slots + brand tokens; never move/add/remove/restyle. Engagement-only on frame — the download CTA belongs in postDelivery.",
+  "brandTokens": {
+    "accent": {
+      "type": "color",
+      "role": "single accent (kicker, numerals, fact block, mark, 'New' pill)",
+      "default": "#b89251",
+      "required": true
+    },
+    "brandName": {
+      "type": "text",
+      "role": "wordmark in the mark",
+      "default": "Gastric IQ",
+      "maxChars": 22,
+      "required": true
+    },
+    "logo": {
+      "type": "image",
+      "role": "optional; replaces the wordmark mark",
+      "aspect": "any",
+      "required": false
+    }
+  },
+  "layouts": {
+    "1a-stat": {
+      "ground": "primary",
+      "slots": {
+        "kicker": {
+          "type": "text",
+          "role": "eyebrow",
+          "maxChars": 18,
+          "required": false
+        },
+        "statValue": {
+          "type": "text",
+          "role": "dominant figure",
+          "maxChars": 8,
+          "required": true
+        },
+        "statLine": {
+          "type": "text",
+          "role": "what it means",
+          "maxChars": 64,
+          "required": true
+        },
+        "source": {
+          "type": "text",
+          "role": "attribution",
+          "maxChars": 48,
+          "required": false
+        }
+      }
+    },
+    "1b-quote": {
+      "ground": "secondary",
+      "slots": {
+        "kicker": {
+          "type": "text",
+          "role": "eyebrow",
+          "maxChars": 18,
+          "required": false
+        },
+        "quote": {
+          "type": "text",
+          "role": "pull quote (italic)",
+          "maxChars": 84,
+          "required": true
+        },
+        "attribution": {
+          "type": "text",
+          "role": "who said it",
+          "maxChars": 48,
+          "required": false
+        }
+      }
+    },
+    "1c-myth": {
+      "ground": "light",
+      "slots": {
+        "myth": {
+          "type": "text",
+          "role": "misconception (struck through)",
+          "maxChars": 56,
+          "required": true
+        },
+        "fact": {
+          "type": "text",
+          "role": "correction (accent block)",
+          "maxChars": 64,
+          "required": true
+        }
+      }
+    },
+    "1d-announce": {
+      "ground": "dark",
+      "slots": {
+        "pill": {
+          "type": "text",
+          "role": "corner flag, e.g. 'New'",
+          "maxChars": 12,
+          "required": false
+        },
+        "kicker": {
+          "type": "text",
+          "role": "eyebrow, e.g. 'Just launched'",
+          "maxChars": 20,
+          "required": false
+        },
+        "headline": {
+          "type": "text",
+          "role": "announcement headline",
+          "maxChars": 48,
+          "required": true
+        },
+        "sub": {
+          "type": "text",
+          "role": "supporting line; soft CTA '→ link in bio'",
+          "maxChars": 80,
+          "required": false
+        }
+      }
+    }
+  },
+  "postDelivery": {
+    "note": "Post-level fields the Create page assembles — NOT drawn on the frame. The download / external CTA lives here.",
+    "caption": {
+      "type": "text",
+      "role": "post caption; ends with soft CTA '→ link in bio'; include the download ask here",
+      "maxChars": 2200,
+      "required": true
+    },
+    "firstComment": {
+      "type": "text",
+      "role": "auto-posted by Postiz; carries the actual download link + pitch",
+      "maxChars": 2200,
+      "required": true
+    },
+    "hashtags": {
+      "type": "list",
+      "role": "5-10 niche tags, weighted under 100K posts",
+      "min": 5,
+      "max": 10,
+      "required": false
+    }
+  },
+  "accentGuardrail": "Accent legibility is auto-guarded: when the chosen accent collides with a slide's ground color, the template substitutes a legible sibling (contrast >= 2.2). The AI/user may pick any brand accent freely; do not hand-tune per slide."
+}

@@ -893,8 +893,11 @@ runs with no Postgres."
 ### Task 3: Carry the brief into generation
 
 **Files:**
-- Modify: `apps/web/src/lib/ai/generate.ts`
+- Create: `apps/web/src/lib/ai/prompt.ts` — the pure prompt builders, moved out of `generate.ts`
+- Modify: `apps/web/src/lib/ai/generate.ts` — keeps `generateDraft`, imports the builders
 - Create: `apps/web/src/lib/ai/__tests__/generate-prompt.test.ts`
+
+**Why the split** (discovered during execution, not anticipated by this plan): `generate.ts` imports `./client` for `completeJson`, and that chain reaches `@/lib/integrations` → `@/lib/db`, which constructs `PrismaClient` as a top-level side effect and throws without `DATABASE_URL`. The unit config has no dotenv import by design, so a unit test of the prompt builder cannot import `generate.ts` at all. Every other import in `generate.ts` (`./schema`, `./playbook`, `@/lib/templates/*`) is pure. So the prompt builders move to `lib/ai/prompt.ts`, which imports nothing reaching the database — the same boundary fix as `token-crypto.ts` in Task 2.
 
 **Interfaces:**
 - Consumes: nothing from earlier tasks.

@@ -1,0 +1,208 @@
+{
+  "template": "story",
+  "version": "1.0",
+  "canvas": {
+    "width": 1080,
+    "height": 1920,
+    "aspect": "9:16"
+  },
+  "safeZone": {
+    "note": "Keep the interactive sticker and all key copy out of the top ~250px (story bar) and bottom ~250px (reply bar). Center band is the tap zone.",
+    "safePx": {
+      "top": 250,
+      "bottom": 250,
+      "left": 60,
+      "right": 60
+    }
+  },
+  "aiContract": "Stories optimize for interaction (tap/vote/reply), NOT reach. Every frame MUST carry exactly one interactive sticker as its tap target. Fill only the slots + the sticker options; never move/add/remove/restyle elements. Put a poll or question on the FIRST frame for the engagement boost. The app-download CTA belongs in postDelivery/link, never as body copy.",
+  "brandTokens": {
+    "accent": {
+      "type": "color",
+      "role": "single accent across every frame (kicker, active sticker option, brand mark, countdown, CTA)",
+      "default": "#b89251",
+      "required": true
+    },
+    "brandName": {
+      "type": "text",
+      "role": "wordmark in the story top bar",
+      "default": "Gastric IQ",
+      "maxChars": 22,
+      "required": true
+    },
+    "handle": {
+      "type": "text",
+      "role": "@handle for reshare + link frames",
+      "default": "@gastric_iq",
+      "maxChars": 30,
+      "required": true
+    },
+    "logo": {
+      "type": "image",
+      "role": "optional; replaces the top-bar mark",
+      "aspect": "any",
+      "required": false
+    }
+  },
+  "frames": {
+    "note": "1-5 frames per story; tap-through drops after the 5th. First frame should be a poll or question. Progress segments auto-fill from frame count.",
+    "kinds": {
+      "1a-poll": {
+        "sticker": "poll",
+        "slots": {
+          "kicker": {
+            "type": "text",
+            "role": "eyebrow",
+            "maxChars": 20,
+            "required": false
+          },
+          "prompt": {
+            "type": "text",
+            "role": "the question above the poll",
+            "maxChars": 44,
+            "required": true
+          },
+          "optionA": {
+            "type": "text",
+            "role": "poll option 1",
+            "maxChars": 20,
+            "required": true
+          },
+          "optionB": {
+            "type": "text",
+            "role": "poll option 2",
+            "maxChars": 20,
+            "required": true
+          },
+          "image": {
+            "type": "image",
+            "role": "optional background; fal.ai",
+            "aspect": "9:16",
+            "required": false
+          }
+        }
+      },
+      "1b-question": {
+        "sticker": "question",
+        "slots": {
+          "prompt": {
+            "type": "text",
+            "role": "open question headline",
+            "maxChars": 40,
+            "required": true
+          },
+          "stickerLabel": {
+            "type": "text",
+            "role": "prompt inside the sticker",
+            "maxChars": 40,
+            "required": true
+          }
+        }
+      },
+      "1c-quiz": {
+        "sticker": "quiz",
+        "slots": {
+          "kicker": {
+            "type": "text",
+            "role": "e.g. 'True or false'",
+            "maxChars": 20,
+            "required": false
+          },
+          "prompt": {
+            "type": "text",
+            "role": "the claim to judge",
+            "maxChars": 48,
+            "required": true
+          },
+          "options": {
+            "type": "list",
+            "role": "2-4 answers; mark the correct one",
+            "min": 2,
+            "max": 4,
+            "required": true
+          }
+        }
+      },
+      "1d-slider": {
+        "sticker": "emoji-slider",
+        "slots": {
+          "prompt": {
+            "type": "text",
+            "role": "the question above the slider",
+            "maxChars": 44,
+            "required": true
+          },
+          "emoji": {
+            "type": "text",
+            "role": "slider emoji",
+            "maxChars": 2,
+            "required": true
+          }
+        }
+      },
+      "1e-countdown": {
+        "sticker": "countdown+link",
+        "slots": {
+          "kicker": {
+            "type": "text",
+            "role": "eyebrow",
+            "maxChars": 20,
+            "required": false
+          },
+          "headline": {
+            "type": "text",
+            "role": "what's launching",
+            "maxChars": 40,
+            "required": true
+          },
+          "targetTime": {
+            "type": "text",
+            "role": "countdown target (ISO)",
+            "required": true
+          },
+          "linkLabel": {
+            "type": "text",
+            "role": "tap-label on the link sticker",
+            "maxChars": 24,
+            "required": true
+          },
+          "linkUrl": {
+            "type": "text",
+            "role": "destination URL (download / landing)",
+            "required": true
+          }
+        }
+      },
+      "1f-reshare": {
+        "sticker": "post-reshare",
+        "slots": {
+          "flag": {
+            "type": "text",
+            "role": "banner, e.g. 'New post'",
+            "maxChars": 18,
+            "required": false
+          },
+          "postRef": {
+            "type": "text",
+            "role": "id/permalink of the feed post to reshare",
+            "required": true
+          }
+        }
+      }
+    }
+  },
+  "postDelivery": {
+    "note": "Story-level fields the Create page assembles. The download/external CTA rides the link sticker (1e) or the bio — not body copy.",
+    "linkSticker": {
+      "type": "text",
+      "role": "URL for the tappable link sticker when a frame uses one",
+      "required": false
+    },
+    "mention": {
+      "type": "text",
+      "role": "optional @mention/collab tag",
+      "required": false
+    }
+  },
+  "accentGuardrail": "Accent legibility is auto-guarded: when the chosen accent collides with a slide's ground color, the template substitutes a legible sibling (contrast >= 2.2). The AI/user may pick any brand accent freely; do not hand-tune per slide."
+}

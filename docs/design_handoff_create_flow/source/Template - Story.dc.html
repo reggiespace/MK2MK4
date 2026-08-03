@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,600;0,700;0,800;1,700&family=Albert+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#e2dccb;font-family:'Albert Sans',system-ui,sans-serif;color:#1a2230}
+  .gal-sec{padding:44px 48px 64px}
+  .opt-row{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}
+  .opt{display:flex;flex-direction:column;gap:12px}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6e6952}
+  .badge b{background:#1a2230;color:#f4efe0;padding:3px 9px;border-radius:999px;font-weight:500}
+  .frame{width:270px;height:480px;overflow:hidden;border-radius:20px;box-shadow:0 14px 34px rgba(26,34,48,.24);position:relative}
+  .slide{width:1080px;height:1920px;transform:scale(.25);transform-origin:top left;position:relative;overflow:hidden}
+  a{color:#3b5a78}a:hover{color:#5c7556}
+  .prog{position:absolute;top:56px;left:60px;right:60px;display:flex;gap:10px}
+  .prog span{flex:1;height:8px;border-radius:999px;background:rgba(255,255,255,.32)}
+</style>
+</helmet>
+
+<section class="gal-sec">
+  <div style="max-width:920px;margin-bottom:26px">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#b89251;margin-bottom:10px">Turn 1 · Story · 9:16 tap &amp; reply system</div>
+    <h1 style="font-family:'Spectral',serif;font-size:38px;font-weight:700;margin:0 0 10px;line-height:1.05">Stories built for a tap, a vote, a reply</h1>
+    <p style="font-size:15px;line-height:1.55;color:#4a4636;margin:0;max-width:74ch">Stories deepen the follower relationship — so these optimize for interaction, not reach. Locked 9:16 (1080×1920) with the sticker kept out of the top/bottom ~250px UI zones (dashed guides). Every frame carries a real interactive sticker as the tap target. Frames — <a href="#1a">1a</a> Poll, <a href="#1b">1b</a> Question, <a href="#1c">1c</a> Quiz, <a href="#1d">1d</a> Emoji slider, <a href="#1e">1e</a> Countdown/link, <a href="#1f">1f</a> Reshare of a post. The AI fills copy + the sticker&rsquo;s options; the layout is fixed.</p>
+  </div>
+
+  <div class="opt-row">
+
+    <!-- 1a POLL -->
+    <div class="opt" id="1a">
+      <div class="badge"><b>1a</b> Poll · lowest-effort tap (put on frame 1)</div>
+      <div class="frame"><div class="slide" style="background:linear-gradient(155deg,#3b5a78,#1e2f40)">
+        {{ prog4 }}{{ topBar }}{{ safeGuides }}
+        <div style="position:absolute;left:80px;right:80px;top:640px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:30px;letter-spacing:.2em;text-transform:uppercase;color:{{ accentOnSlate }};margin-bottom:24px">Quick gut check</div>
+          <h2 style="font-family:'Spectral',serif;font-weight:800;font-size:104px;line-height:1.0;color:#f4efe0;margin:0 0 60px">Does 3&nbsp;p.m. hit you too?</h2>
+          <div style="background:#fff;border-radius:36px;padding:20px;box-shadow:0 24px 60px rgba(0,0,0,.35)">
+            <div style="font-family:'Albert Sans';font-weight:700;font-size:44px;text-align:center;color:#1a2230;padding:26px 0 30px">Every fade day.</div>
+            <div style="height:3px;background:rgba(26,34,48,.12);margin:0 -20px"></div>
+            <div style="font-family:'Albert Sans';font-weight:700;font-size:44px;text-align:center;color:#1a2230;padding:30px 0 26px">Not really.</div>
+          </div>
+        </div>
+        {{ replyBar }}
+      </div></div>
+    </div>
+
+    <!-- 1b QUESTION -->
+    <div class="opt" id="1b">
+      <div class="badge"><b>1b</b> Question · opens a DM reply</div>
+      <div class="frame"><div class="slide" style="background:linear-gradient(155deg,#5c7556,#2f3f2c)">
+        {{ prog4 }}{{ topBar }}{{ safeGuides }}
+        <div style="position:absolute;left:80px;right:80px;top:600px">
+          <h2 style="font-family:'Spectral',serif;font-weight:800;font-size:100px;line-height:1.02;color:#f4efe0;margin:0 0 56px">What&rsquo;s your 3 p.m. move?</h2>
+          <div style="background:#fff;border-radius:36px;padding:44px 46px;box-shadow:0 24px 60px rgba(0,0,0,.35)">
+            <div style="font-family:'Albert Sans';font-weight:700;font-size:40px;color:#1a2230;margin-bottom:22px">Tell us — we read every one</div>
+            <div style="border:3px dashed rgba(26,34,48,.28);border-radius:22px;padding:28px 30px;font-family:'Albert Sans';font-size:38px;color:#8a8672">Type something…</div>
+          </div>
+        </div>
+        {{ replyBar }}
+      </div></div>
+    </div>
+
+    <!-- 1c QUIZ -->
+    <div class="opt" id="1c">
+      <div class="badge"><b>1c</b> Quiz · myth-buster tap</div>
+      <div class="frame"><div class="slide" style="background:linear-gradient(155deg,#6b5f43,#2a2418)">
+        {{ prog4 }}{{ topBar }}{{ safeGuides }}
+        <div style="position:absolute;left:80px;right:80px;top:560px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:30px;letter-spacing:.2em;text-transform:uppercase;color:{{ accentOnBrown }};margin-bottom:22px">True or false</div>
+          <h2 style="font-family:'Spectral',serif;font-weight:800;font-size:88px;line-height:1.04;color:#f7f3e8;margin:0 0 54px">Cravings mean low willpower.</h2>
+          <div style="display:flex;flex-direction:column;gap:22px">
+            <div style="background:#fff;border-radius:28px;padding:30px 40px;font-family:'Albert Sans';font-weight:700;font-size:44px;color:#1a2230;display:flex;align-items:center;gap:26px"><span style="width:56px;height:56px;border-radius:50%;border:5px solid #c9c2ae"></span>True</div>
+            <div style="background:{{ accent }};border-radius:28px;padding:30px 40px;font-family:'Albert Sans';font-weight:700;font-size:44px;color:#141a24;display:flex;align-items:center;gap:26px"><span style="width:56px;height:56px;border-radius:50%;background:#141a24;color:{{ accent }};display:flex;align-items:center;justify-content:center;font-size:38px">✓</span>False</div>
+          </div>
+        </div>
+        {{ replyBar }}
+      </div></div>
+    </div>
+
+    <!-- 1d EMOJI SLIDER -->
+    <div class="opt" id="1d">
+      <div class="badge"><b>1d</b> Emoji slider · playful tap</div>
+      <div class="frame"><div class="slide" style="background:linear-gradient(155deg,#b89251,#5c4a24)">
+        {{ prog4 }}{{ topBar }}{{ safeGuides }}
+        <div style="position:absolute;left:80px;right:80px;top:660px">
+          <h2 style="font-family:'Spectral',serif;font-weight:800;font-size:100px;line-height:1.02;color:#fff;margin:0 0 64px">How&rsquo;s the food noise today?</h2>
+          <div style="background:#fff;border-radius:40px;padding:52px 46px 60px;box-shadow:0 24px 60px rgba(0,0,0,.3)">
+            <div style="position:relative;height:22px;border-radius:999px;background:linear-gradient(90deg,#e7dfca,#3b5a78)">
+              <div style="position:absolute;left:64%;top:50%;transform:translate(-50%,-50%);font-size:88px">🫠</div>
+            </div>
+          </div>
+        </div>
+        {{ replyBar }}
+      </div></div>
+    </div>
+
+    <!-- 1e COUNTDOWN / LINK -->
+    <div class="opt" id="1e">
+      <div class="badge"><b>1e</b> Countdown + link · drive action</div>
+      <div class="frame"><div class="slide" style="background:radial-gradient(120% 80% at 50% 32%,#20293a,#0e131b)">
+        {{ prog4 }}{{ topBar }}{{ safeGuides }}
+        <div style="position:absolute;left:80px;right:80px;top:560px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:30px;letter-spacing:.22em;text-transform:uppercase;color:{{ accent }};margin-bottom:26px">New this week</div>
+          <h2 style="font-family:'Spectral',serif;font-weight:800;font-size:108px;line-height:.98;color:#f4efe0;margin:0 0 52px">Fade-day tracker is live.</h2>
+          <div style="background:rgba(244,239,224,.1);border:2px solid rgba(244,239,224,.25);border-radius:32px;padding:40px 44px;text-align:center;margin-bottom:44px">
+            <div style="font-family:'Spectral',serif;font-weight:800;font-size:120px;color:{{ accent }};line-height:.9">02:14:06</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:30px;letter-spacing:.16em;text-transform:uppercase;color:rgba(244,239,224,.65);margin-top:14px">Until it opens</div>
+          </div>
+          <div style="display:inline-flex;align-items:center;gap:18px;background:{{ accent }};color:#141a24;font-family:'Albert Sans';font-weight:700;font-size:48px;padding:30px 52px;border-radius:999px">↑ Tap to open</div>
+        </div>
+        {{ replyBar }}
+      </div></div>
+    </div>
+
+    <!-- 1f RESHARE -->
+    <div class="opt" id="1f">
+      <div class="badge"><b>1f</b> Reshare a post · pull into feed</div>
+      <div class="frame"><div class="slide" style="background:linear-gradient(155deg,#2f3f2c,#141a13)">
+        {{ prog4 }}{{ topBar }}{{ safeGuides }}
+        <div style="position:absolute;left:100px;right:100px;top:520px">
+          <div style="font-family:'Albert Sans';font-weight:700;font-size:44px;color:#f4efe0;margin-bottom:36px;transform:rotate(-3deg);display:inline-block;background:{{ accent }};color:#141a24;padding:14px 30px;border-radius:20px">New post ✦</div>
+          <div style="background:#faf7ec;border-radius:32px;padding:22px;box-shadow:0 30px 70px rgba(0,0,0,.4);transform:rotate(1.5deg)">
+            <div style="border-radius:22px;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#20293a,#141a24);padding:70px 54px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:26px;letter-spacing:.2em;text-transform:uppercase;color:{{ accent }};margin-bottom:22px">The pattern</div>
+              <div style="font-family:'Spectral',serif;font-weight:800;font-size:82px;line-height:.98;color:#f4efe0">Food noise peaks before it fades.</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:26px 16px 8px">
+              <span style="font-family:'Albert Sans';font-weight:700;font-size:36px;color:#1a2230">{{ handle }}</span>
+              <span style="font-family:'Albert Sans';font-weight:700;font-size:34px;color:#8a6f3c">View post →</span>
+            </div>
+          </div>
+        </div>
+        {{ replyBar }}
+      </div></div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1080,&quot;height&quot;:720},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#b89251&quot;,&quot;options&quot;:[&quot;#b89251&quot;,&quot;#5c7556&quot;,&quot;#3b5a78&quot;,&quot;#a5524a&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Brand&quot;},&quot;brandName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Gastric IQ&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Brand&quot;},&quot;handle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;@gastric_iq&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Brand&quot;}}">
+class Component extends DCLogic {
+  ce(t,p,...c){ return React.createElement(t,p,...c); }
+  W(a){ return `rgba(255,255,255,${a})`; }
+  _lum(hex){
+    const h=hex.replace('#',''); const n=h.length===3?h.split('').map(x=>x+x).join(''):h;
+    const c=[0,2,4].map(i=>{ let v=parseInt(n.slice(i,i+2),16)/255; return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4); });
+    return .2126*c[0]+.7152*c[1]+.0722*c[2];
+  }
+  _contrast(a,b){ const L1=this._lum(a),L2=this._lum(b); return (Math.max(L1,L2)+.05)/(Math.min(L1,L2)+.05); }
+  safeOn(bg,min){
+    if(this._contrast(this.accent,bg)>=(min||2.2)) return this.accent;
+    const fb=['#b89251','#f4efe0','#e7c98a','#141a24','#3b5a78','#a5524a'];
+    let best=fb[0],bc=0; for(const f of fb){ const c=this._contrast(f,bg); if(c>bc){bc=c;best=f;} } return best;
+  }
+
+  progEl(active,total){
+    return this.ce('div',{className:'prog'},
+      Array.from({length:total},(_,i)=>this.ce('span',{key:i,style:i<active?{background:this.accent}:null})));
+  }
+  topBarEl(brandName){
+    return this.ce('div',{style:{position:'absolute',left:'60px',right:'60px',top:'96px',display:'flex',alignItems:'center',gap:'20px'}},
+      this.ce('div',{style:{width:'72px',height:'72px',borderRadius:'18px',background:this.accent,color:'#141a24',fontFamily:"'Spectral', serif",fontWeight:800,fontSize:'40px',display:'flex',alignItems:'center',justifyContent:'center'}},(brandName[0]||'G')),
+      this.ce('span',{style:{fontFamily:"'Spectral', serif",fontWeight:700,fontSize:'44px',color:'#f4efe0'}},brandName),
+      this.ce('span',{style:{fontFamily:"'Albert Sans'",fontSize:'38px',color:this.W(.6)}},'· 2h'),
+      this.ce('span',{style:{marginLeft:'auto',color:this.W(.7),fontSize:'56px',lineHeight:.4,letterSpacing:'2px'}},'···'));
+  }
+  safeGuidesEl(){
+    const line=(pos)=>this.ce('div',{style:Object.assign({position:'absolute',left:0,right:0,height:0,borderTop:`3px dashed ${this.W(.32)}`},pos)},
+      this.ce('span',{style:{position:'absolute',right:'20px',top:'8px',fontFamily:"'IBM Plex Mono', monospace",fontSize:'22px',letterSpacing:'.12em',textTransform:'uppercase',color:this.W(.4)}},'sticker-safe'));
+    return this.ce(React.Fragment,null,
+      line({top:'250px'}), line({bottom:'250px'}));
+  }
+  replyBarEl(){
+    return this.ce('div',{style:{position:'absolute',left:'60px',right:'60px',bottom:'90px',display:'flex',alignItems:'center',gap:'24px'}},
+      this.ce('div',{style:{flex:1,border:`3px solid ${this.W(.5)}`,borderRadius:'999px',padding:'28px 40px',fontFamily:"'Albert Sans'",fontSize:'40px',color:this.W(.6)}},'Send message'),
+      this.ce('span',{style:{color:this.W(.6),fontSize:'52px'}},'♡'),
+      this.ce('span',{style:{color:this.W(.6),fontSize:'52px'}},'⤴'));
+  }
+
+  renderVals(){
+    this.accent = Array.isArray(this.props.accent) ? this.props.accent[0] : (this.props.accent || '#b89251');
+    const brandName = this.props.brandName || 'Gastric IQ';
+    const handle = this.props.handle || '@gastric_iq';
+    return {
+      accent:this.accent, accentOnSlate:this.safeOn('#3b5a78'), accentOnBrown:this.safeOn('#6b5f43'), handle,
+      prog4: this.progEl(1,4),
+      topBar: this.topBarEl(brandName),
+      safeGuides: this.safeGuidesEl(),
+      replyBar: this.replyBarEl(),
+    };
+  }
+}
+</script>
+</body>
+</html>

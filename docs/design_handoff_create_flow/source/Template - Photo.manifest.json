@@ -1,0 +1,198 @@
+{
+  "template": "photo",
+  "version": "1.0",
+  "canvas": {
+    "width": 1080,
+    "height": 1350,
+    "aspect": "4:5",
+    "note": "4:5 shown; 1:1 and 9:16 variants share the same slots."
+  },
+  "safeZone": {
+    "note": "Text sits over a built-in scrim; keep copy inside an 84px inset. Scrim is part of the template — never remove it.",
+    "insetPx": 84
+  },
+  "aiContract": "Image-led post. Pick ONE treatment. The image slot is required and is a drop/upload OR a fal.ai generation. Fill only the image, the labelled copy, and brand tokens; never move/add/remove/restyle, and never remove the scrim. Logo auto-places from the brand default. Engagement-only on frame; download CTA lives in postDelivery.",
+  "brandTokens": {
+    "accent": {
+      "type": "color",
+      "role": "single accent (kicker, quote mark)",
+      "default": "#b89251",
+      "required": true
+    },
+    "brandName": {
+      "type": "text",
+      "role": "wordmark in the logo lockup",
+      "default": "Gastric IQ",
+      "maxChars": 22,
+      "required": true
+    },
+    "logo": {
+      "type": "image",
+      "role": "brand-default logo; auto-places in the lockup on every treatment",
+      "aspect": "any",
+      "required": false
+    }
+  },
+  "imageDefaults": {
+    "treatment": "washed",
+    "note": "Photos are washed (desaturated, lifted) to match the brand ground; scrim gradient is applied automatically for text contrast.",
+    "generate": {
+      "provider": "fal.ai",
+      "promptField": "imagePrompt",
+      "note": "When no upload is given, imagePrompt drives fal.ai generation at the slot's aspect."
+    }
+  },
+  "treatments": {
+    "1a-lifestyle": {
+      "layout": "full-bleed",
+      "slots": {
+        "image": {
+          "type": "image",
+          "role": "full-bleed background",
+          "aspect": "4:5",
+          "required": true
+        },
+        "imagePrompt": {
+          "type": "text",
+          "role": "fal.ai prompt if generating",
+          "maxChars": 200,
+          "required": false
+        },
+        "kicker": {
+          "type": "text",
+          "role": "eyebrow",
+          "maxChars": 18,
+          "required": false
+        },
+        "headline": {
+          "type": "text",
+          "role": "over-image headline",
+          "maxChars": 52,
+          "required": true
+        }
+      }
+    },
+    "1b-fieldnote": {
+      "layout": "framed",
+      "slots": {
+        "image": {
+          "type": "image",
+          "role": "framed photo",
+          "aspect": "~4:3",
+          "required": true
+        },
+        "imagePrompt": {
+          "type": "text",
+          "role": "fal.ai prompt if generating",
+          "maxChars": 200,
+          "required": false
+        },
+        "tag": {
+          "type": "text",
+          "role": "e.g. 'Field note · 07'",
+          "maxChars": 22,
+          "required": false
+        },
+        "caption": {
+          "type": "text",
+          "role": "bold caption headline",
+          "maxChars": 40,
+          "required": true
+        },
+        "captionSub": {
+          "type": "text",
+          "role": "supporting line",
+          "maxChars": 90,
+          "required": false
+        }
+      }
+    },
+    "1c-split": {
+      "layout": "image-over-panel",
+      "slots": {
+        "image": {
+          "type": "image",
+          "role": "top photo band",
+          "aspect": "~3:2",
+          "required": true
+        },
+        "imagePrompt": {
+          "type": "text",
+          "role": "fal.ai prompt if generating",
+          "maxChars": 200,
+          "required": false
+        },
+        "kicker": {
+          "type": "text",
+          "role": "eyebrow",
+          "maxChars": 18,
+          "required": false
+        },
+        "headline": {
+          "type": "text",
+          "role": "panel headline",
+          "maxChars": 44,
+          "required": true
+        },
+        "body": {
+          "type": "text",
+          "role": "panel supporting line",
+          "maxChars": 80,
+          "required": false
+        }
+      }
+    },
+    "1d-photoquote": {
+      "layout": "full-bleed-quote",
+      "slots": {
+        "image": {
+          "type": "image",
+          "role": "full-bleed background",
+          "aspect": "4:5",
+          "required": true
+        },
+        "imagePrompt": {
+          "type": "text",
+          "role": "fal.ai prompt if generating",
+          "maxChars": 200,
+          "required": false
+        },
+        "quote": {
+          "type": "text",
+          "role": "testimonial (italic)",
+          "maxChars": 80,
+          "required": true
+        },
+        "attribution": {
+          "type": "text",
+          "role": "who said it",
+          "maxChars": 48,
+          "required": false
+        }
+      }
+    }
+  },
+  "postDelivery": {
+    "note": "Post-level fields the Create page assembles — NOT drawn on the frame. The download / external CTA lives here.",
+    "caption": {
+      "type": "text",
+      "role": "post caption; ends with soft CTA '→ link in bio'; include the download ask here",
+      "maxChars": 2200,
+      "required": true
+    },
+    "firstComment": {
+      "type": "text",
+      "role": "auto-posted by Postiz; carries the actual download link + pitch",
+      "maxChars": 2200,
+      "required": true
+    },
+    "hashtags": {
+      "type": "list",
+      "role": "5-10 niche tags, weighted under 100K posts",
+      "min": 5,
+      "max": 10,
+      "required": false
+    }
+  },
+  "accentGuardrail": "Accent legibility is auto-guarded: when the chosen accent collides with a slide's ground color, the template substitutes a legible sibling (contrast >= 2.2). The AI/user may pick any brand accent freely; do not hand-tune per slide."
+}

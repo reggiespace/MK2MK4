@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700;800&amp;family=Albert+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ece6d6; --surface:#f4efe0; --surface-2:#faf7ec; --ink:#1a2230;
+  --moss:#5c7556; --moss-d:#4c6247; --slate:#3b5a78; --brass:#b89251;
+  --muted:#6e6952; --border:#d9d1b6; --border-2:#cabf9d;
+  --font-display:'Spectral',Georgia,serif; --font-sans:'Albert Sans',system-ui,sans-serif; --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --accent:#5c7556;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+a{color:var(--slate);text-decoration:none}
+a:hover{color:var(--moss)}
+::selection{background:rgba(92,117,86,.22)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<div style="--accent:{{ accent }};display:flex;min-height:100vh;background:var(--bg)">
+
+  <!-- ── Sidebar ────────────────────────────────── -->
+  <nav style="width:236px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:22px 16px;gap:22px;position:sticky;top:0;height:100vh">
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="font-family:var(--font-display);font-size:19px;font-weight:700;line-height:1;color:var(--ink)">Reggie<span style="color:var(--moss)">Space</span></div>
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">Social Studio</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <div style="{{ n.style }}" onClick="{{ n.onClick }}">{{ n.iconEl }}<span>{{ n.label }}</span></div>
+      </sc-for>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);padding:0 4px">Accounts</div>
+      <sc-for list="{{ clients }}" as="c" hint-placeholder-count="2">
+        <div style="{{ c.style }}" onClick="{{ c.onClick }}">
+          <span style="width:24px;height:24px;border-radius:7px;background:{{ c.mark }};color:#f4efe0;font-family:var(--font-display);font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ c.initials }}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.name }}</span>
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--moss);flex-shrink:0"></span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:auto">
+      <button style="width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:9px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:var(--bg)">Sign out</button>
+    </div>
+  </nav>
+
+  <!-- ── Main ────────────────────────────────── -->
+  <main style="flex:1;overflow-y:auto;min-width:0">
+    <div style="max-width:1080px;margin:0 auto;padding:32px 40px 64px;display:flex;flex-direction:column;gap:24px">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);margin-bottom:6px">Workspace</div>
+          <h1 style="font-family:var(--font-display);font-size:32px;font-weight:700;margin:0;line-height:1.1;color:var(--ink)">Settings</h1>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:5px 6px">
+          <sc-for list="{{ accountTabs }}" as="a" hint-placeholder-count="2">
+            <button style="{{ a.style }}" onClick="{{ a.onClick }}"><span style="width:20px;height:20px;border-radius:6px;background:{{ a.mark }};color:#f4efe0;font-family:var(--font-display);font-weight:700;font-size:9.5px;display:flex;align-items:center;justify-content:center">{{ a.initials }}</span>{{ a.name }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- Section tabs -->
+      <div style="display:flex;gap:6px;border-bottom:1px solid var(--border);padding-bottom:0;flex-wrap:wrap">
+        <sc-for list="{{ sectionTabs }}" as="t" hint-placeholder-count="5">
+          <button style="{{ t.style }}" onClick="{{ t.onClick }}">{{ t.iconEl }}{{ t.label }}</button>
+        </sc-for>
+      </div>
+
+      <!-- ═══ INTEGRATIONS ═══ -->
+      <sc-if value="{{ isIntegrations }}" hint-placeholder-val="{{ true }}">
+        <div style="animation:fadeUp .3s ease both;display:flex;flex-direction:column;gap:22px">
+          <div>
+            <h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;margin:0 0 4px">Publishing providers</h2>
+            <p style="margin:0;color:var(--muted);font-size:14px">Connect an API key so ReggieSpace can schedule and publish on your behalf. Only one provider is active per workspace.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <sc-for list="{{ publishingVM }}" as="p" hint-placeholder-count="3">
+              <div style="{{ p.cardStyle }}">
+                <div style="display:flex;align-items:center;gap:14px">
+                  <span style="width:46px;height:46px;border-radius:12px;background:{{ p.mark }};color:#f4efe0;font-family:var(--font-display);font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ p.initials }}</span>
+                  <div style="min-width:0;flex:1">
+                    <div style="display:flex;align-items:center;gap:9px"><span style="font-family:var(--font-display);font-size:17px;font-weight:700">{{ p.name }}</span><span style="{{ p.pillStyle }}">{{ p.pillEl }}{{ p.status }}</span></div>
+                    <div style="font-size:12.5px;color:var(--muted);margin-top:2px">{{ p.desc }}</div>
+                  </div>
+                  <sc-if value="{{ p.connected }}" hint-placeholder-val="{{ false }}">
+                    <button style="background:transparent;border:1px solid var(--border);border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer" style-hover="border-color:var(--slate);color:var(--slate)" onClick="{{ p.onDisconnect }}">Disconnect</button>
+                  </sc-if>
+                  <sc-if value="{{ p.showConnectBtn }}" hint-placeholder-val="{{ false }}">
+                    <button style="display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border-2);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;color:var(--slate);cursor:pointer" style-hover="background:var(--surface-2)" onClick="{{ p.onStart }}">{{ ic.plug }}Connect</button>
+                  </sc-if>
+                </div>
+
+                <sc-if value="{{ p.connected }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:20px;align-items:center">
+                    <div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">API key</div><div style="font-family:var(--font-mono);font-size:13px;color:var(--ink)">{{ p.key }}</div></div>
+                    <div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Last synced</div><div style="font-size:13px;color:var(--ink)">{{ p.synced }}</div></div>
+                    <div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">{{ p.usageLabel }}</div><div style="font-size:13px;color:var(--ink)">{{ p.usageVal }}</div></div>
+                    <button style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;font-size:12.5px;font-weight:600;color:var(--slate);cursor:pointer" style-hover="color:var(--moss)" onClick="{{ p.onTest }}">{{ ic.refresh }}Test connection</button>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ p.connecting }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);animation:fadeUp .2s ease both">
+                    <div style="font-size:12.5px;color:var(--muted);margin-bottom:9px">Paste your {{ p.name }} API key. Find it under Settings → API in your {{ p.name }} account.</div>
+                    <div style="display:flex;gap:9px;flex-wrap:wrap">
+                      <input value="{{ keyDraft }}" onInput="{{ onKeyDraft }}" placeholder="sk_live_…" style="flex:1;min-width:220px;border:1px solid var(--border);border-radius:10px;padding:11px 14px;background:#fff;font-family:var(--font-mono);font-size:13px;color:var(--ink);outline:none">
+                      <button style="background:var(--accent);color:#f4efe0;border:none;border-radius:10px;padding:11px 20px;font-size:13.5px;font-weight:700;cursor:pointer" style-hover="filter:brightness(1.06)" onClick="{{ p.onSave }}">Save &amp; connect</button>
+                      <button style="background:transparent;border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer" onClick="{{ p.onCancel }}">Cancel</button>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="margin-top:8px">
+            <h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;margin:0 0 4px">AI generation &amp; voice</h2>
+            <p style="margin:0;color:var(--muted);font-size:14px">Power the Create flow — generate and animate imagery with fal.ai, and narrate Reels &amp; Stories with ElevenLabs voices.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <sc-for list="{{ generationVM }}" as="p" hint-placeholder-count="2">
+              <div style="{{ p.cardStyle }}">
+                <div style="display:flex;align-items:center;gap:14px">
+                  <span style="width:46px;height:46px;border-radius:12px;background:{{ p.mark }};color:#f4efe0;font-family:var(--font-display);font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ p.initials }}</span>
+                  <div style="min-width:0;flex:1">
+                    <div style="display:flex;align-items:center;gap:9px"><span style="font-family:var(--font-display);font-size:17px;font-weight:700">{{ p.name }}</span><span style="{{ p.pillStyle }}">{{ p.pillEl }}{{ p.status }}</span></div>
+                    <div style="font-size:12.5px;color:var(--muted);margin-top:2px">{{ p.desc }}</div>
+                  </div>
+                  <sc-if value="{{ p.connected }}" hint-placeholder-val="{{ true }}">
+                    <button style="background:transparent;border:1px solid var(--border);border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer" style-hover="border-color:var(--slate);color:var(--slate)" onClick="{{ p.onDisconnect }}">Disconnect</button>
+                  </sc-if>
+                  <sc-if value="{{ p.showConnectBtn }}" hint-placeholder-val="{{ false }}">
+                    <button style="display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border-2);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;color:var(--slate);cursor:pointer" style-hover="background:var(--surface-2)" onClick="{{ p.onStart }}">{{ ic.plug }}Connect</button>
+                  </sc-if>
+                </div>
+
+                <sc-if value="{{ p.connected }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:20px;align-items:center">
+                    <div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">API key</div><div style="font-family:var(--font-mono);font-size:13px;color:var(--ink)">{{ p.key }}</div></div>
+                    <div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Last synced</div><div style="font-size:13px;color:var(--ink)">{{ p.synced }}</div></div>
+                    <div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">{{ p.usageLabel }}</div><div style="font-size:13px;color:var(--ink)">{{ p.usageVal }}</div></div>
+                    <button style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;font-size:12.5px;font-weight:600;color:var(--slate);cursor:pointer" style-hover="color:var(--moss)" onClick="{{ p.onTest }}">{{ ic.refresh }}Test connection</button>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ p.connecting }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);animation:fadeUp .2s ease both">
+                    <div style="font-size:12.5px;color:var(--muted);margin-bottom:9px">Paste your {{ p.name }} API key. Find it under Settings → API in your {{ p.name }} account.</div>
+                    <div style="display:flex;gap:9px;flex-wrap:wrap">
+                      <input value="{{ keyDraft }}" onInput="{{ onKeyDraft }}" placeholder="sk_live_…" style="flex:1;min-width:220px;border:1px solid var(--border);border-radius:10px;padding:11px 14px;background:#fff;font-family:var(--font-mono);font-size:13px;color:var(--ink);outline:none">
+                      <button style="background:var(--accent);color:#f4efe0;border:none;border-radius:10px;padding:11px 20px;font-size:13.5px;font-weight:700;cursor:pointer" style-hover="filter:brightness(1.06)" onClick="{{ p.onSave }}">Save &amp; connect</button>
+                      <button style="background:transparent;border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer" onClick="{{ p.onCancel }}">Cancel</button>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ═══ CHANNELS ═══ -->
+      <sc-if value="{{ isChannels }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:fadeUp .3s ease both;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+            <div><h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;margin:0 0 4px">Channels · {{ account.name }}</h2><p style="margin:0;color:var(--muted);font-size:14px">Platforms this account can publish to through {{ activeProvider }}.</p></div>
+            <button style="display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px dashed var(--border-2);border-radius:999px;padding:9px 15px;font-size:13px;font-weight:600;color:var(--slate);cursor:pointer" style-hover="background:var(--surface-2)" onClick="{{ toggleAddChannel }}">{{ ic.plus }}Add channel</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+            <sc-for list="{{ channelsVM }}" as="ch" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
+                <span style="width:40px;height:40px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--slate);flex-shrink:0">{{ ch.iconEl }}</span>
+                <div style="min-width:0;flex:1"><div style="font-size:14.5px;font-weight:600;color:var(--ink)">{{ ch.name }}</div><div style="font-size:12px;color:var(--muted);font-family:var(--font-mono)">{{ ch.handle }}</div></div>
+                <button style="width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0" style-hover="border-color:#b4574f;color:#b4574f" onClick="{{ ch.onRemove }}">{{ ic.trash }}</button>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ showAddChannel }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;animation:fadeUp .2s ease both">
+              <div style="font-size:12.5px;color:var(--muted);margin-bottom:11px">Connect another platform to {{ account.name }}:</div>
+              <div style="display:flex;flex-wrap:wrap;gap:9px">
+                <sc-for list="{{ addChannelVM }}" as="p" hint-placeholder-count="4">
+                  <button style="display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:9px 15px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer" style-hover="border-color:var(--slate)" onClick="{{ p.onAdd }}"><span style="display:flex;color:var(--slate)">{{ p.iconEl }}</span>{{ p.name }}<span style="display:flex;color:var(--moss)">{{ ic.plusSm }}</span></button>
+                </sc-for>
+                <sc-if value="{{ allChannelsAdded }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--muted);padding:9px 4px">All available platforms are connected.</span></sc-if>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ═══ BRAND VOICE ═══ -->
+      <sc-if value="{{ isVoice }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:fadeUp .3s ease both;display:flex;flex-direction:column;gap:22px;max-width:720px">
+          <div><h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;margin:0 0 4px">Brand voice · {{ account.name }}</h2><p style="margin:0;color:var(--muted);font-size:14px">The AI writes every caption and slide in this voice. Edits here apply to all future generations.</p></div>
+
+          <div>
+            <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-bottom:10px">Voice description</div>
+            <textarea value="{{ voiceText }}" onInput="{{ onVoice }}" rows="4" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:13px 15px;background:#fff;color:var(--ink);font-size:14px;font-family:var(--font-sans);resize:vertical;line-height:1.55;outline:none"></textarea>
+          </div>
+
+          <div>
+            <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-bottom:10px">Tone</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <sc-for list="{{ toneVM }}" as="t" hint-placeholder-count="6">
+                <button style="{{ t.style }}" onClick="{{ t.onToggle }}">{{ t.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-bottom:10px">Reading level</div>
+            <div style="display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:4px;gap:2px">
+              <sc-for list="{{ readingVM }}" as="r" hint-placeholder-count="3">
+                <button style="{{ r.style }}" onClick="{{ r.onClick }}">{{ r.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:flex-start;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px">
+            <span style="display:flex;color:var(--moss);margin-top:1px">{{ ic.shield }}</span>
+            <div style="flex:1"><div style="font-size:14.5px;font-weight:700;color:var(--ink)">Medical-claims guardrail</div><div style="font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.5">Screens every draft for unproven health claims and forces model-estimate framing on GLP-1 and gastric-load statements before it reaches review.</div></div>
+            <button style="{{ guardStyle }}" onClick="{{ onToggleGuard }}"><span style="{{ guardKnob }}"></span></button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ═══ PILLARS ═══ -->
+      <sc-if value="{{ isPillars }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:fadeUp .3s ease both;display:flex;flex-direction:column;gap:18px;max-width:640px">
+          <div><h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;margin:0 0 4px">Content pillars · {{ account.name }}</h2><p style="margin:0;color:var(--muted);font-size:14px">The recurring themes AI draws from when suggesting topics. Keep 4–6 for a focused feed.</p></div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ pillarsVM }}" as="p" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px 12px 16px">
+                <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0"></span>
+                <span style="flex:1;font-size:14.5px;font-weight:500;color:var(--ink)">{{ p.name }}</span>
+                <button style="width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0" style-hover="border-color:#b4574f;color:#b4574f" onClick="{{ p.onRemove }}">{{ ic.close }}</button>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap">
+            <input value="{{ pillarDraft }}" onInput="{{ onPillarDraft }}" onKeyDown="{{ onPillarKey }}" placeholder="Add a content pillar…" style="flex:1;min-width:220px;border:1px solid var(--border);border-radius:11px;padding:11px 15px;background:#fff;font-size:14px;color:var(--ink);font-family:inherit;outline:none">
+            <button style="display:inline-flex;align-items:center;gap:7px;background:var(--accent);color:#f4efe0;border:none;border-radius:11px;padding:11px 18px;font-size:13.5px;font-weight:700;cursor:pointer" style-hover="filter:brightness(1.06)" onClick="{{ onAddPillar }}">{{ ic.plusSm }}Add pillar</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ═══ BILLING ═══ -->
+      <sc-if value="{{ isBilling }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:fadeUp .3s ease both;display:flex;flex-direction:column;gap:20px">
+          <div><h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;margin:0 0 4px">Plan &amp; billing</h2><p style="margin:0;color:var(--muted);font-size:14px">Workspace-wide — covers all connected accounts.</p></div>
+          <div style="display:grid;grid-template-columns:minmax(0,1.3fr) 1fr;gap:16px;align-items:start">
+            <div style="background:linear-gradient(150deg,#3b5a78,#5c7556);border-radius:18px;padding:24px 26px;color:#f4efe0;box-shadow:0 10px 28px rgba(59,90,120,.24)">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.85">Current plan</span><span style="font-family:var(--font-mono);font-size:11px;background:rgba(255,255,255,.18);padding:4px 10px;border-radius:999px">ACTIVE</span></div>
+              <div style="font-family:var(--font-display);font-size:30px;font-weight:800;margin:12px 0 2px">Studio Pro</div>
+              <div style="font-size:14px;opacity:.9">$79<span style="opacity:.75">/mo · renews Aug 22, 2026</span></div>
+              <div style="display:flex;gap:22px;margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.2)">
+                <div><div style="font-family:var(--font-display);font-size:22px;font-weight:800">2</div><div style="font-size:11.5px;opacity:.8">accounts</div></div>
+                <div><div style="font-family:var(--font-display);font-size:22px;font-weight:800">6</div><div style="font-size:11.5px;opacity:.8">channels</div></div>
+                <div><div style="font-family:var(--font-display);font-size:22px;font-weight:800">∞</div><div style="font-size:11.5px;opacity:.8">team seats</div></div>
+              </div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px 24px;display:flex;flex-direction:column;gap:16px">
+              <div>
+                <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px"><span style="font-size:13.5px;font-weight:600;color:var(--ink)">AI generations</span><span style="font-family:var(--font-mono);font-size:12.5px;color:var(--muted)">{{ usageLabel }}</span></div>
+                <div style="height:9px;border-radius:999px;background:#e5ddc6;overflow:hidden"><div style="height:100%;width:{{ usagePct }};background:var(--accent);border-radius:999px"></div></div>
+                <div style="font-size:12px;color:var(--muted);margin-top:8px">Resets Aug 22. Overage billed at $0.40 / generation.</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:9px;margin-top:2px">
+                <button style="background:var(--accent);color:#f4efe0;border:none;border-radius:11px;padding:12px 18px;font-size:13.5px;font-weight:700;cursor:pointer" style-hover="filter:brightness(1.06)">Upgrade to Agency</button>
+                <button style="background:transparent;color:var(--ink);border:1px solid var(--border-2);border-radius:11px;padding:11px 18px;font-size:13.5px;font-weight:600;cursor:pointer" style-hover="background:var(--surface-2)">Manage billing</button>
+              </div>
+            </div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:4px 20px">
+            <sc-for list="{{ invoicesVM }}" as="inv" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid {{ inv.rule }}">
+                <span style="font-size:13.5px;font-weight:600;color:var(--ink);width:130px">{{ inv.date }}</span>
+                <span style="font-size:13px;color:var(--muted);flex:1">{{ inv.desc }}</span>
+                <span style="font-family:var(--font-mono);font-size:13px;color:var(--ink)">{{ inv.amount }}</span>
+                <a href="#" style="font-size:12.5px;font-weight:600">Receipt</a>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:880},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#5c7556&quot;,&quot;options&quot;:[&quot;#5c7556&quot;,&quot;#3b5a78&quot;,&quot;#b89251&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;}}">
+class Component extends DCLogic {
+  state = {
+    accountId:'giq',
+    section:'integrations',
+    providers:{
+      postiz:{ connected:true, key:'sk_live_••••••••4f2a', synced:'2 min ago' },
+      buffer:{ connected:false, key:'' },
+      zernio:{ connected:false, key:'' },
+      fal:{ connected:true, key:'key-••••••••7c1e', synced:'just now' },
+      elevenlabs:{ connected:true, key:'sk_11••••••••b93d', synced:'1 hr ago' },
+    },
+    connectingId:null, keyDraft:'',
+    extra:{ giq:['youtube'], giqbr:[] },
+    showAddChannel:false,
+    voice:{
+      giq:'Calm, evidence-literate and shame-free. We explain the GLP-1 rhythm like a knowledgeable friend — never clinical, never hype. Short sentences, concrete examples, no willpower framing.',
+      giqbr:'Calma, acolhedora e sem julgamento. Explicamos o ritmo do GLP-1 como uma amiga que entende do assunto — nunca clínica, nunca sensacionalista. Frases curtas e exemplos concretos.',
+    },
+    tones:{ giq:['Calm','Warm','Evidence-led'], giqbr:['Calm','Warm','Evidence-led'] },
+    reading:{ giq:'Grade 7', giqbr:'Grade 7' },
+    guardrail:true,
+    pillars:{
+      giq:['Medication-cycle education','Side-effect readiness','Protein & lean mass','Bariatric guidance','Trust & privacy'],
+      giqbr:['Ciclo da medicação','Efeitos colaterais','Proteína e massa magra','Orientação bariátrica','Confiança e privacidade'],
+    },
+    pillarDraft:'',
+  };
+
+  PATHS = {
+    sparkles:[['path',{d:'M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z'}],['path',{d:'M20 3v4'}],['path',{d:'M22 5h-4'}]],
+    dash:[['rect',{width:7,height:9,x:3,y:3,rx:1}],['rect',{width:7,height:5,x:14,y:3,rx:1}],['rect',{width:7,height:9,x:14,y:12,rx:1}],['rect',{width:7,height:5,x:3,y:16,rx:1}]],
+    layers:[['path',{d:'M12 2 2 7l10 5 10-5-10-5Z'}],['path',{d:'m2 17 10 5 10-5'}],['path',{d:'m2 12 10 5 10-5'}]],
+    cal:[['path',{d:'M8 2v4'}],['path',{d:'M16 2v4'}],['rect',{width:18,height:18,x:3,y:4,rx:2}],['path',{d:'M3 10h18'}]],
+    sliders:[['line',{x1:21,x2:14,y1:4,y2:4}],['line',{x1:10,x2:3,y1:4,y2:4}],['line',{x1:21,x2:12,y1:12,y2:12}],['line',{x1:8,x2:3,y1:12,y2:12}],['line',{x1:21,x2:16,y1:20,y2:20}],['line',{x1:12,x2:3,y1:20,y2:20}],['line',{x1:14,x2:14,y1:2,y2:6}],['line',{x1:8,x2:8,y1:10,y2:14}],['line',{x1:16,x2:16,y1:18,y2:22}]],
+    ig:[['rect',{width:20,height:20,x:2,y:2,rx:5.5}],['circle',{cx:12,cy:12,r:4}],['line',{x1:17.5,x2:17.51,y1:6.5,y2:6.5}]],
+    fb:[['path',{d:'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z'}]],
+    yt:[['path',{d:'M2.5 17a24 24 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.6 49.6 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24 24 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.6 49.6 0 0 1-16.2 0A2 2 0 0 1 2.5 17'}],['path',{d:'m10 15 5-3-5-3z'}]],
+    tt:[['path',{d:'M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5'}]],
+    in:[['path',{d:'M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z'}],['rect',{width:4,height:12,x:2,y:9}],['circle',{cx:4,cy:4,r:2}]],
+    x:[['path',{d:'M4 4l16 16'}],['path',{d:'M20 4 4 20'}]],
+    plug:[['path',{d:'M12 22v-5'}],['path',{d:'M9 8V2'}],['path',{d:'M15 8V2'}],['path',{d:'M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z'}]],
+    check:[['polyline',{points:'20 6 9 17 4 12'}]],
+    close:[['path',{d:'M18 6 6 18'}],['path',{d:'m6 6 12 12'}]],
+    plus:[['path',{d:'M5 12h14'}],['path',{d:'M12 5v14'}]],
+    refresh:[['path',{d:'M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8'}],['path',{d:'M21 3v5h-5'}],['path',{d:'M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16'}],['path',{d:'M8 16H3v5'}]],
+    trash:[['path',{d:'M3 6h18'}],['path',{d:'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6'}],['path',{d:'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'}]],
+    shield:[['path',{d:'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z'}],['path',{d:'m9 12 2 2 4-4'}]],
+    card:[['rect',{width:20,height:14,x:2,y:5,rx:2}],['line',{x1:2,x2:22,y1:10,y2:10}]],
+    image:[['rect',{width:18,height:18,x:3,y:3,rx:2}],['circle',{cx:9,cy:9,r:2}],['path',{d:'m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21'}]],
+  };
+  icon(key,size,sw){
+    const c = this.PATHS[key] || [];
+    return React.createElement('svg',{ width:size,height:size,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:sw||2,strokeLinecap:'round',strokeLinejoin:'round',style:{display:'block',flexShrink:0} },
+      c.map((ch,i)=>React.createElement(ch[0], Object.assign({key:i}, ch[1]))));
+  }
+
+  ACCOUNTS = [
+    { id:'giq', name:'Gastric IQ', locale:'EN', mark:'linear-gradient(135deg,#3b5a78,#5c7556)', initials:'IQ', ig:'@gastric_iq', fb:'Gastric IQ' },
+    { id:'giqbr', name:'Gastric IQ Brasil', locale:'PT-BR', mark:'linear-gradient(135deg,#5c7556,#b89251)', initials:'BR', ig:'@gastric_iq_brasil', fb:'Gastric IQ Brasil' },
+  ];
+  PLAT = {
+    instagram:{ name:'Instagram', icon:'ig' }, facebook:{ name:'Facebook', icon:'fb' },
+    tiktok:{ name:'TikTok', icon:'tt' }, youtube:{ name:'YouTube', icon:'yt' },
+    linkedin:{ name:'LinkedIn', icon:'in' }, x:{ name:'X', icon:'x' },
+  };
+  PROVIDERS = [
+    { id:'postiz', group:'publishing', name:'Postiz', initials:'Po', mark:'linear-gradient(135deg,#3b5a78,#5c7556)', desc:'Open-source scheduler · auto-posts first comment' },
+    { id:'buffer', group:'publishing', name:'Buffer', initials:'Bf', mark:'linear-gradient(135deg,#2b6cb0,#3b5a78)', desc:'Classic queue-based scheduling' },
+    { id:'zernio', group:'publishing', name:'Zernio', initials:'Ze', mark:'linear-gradient(135deg,#b89251,#8a6f3c)', desc:'Analytics-first publishing API' },
+    { id:'fal', group:'generation', name:'fal.ai', initials:'Fa', mark:'linear-gradient(135deg,#5c7556,#3b5a78)', desc:'Image generation & animation · FLUX + Kling', usageLabel:'Models', usageVal:'FLUX 1.1 · Kling 1.6' },
+    { id:'elevenlabs', group:'generation', name:'ElevenLabs', initials:'El', mark:'linear-gradient(135deg,#1a2230,#3b5a78)', desc:'Professional AI voiceover for Reels & Stories', usageLabel:'Voices', usageVal:'3 available' },
+  ];
+  SECTIONS = [
+    { id:'integrations', label:'Integrations', icon:'plug' },
+    { id:'channels', label:'Channels', icon:'ig' },
+    { id:'voice', label:'Brand voice', icon:'sparkles' },
+    { id:'pillars', label:'Content pillars', icon:'layers' },
+    { id:'billing', label:'Billing', icon:'card' },
+  ];
+  TONES = ['Calm','Warm','Evidence-led','Playful','Direct','Editorial'];
+  READING = ['Grade 5','Grade 7','Grade 9'];
+
+  account(){ return this.ACCOUNTS.find(a=>a.id===this.state.accountId); }
+  channelKeys(id){ return ['instagram','facebook', ...this.state.extra[id]]; }
+  activeProviderName(){ const p=this.PROVIDERS.find(x=>this.state.providers[x.id].connected); return p?p.name:'no provider'; }
+
+  startConnect(id){ this.setState({ connectingId:id, keyDraft:'' }); }
+  saveConnect(id){ const k=this.state.keyDraft.trim(); const masked=k?('sk_live_••••••••'+k.slice(-4)):'sk_live_••••••••0000'; this.setState({ providers:{ ...this.state.providers, [id]:{ connected:true, key:masked, synced:'just now' } }, connectingId:null, keyDraft:'' }); }
+  disconnect(id){ this.setState({ providers:{ ...this.state.providers, [id]:{ connected:false, key:'' } } }); }
+  addChannel(k){ const id=this.state.accountId; if(this.channelKeys(id).includes(k)) return; this.setState({ extra:{ ...this.state.extra, [id]:[...this.state.extra[id], k] }, showAddChannel:false }); }
+  removeChannel(k){ const id=this.state.accountId; if(k==='instagram'||k==='facebook') return; this.setState({ extra:{ ...this.state.extra, [id]:this.state.extra[id].filter(x=>x!==k) } }); }
+  toggleTone(t){ const id=this.state.accountId; const cur=this.state.tones[id]; const next=cur.includes(t)?cur.filter(x=>x!==t):[...cur,t]; this.setState({ tones:{ ...this.state.tones, [id]:next } }); }
+  addPillar(){ let t=this.state.pillarDraft.trim(); if(!t) return; const id=this.state.accountId; if(this.state.pillars[id].some(x=>x.toLowerCase()===t.toLowerCase())){ this.setState({pillarDraft:''}); return; } this.setState({ pillars:{ ...this.state.pillars, [id]:[...this.state.pillars[id], t] }, pillarDraft:'' }); }
+  removePillar(name){ const id=this.state.accountId; this.setState({ pillars:{ ...this.state.pillars, [id]:this.state.pillars[id].filter(x=>x!==name) } }); }
+
+  renderVals(){
+    const s=this.state, acc=this.account(), id=s.accountId;
+    const accent = Array.isArray(this.props.accent) ? this.props.accent[0] : (this.props.accent || '#5c7556');
+    const I=(k,sz,sw)=>this.icon(k,sz,sw);
+    const ic={ plug:I('plug',15), plus:I('plus',15), plusSm:I('plus',14,2.4), refresh:I('refresh',14), trash:I('trash',15), close:I('close',14,2.6), shield:I('shield',22) };
+
+    // sidebar nav (Settings active; Create navigates to Studio)
+    const navItems=[
+      { label:'Create', icon:'sparkles', href:'Studio.dc.html' },
+      { label:'Dashboard', icon:'dash', href:'Dashboard.dc.html' },
+      { label:'Pieces', icon:'layers', href:'Pieces.dc.html' },
+      { label:'Assets', icon:'image', href:'Assets.dc.html' },
+      { label:'Queue', icon:'cal' },
+      { label:'Settings', icon:'sliders', active:true },
+    ];
+    const nav=navItems.map(n=>({ label:n.label, iconEl:I(n.icon,20),
+      style:`display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:10px;font-size:14px;font-weight:${n.active?600:500};cursor:pointer;color:${n.active?'#1a2230':'#6e6952'};background:${n.active?'#e5ddc6':'transparent'}`,
+      onClick: n.href ? ()=>{ window.location.href=n.href; } : ()=>{} }));
+    const clients=this.ACCOUNTS.map(a=>({ name:a.name, initials:a.initials, mark:a.mark,
+      style:`display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;font-size:13px;cursor:pointer;color:var(--ink);${a.id===id?'background:#e5ddc6':''}`,
+      onClick:()=>this.setState({ accountId:a.id, showAddChannel:false, connectingId:null }) }));
+
+    const accountTabs=this.ACCOUNTS.map(a=>{ const on=a.id===id; return { name:a.name, initials:a.initials, mark:a.mark,
+      style:`display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:6px 14px 6px 6px;font-size:13px;font-weight:600;cursor:pointer;color:${on?'#f4efe0':'var(--ink)'};background:${on?'var(--ink)':'transparent'}`,
+      onClick:()=>this.setState({ accountId:a.id, showAddChannel:false, connectingId:null }) }; });
+
+    const sectionTabs=this.SECTIONS.map(sec=>{ const on=sec.id===s.section; return { label:sec.label, iconEl:I(sec.icon,15,2.2),
+      style:`display:inline-flex;align-items:center;gap:7px;background:transparent;border:none;border-bottom:2px solid ${on?accent:'transparent'};padding:10px 12px 12px;font-size:13.5px;font-weight:${on?700:600};color:${on?'var(--ink)':'var(--muted)'};cursor:pointer;margin-bottom:-1px`,
+      onClick:()=>this.setState({ section:sec.id }) }; });
+
+    // providers
+    const anyConnected=this.PROVIDERS.some(p=>s.providers[p.id].connected);
+    const providersVM=this.PROVIDERS.map(p=>{
+      const st=s.providers[p.id]; const connecting=s.connectingId===p.id;
+      const pillStyle= st.connected
+        ? 'display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;background:#d8ecd6;color:#2d6b28;padding:3px 9px 3px 7px;border-radius:999px'
+        : 'display:inline-flex;align-items:center;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;background:#e8e2d0;color:var(--muted);padding:3px 9px;border-radius:999px';
+      return { name:p.name, initials:p.initials, mark:p.mark, desc:p.desc, group:p.group,
+        connected:st.connected, connecting, showConnectBtn: !st.connected && !connecting,
+        status: st.connected?'Connected':'Not connected', pillStyle, pillEl: st.connected?I('check',11,3):null,
+        key:st.key, synced:st.synced, usageLabel:p.usageLabel||'Channels routed', usageVal:p.usageVal||(this.channelKeys(id).length+' channels'),
+        cardStyle:`background:var(--surface);border:1.5px solid ${st.connected?'#bcd6b6':'var(--border)'};border-radius:16px;padding:18px 20px`,
+        onStart:()=>this.startConnect(p.id), onSave:()=>this.saveConnect(p.id), onCancel:()=>this.setState({connectingId:null,keyDraft:''}),
+        onDisconnect:()=>this.disconnect(p.id), onTest:()=>this.setState({ providers:{ ...s.providers, [p.id]:{ ...st, synced:'just now' } } }) };
+    });
+
+    // channels
+    const channelsVM=this.channelKeys(id).map(k=>{
+      const handle = k==='instagram'?acc.ig : k==='facebook'?acc.fb : acc.ig.replace('@','')+' · '+this.PLAT[k].name;
+      return { name:this.PLAT[k].name, handle, iconEl:I(this.PLAT[k].icon,19), onRemove:()=>this.removeChannel(k) };
+    });
+    const addable=Object.keys(this.PLAT).filter(k=>!this.channelKeys(id).includes(k));
+    const addChannelVM=addable.map(k=>({ name:this.PLAT[k].name, iconEl:I(this.PLAT[k].icon,16), onAdd:()=>this.addChannel(k) }));
+
+    // voice
+    const toneVM=this.TONES.map(t=>{ const on=s.tones[id].includes(t); return { label:t,
+      style:`padding:8px 15px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid ${on?'transparent':'var(--border)'};background:${on?'var(--slate)':'var(--surface)'};color:${on?'#fff':'var(--ink)'}`,
+      onToggle:()=>this.toggleTone(t) }; });
+    const readingVM=this.READING.map(r=>{ const on=s.reading[id]===r; return { label:r,
+      style:`padding:8px 16px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:${on?accent:'transparent'};color:${on?'#f4efe0':'var(--muted)'}`,
+      onClick:()=>this.setState({ reading:{ ...s.reading, [id]:r } }) }; });
+    const guardStyle=`width:46px;height:26px;border-radius:999px;border:none;cursor:pointer;flex-shrink:0;padding:0;position:relative;background:${s.guardrail?accent:'#cabf9d'};transition:background .15s`;
+    const guardKnob=`position:absolute;top:3px;left:${s.guardrail?'23px':'3px'};width:20px;height:20px;border-radius:50%;background:#f4efe0;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.2)`;
+
+    // pillars
+    const pillarsVM=s.pillars[id].map(name=>({ name, onRemove:()=>this.removePillar(name) }));
+
+    // billing
+    const used=id==='giq'?168:96, limit=400;
+    const usagePct=Math.round(used/limit*100)+'%';
+    const invoices=[
+      { date:'Jul 22, 2026', desc:'Studio Pro — monthly', amount:'$79.00' },
+      { date:'Jun 22, 2026', desc:'Studio Pro — monthly', amount:'$79.00' },
+      { date:'May 22, 2026', desc:'Studio Pro — monthly + 20 overage', amount:'$87.00' },
+    ];
+    const invoicesVM=invoices.map((v,i,a)=>({ ...v, rule:i===a.length-1?'transparent':'var(--border)' }));
+
+    return {
+      accent, ic, nav, clients, accountTabs, sectionTabs,
+      account:{ name:acc.name, initials:acc.initials, mark:acc.mark },
+      isIntegrations:s.section==='integrations', isChannels:s.section==='channels', isVoice:s.section==='voice', isPillars:s.section==='pillars', isBilling:s.section==='billing',
+      publishingVM:providersVM.filter(p=>p.group==='publishing'), generationVM:providersVM.filter(p=>p.group==='generation'),
+      keyDraft:s.keyDraft, onKeyDraft:(e)=>this.setState({ keyDraft:e.target.value }),
+      activeProvider:this.activeProviderName(),
+      channelsVM, addChannelVM, allChannelsAdded:addable.length===0,
+      showAddChannel:s.showAddChannel, toggleAddChannel:()=>this.setState({ showAddChannel:!s.showAddChannel }),
+      voiceText:s.voice[id], onVoice:(e)=>this.setState({ voice:{ ...s.voice, [id]:e.target.value } }),
+      toneVM, readingVM, guardStyle, guardKnob, onToggleGuard:()=>this.setState({ guardrail:!s.guardrail }),
+      pillarsVM, pillarDraft:s.pillarDraft, onPillarDraft:(e)=>this.setState({ pillarDraft:e.target.value }),
+      onAddPillar:()=>this.addPillar(), onPillarKey:(e)=>{ if(e.key==='Enter'){ e.preventDefault(); this.addPillar(); } },
+      usageLabel:`${used} / ${limit}`, usagePct, invoicesVM,
+    };
+  }
+}
+</script>
+</body>
+</html>
