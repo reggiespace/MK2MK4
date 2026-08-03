@@ -8,6 +8,8 @@ const doc: PostDoc = {
   caption: "hello",
   first: "",
   hashtags: ["#gastriciq"],
+  linkSticker: "",
+  mention: "",
 };
 
 describe("toInitialDraft", () => {
