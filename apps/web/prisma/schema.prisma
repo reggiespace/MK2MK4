@@ -331,6 +331,11 @@ enum JobStatus {
   failed
 }
 
+enum AgentJobKind {
+  media
+  render
+}
+
 model RenderJob {
   id          String    @id @default(cuid())
   postId      String
@@ -431,10 +436,8 @@ model Job {
   apiTokenId  String?
   apiToken    ApiToken? @relation(fields: [apiTokenId], references: [id], onDelete: SetNull)
 
-  /// "media" | "render"
-  kind String
-  /// "queued" | "running" | "done" | "failed"
-  state String @default("queued")
+  kind  AgentJobKind
+  state JobStatus @default(queued)
 
   total Int @default(0)
   done  Int @default(0)
