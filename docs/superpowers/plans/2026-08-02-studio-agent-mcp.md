@@ -229,7 +229,8 @@ not disturb the other."
 **Files:**
 - Create: `apps/web/src/lib/studio/types.ts`
 - Create: `apps/web/src/lib/studio/errors.ts`
-- Create: `apps/web/src/lib/studio/tokens.ts`
+- Create: `apps/web/src/lib/studio/token-crypto.ts` — the pure parts (`hashToken`, `generateToken`) with no `server-only` and no `@/lib/db` import, so unit tests need no database
+- Create: `apps/web/src/lib/studio/tokens.ts` — everything that touches Prisma, re-exporting the two pure helpers
 - Create: `apps/web/vitest.integration.config.ts`
 - Create: `apps/web/src/lib/studio/__tests__/helpers.ts`
 - Create: `apps/web/src/lib/studio/__tests__/tokens.test.ts` (unit, no DB)
