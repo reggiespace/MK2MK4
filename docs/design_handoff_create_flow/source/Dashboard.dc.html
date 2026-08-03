@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700;800&amp;family=Albert+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ece6d6; --surface:#f4efe0; --surface-2:#faf7ec; --ink:#1a2230;
+  --moss:#5c7556; --moss-d:#4c6247; --slate:#3b5a78; --brass:#b89251;
+  --muted:#6e6952; --border:#d9d1b6; --border-2:#cabf9d;
+  --font-display:'Spectral',Georgia,serif; --font-sans:'Albert Sans',system-ui,sans-serif; --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --accent:#5c7556;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+a{color:var(--slate);text-decoration:none}
+a:hover{color:var(--moss)}
+::selection{background:rgba(92,117,86,.22)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes growW{from{width:0}to{width:var(--w)}}
+</style>
+</helmet>
+
+<div style="--accent:{{ accent }};display:flex;min-height:100vh;background:var(--bg)">
+
+  <!-- ── Sidebar ────────────────────────────────── -->
+  <nav style="width:236px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:22px 16px;gap:22px;position:sticky;top:0;height:100vh">
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="font-family:var(--font-display);font-size:19px;font-weight:700;line-height:1;color:var(--ink)">Reggie<span style="color:var(--moss)">Space</span></div>
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">Social Studio</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <div style="{{ n.style }}" onClick="{{ n.onClick }}">{{ n.iconEl }}<span>{{ n.label }}</span></div>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);padding:0 4px">Accounts</div>
+      <sc-for list="{{ clients }}" as="c" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;font-size:13px;color:var(--ink)">
+          <span style="width:24px;height:24px;border-radius:7px;background:{{ c.mark }};color:#f4efe0;font-family:var(--font-display);font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ c.initials }}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.name }}</span>
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--moss);flex-shrink:0"></span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top:auto">
+      <button style="width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:9px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:var(--bg)">Sign out</button>
+    </div>
+  </nav>
+
+  <!-- ── Main ────────────────────────────────── -->
+  <main style="flex:1;overflow-y:auto;min-width:0">
+    <div style="max-width:1120px;margin:0 auto;padding:32px 40px 64px;display:flex;flex-direction:column;gap:26px">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);margin-bottom:6px">{{ today }}</div>
+          <h1 style="font-family:var(--font-display);font-size:32px;font-weight:700;margin:0;line-height:1.1;color:var(--ink)">{{ greeting }}</h1>
+        </div>
+        <button style="display:inline-flex;align-items:center;gap:9px;background:var(--accent);color:#f4efe0;border:none;border-radius:12px;padding:12px 20px;font-size:14.5px;font-weight:700;cursor:pointer;box-shadow:0 5px 14px rgba(92,117,86,.26)" style-hover="filter:brightness(1.06)" onClick="{{ onCreate }}">{{ ic.spark }}New post</button>
+      </div>
+
+      <!-- Stat row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+        <sc-for list="{{ statsVM }}" as="st" hint-placeholder-count="4">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:17px 18px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px"><span style="width:30px;height:30px;border-radius:9px;background:{{ st.tint }};color:{{ st.fg }};display:flex;align-items:center;justify-content:center">{{ st.iconEl }}</span><span style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted)">{{ st.label }}</span></div>
+            <div style="display:flex;align-items:baseline;gap:8px"><span style="font-family:var(--font-display);font-size:29px;font-weight:800;line-height:1;color:var(--ink)">{{ st.value }}</span><span style="{{ st.deltaStyle }}">{{ st.delta }}</span></div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- Two-column body -->
+      <div style="display:grid;grid-template-columns:minmax(0,1.5fr) 1fr;gap:22px;align-items:start">
+
+        <!-- LEFT column -->
+        <div style="display:flex;flex-direction:column;gap:22px;min-width:0">
+
+          <!-- This week's queue -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 22px">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px">
+              <div><div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--brass);margin-bottom:4px">This week</div><h2 style="font-family:var(--font-display);font-size:19px;font-weight:700;margin:0">Scheduled queue</h2></div>
+              <a href="#" style="font-size:13px;font-weight:600">Open queue →</a>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <sc-for list="{{ queueVM }}" as="q" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid {{ q.rule }}">
+                  <div style="width:52px;flex-shrink:0;text-align:center"><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">{{ q.dow }}</div><div style="font-family:var(--font-display);font-size:21px;font-weight:800;line-height:1;color:var(--ink)">{{ q.day }}</div></div>
+                  <div style="width:44px;height:56px;border-radius:9px;overflow:hidden;flex-shrink:0;position:relative;background:{{ q.bg }};display:flex;align-items:flex-end"><div style="position:absolute;inset:0;background:{{ q.scrim }}"></div><span style="position:absolute;top:6px;left:6px;right:6px;height:2px;border-radius:2px;background:{{ q.acc }};opacity:.9"></span><span style="position:relative;padding:5px 6px;font-family:var(--font-display);font-size:7.5px;font-weight:800;line-height:1.05;color:{{ q.fg }}">{{ q.mini }}</span></div>
+                  <div style="min-width:0;flex:1"><div style="font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ q.title }}</div><div style="display:flex;align-items:center;gap:7px;margin-top:3px"><span style="width:16px;height:16px;border-radius:5px;background:{{ q.mark }};color:#f4efe0;font-family:var(--font-display);font-weight:700;font-size:7.5px;display:flex;align-items:center;justify-content:center">{{ q.initials }}</span><span style="font-size:11.5px;color:var(--muted);font-family:var(--font-mono)">{{ q.time }} · {{ q.channels }}</span></div></div>
+                  <span style="{{ q.badgeStyle }}">{{ q.status }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- Recent pieces -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 22px">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px">
+              <h2 style="font-family:var(--font-display);font-size:19px;font-weight:700;margin:0">Recent pieces</h2>
+              <a href="#" style="font-size:13px;font-weight:600">All pieces →</a>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+              <sc-for list="{{ recentVM }}" as="r" hint-placeholder-count="4">
+                <div style="cursor:pointer" style-hover="opacity:.92">
+                  <div style="aspect-ratio:4/5;border-radius:12px;overflow:hidden;position:relative;background:{{ r.bg }};display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--border)">
+                    <div style="position:absolute;inset:0;background:{{ r.scrim }}"></div>
+                    <span style="position:absolute;top:9px;left:9px;right:9px;height:2px;border-radius:2px;background:{{ r.acc }};opacity:.9"></span>
+                    <span style="{{ r.badgeStyle }}">{{ r.status }}</span>
+                    <div style="position:relative;padding:10px 10px 11px;z-index:1"><div style="font-family:var(--font-mono);font-size:6.5px;letter-spacing:.1em;text-transform:uppercase;color:{{ r.acc }};margin-bottom:3px">{{ r.eyebrow }}</div><div style="font-family:var(--font-display);font-size:11.5px;font-weight:800;line-height:1.12;color:{{ r.fg }}">{{ r.headline }}</div></div>
+                  </div>
+                  <div style="font-size:11px;color:var(--muted);font-family:var(--font-mono);margin-top:6px">{{ r.meta }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT column -->
+        <div style="display:flex;flex-direction:column;gap:22px;min-width:0">
+
+          <!-- Connected accounts -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 22px">
+            <h2 style="font-family:var(--font-display);font-size:19px;font-weight:700;margin:0 0 15px">Connected accounts</h2>
+            <div style="display:flex;flex-direction:column;gap:13px">
+              <sc-for list="{{ accountsVM }}" as="a" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <span style="width:40px;height:40px;border-radius:11px;background:{{ a.mark }};color:#f4efe0;font-family:var(--font-display);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ a.initials }}</span>
+                  <div style="min-width:0;flex:1"><div style="font-size:14px;font-weight:700;color:var(--ink)">{{ a.name }}</div><div style="font-size:11.5px;color:var(--muted);font-family:var(--font-mono)">{{ a.locale }} · {{ a.followers }} followers</div></div>
+                  <div style="display:flex;gap:3px">
+                    <sc-for list="{{ a.chips }}" as="c" hint-placeholder-count="3"><span style="width:24px;height:24px;border-radius:7px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--slate)">{{ c.iconEl }}</span></sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- Integration health -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 22px">
+            <h2 style="font-family:var(--font-display);font-size:19px;font-weight:700;margin:0 0 15px">Integration health</h2>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ healthVM }}" as="h" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <span style="width:34px;height:34px;border-radius:9px;background:{{ h.mark }};color:#f4efe0;font-family:var(--font-display);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ h.initials }}</span>
+                  <div style="min-width:0;flex:1"><div style="font-size:13.5px;font-weight:600;color:var(--ink)">{{ h.name }}</div><div style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">{{ h.detail }}</div></div>
+                  <span style="{{ h.dotStyle }}"></span>
+                  <span style="{{ h.labelStyle }}">{{ h.state }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <a href="Settings.dc.html" style="display:block;margin-top:15px;font-size:13px;font-weight:600">Manage integrations →</a>
+          </div>
+
+          <!-- Best-time nudge -->
+          <div style="background:linear-gradient(150deg,#3b5a78,#5c7556);border-radius:18px;padding:20px 22px;color:#f4efe0">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px"><span style="display:flex">{{ ic.sparkLight }}</span><span style="font-family:var(--font-mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;opacity:.9">Suggested next</span></div>
+            <div style="font-family:var(--font-display);font-size:17px;font-weight:700;line-height:1.25;margin-bottom:6px">{{ nudgeTitle }}</div>
+            <div style="font-size:13px;line-height:1.5;opacity:.9;margin-bottom:14px">{{ nudgeBody }}</div>
+            <button style="background:#f4efe0;color:var(--ink);border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer" style-hover="filter:brightness(1.03)" onClick="{{ onCreate }}">Draft it →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#5c7556&quot;,&quot;options&quot;:[&quot;#5c7556&quot;,&quot;#3b5a78&quot;,&quot;#b89251&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;}}">
+class Component extends DCLogic {
+  PATHS = {
+    sparkles:[['path',{d:'M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z'}],['path',{d:'M20 3v4'}],['path',{d:'M22 5h-4'}]],
+    dash:[['rect',{width:7,height:9,x:3,y:3,rx:1}],['rect',{width:7,height:5,x:14,y:3,rx:1}],['rect',{width:7,height:9,x:14,y:12,rx:1}],['rect',{width:7,height:5,x:3,y:16,rx:1}]],
+    layers:[['path',{d:'M12 2 2 7l10 5 10-5-10-5Z'}],['path',{d:'m2 17 10 5 10-5'}],['path',{d:'m2 12 10 5 10-5'}]],
+    cal:[['path',{d:'M8 2v4'}],['path',{d:'M16 2v4'}],['rect',{width:18,height:18,x:3,y:4,rx:2}],['path',{d:'M3 10h18'}]],
+    sliders:[['line',{x1:21,x2:14,y1:4,y2:4}],['line',{x1:10,x2:3,y1:4,y2:4}],['line',{x1:21,x2:12,y1:12,y2:12}],['line',{x1:8,x2:3,y1:12,y2:12}],['line',{x1:21,x2:16,y1:20,y2:20}],['line',{x1:12,x2:3,y1:20,y2:20}],['line',{x1:14,x2:14,y1:2,y2:6}],['line',{x1:8,x2:8,y1:10,y2:14}],['line',{x1:16,x2:16,y1:18,y2:22}]],
+    ig:[['rect',{width:20,height:20,x:2,y:2,rx:5.5}],['circle',{cx:12,cy:12,r:4}],['line',{x1:17.5,x2:17.51,y1:6.5,y2:6.5}]],
+    fb:[['path',{d:'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z'}]],
+    yt:[['path',{d:'M2.5 17a24 24 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.6 49.6 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24 24 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.6 49.6 0 0 1-16.2 0A2 2 0 0 1 2.5 17'}],['path',{d:'m10 15 5-3-5-3z'}]],
+    tt:[['path',{d:'M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5'}]],
+    eye:[['path',{d:'M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0'}],['circle',{cx:12,cy:12,r:3}]],
+    send:[['path',{d:'m22 2-7 20-4-9-9-4Z'}],['path',{d:'M22 2 11 13'}]],
+    check:[['polyline',{points:'20 6 9 17 4 12'}]],
+    heart:[['path',{d:'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z'}]],
+    image:[['rect',{width:18,height:18,x:3,y:3,rx:2}],['circle',{cx:9,cy:9,r:2}],['path',{d:'m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21'}]],
+  };
+  icon(key,size,sw){
+    const c=this.PATHS[key]||[];
+    return React.createElement('svg',{width:size,height:size,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:sw||2,strokeLinecap:'round',strokeLinejoin:'round',style:{display:'block',flexShrink:0}},
+      c.map((ch,i)=>React.createElement(ch[0],Object.assign({key:i},ch[1]))));
+  }
+  PLAT={ instagram:{name:'Instagram',icon:'ig'}, facebook:{name:'Facebook',icon:'fb'}, tiktok:{name:'TikTok',icon:'tt'}, youtube:{name:'YouTube',icon:'yt'} };
+  SKINS={
+    dark:{bg:'#0e141b',fg:'#e5decc',acc:'#94ae8a',scrim:'linear-gradient(to top,rgba(0,0,0,.55),transparent 55%)'},
+    light:{bg:'#ece6d6',fg:'#1a2230',acc:'#5c7556',scrim:'linear-gradient(to top,rgba(26,34,48,.06),transparent 55%)'},
+    mark:{bg:'linear-gradient(140deg,#3b5a78,#5c7556)',fg:'#f4efe0',acc:'#f4efe0',scrim:'linear-gradient(to top,rgba(0,0,0,.32),transparent 55%)'},
+    photo:{bg:'linear-gradient(160deg,#9c8d6b,#4b4433)',fg:'#f7f2e6',acc:'#edc98a',scrim:'linear-gradient(to top,rgba(0,0,0,.5),transparent 50%)'},
+  };
+  GIQ='linear-gradient(135deg,#3b5a78,#5c7556)';
+  BR='linear-gradient(135deg,#5c7556,#b89251)';
+
+  renderVals(){
+    const accent = Array.isArray(this.props.accent) ? this.props.accent[0] : (this.props.accent || '#5c7556');
+    const I=(k,sz,sw)=>this.icon(k,sz,sw);
+    const ic={ spark:I('sparkles',18), sparkLight:I('sparkles',16) };
+
+    const navItems=[
+      { label:'Create', icon:'sparkles', href:'Studio.dc.html' },
+      { label:'Dashboard', icon:'dash', active:true },
+      { label:'Pieces', icon:'layers', href:'Pieces.dc.html' },
+      { label:'Assets', icon:'image', href:'Assets.dc.html' },
+      { label:'Queue', icon:'cal' },
+      { label:'Settings', icon:'sliders', href:'Settings.dc.html' },
+    ];
+    const nav=navItems.map(n=>({ label:n.label, iconEl:I(n.icon,20),
+      style:`display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:10px;font-size:14px;font-weight:${n.active?600:500};cursor:pointer;color:${n.active?'#1a2230':'#6e6952'};background:${n.active?'#e5ddc6':'transparent'}`,
+      onClick: n.href ? ()=>{ window.location.href=n.href; } : ()=>{} }));
+    const clients=[ {name:'Gastric IQ',initials:'IQ',mark:this.GIQ}, {name:'Gastric IQ Brasil',initials:'BR',mark:this.BR} ];
+    const onCreate=()=>{ window.location.href='Studio.dc.html'; };
+
+    const badge=(status)=>{
+      const map={ Scheduled:['#e0eaf4','#2f5378'], Published:['#d8ecd6','#2d6b28'], Draft:['#efe7d2','#8a6f3c'] };
+      const [bg,fg]=map[status]||map.Draft;
+      return `position:absolute;top:8px;right:8px;z-index:2;font-family:var(--font-mono);font-size:7.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;background:${bg};color:${fg};padding:2px 7px;border-radius:999px`;
+    };
+    const listBadge=(status)=>{
+      const map={ Scheduled:['#e0eaf4','#2f5378'], Published:['#d8ecd6','#2d6b28'], Draft:['#efe7d2','#8a6f3c'], 'Best time':['#efe7d2','#8a6f3c'] };
+      const [bg,fg]=map[status]||map.Draft;
+      return `font-family:var(--font-mono);font-size:9.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;background:${bg};color:${fg};padding:4px 9px;border-radius:999px;flex-shrink:0`;
+    };
+
+    const statsVM=[
+      { label:'Scheduled', value:'12', delta:'this week', up:null, icon:'cal', tint:'#e0eaf4', fg:'#2f5378' },
+      { label:'Published', value:'48', delta:'+9', up:true, icon:'send', tint:'#d8ecd6', fg:'#2d6b28' },
+      { label:'Reach · 30d', value:'214K', delta:'+18%', up:true, icon:'eye', tint:'#efe7d2', fg:'#8a6f3c' },
+      { label:'Avg. saves', value:'1.9K', delta:'+6%', up:true, icon:'heart', tint:'#f0e2e0', fg:'#a5524a' },
+    ].map(s=>({ ...s, iconEl:I(s.icon,17,2.2),
+      deltaStyle: s.up===null ? 'font-size:11.5px;color:var(--muted);font-family:var(--font-mono)' : `font-size:12px;font-weight:700;color:${s.up?'#2d6b28':'#a5524a'};font-family:var(--font-mono)` }));
+
+    const queue=[
+      { dow:'TUE', day:'22', title:'Why food noise peaks on fade days', time:'6:30 PM', channels:'IG · FB', status:'Scheduled', acct:'giq', skin:'dark', mini:'Peak, then fade' },
+      { dow:'WED', day:'23', title:'The 3 p.m. protein checkpoint', time:'12:15 PM', channels:'IG · YT', status:'Scheduled', acct:'giq', skin:'light', mini:'Protein first' },
+      { dow:'THU', day:'24', title:'Carga gástrica noturna, explicada', time:'7:00 PM', channels:'IG · FB', status:'Best time', acct:'giqbr', skin:'photo', mini:'Bedtime load' },
+      { dow:'SAT', day:'26', title:'Shame-free by design', time:'10:00 AM', channels:'IG', status:'Draft', acct:'giq', skin:'mark', mini:'Shame-free' },
+    ];
+    const queueVM=queue.map((q,i,a)=>{ const sk=this.SKINS[q.skin]; return { ...q, rule:i===a.length-1?'transparent':'var(--border)',
+      bg:sk.bg, fg:sk.fg, acc:sk.acc, scrim:sk.scrim, mark:q.acct==='giq'?this.GIQ:this.BR, initials:q.acct==='giq'?'IQ':'BR',
+      badgeStyle:listBadge(q.status) }; });
+
+    const recent=[
+      { eyebrow:'THE PATTERN', headline:'Peak, then fade', status:'Published', skin:'dark', meta:'IG · 2d · 3.1K saves' },
+      { eyebrow:'BY THE NUMBERS', headline:'3pm checkpoint', status:'Published', skin:'light', meta:'IG · 4d · 1.8K saves' },
+      { eyebrow:'IN THE KITCHEN', headline:'Smaller plates', status:'Scheduled', skin:'photo', meta:'IG · Wed 6:30' },
+      { eyebrow:'GASTRIC IQ', headline:'Know your rhythm', status:'Draft', skin:'mark', meta:'Edited 1h ago' },
+    ];
+    const recentVM=recent.map(r=>{ const sk=this.SKINS[r.skin]; return { ...r, bg:sk.bg, fg:sk.fg, acc:sk.acc, scrim:sk.scrim, badgeStyle:badge(r.status) }; });
+
+    const chipsFor=(ks)=>ks.map(k=>({ iconEl:I(this.PLAT[k].icon,13) }));
+    const accountsVM=[
+      { name:'Gastric IQ', locale:'EN', followers:'38.4K', mark:this.GIQ, initials:'IQ', chips:chipsFor(['instagram','facebook','youtube']) },
+      { name:'Gastric IQ Brasil', locale:'PT-BR', followers:'21.7K', mark:this.BR, initials:'BR', chips:chipsFor(['instagram','facebook']) },
+    ];
+
+    const health=[
+      { name:'Postiz', initials:'Po', mark:'linear-gradient(135deg,#3b5a78,#5c7556)', detail:'Synced 2 min ago', state:'Healthy', ok:'good' },
+      { name:'Instagram Graph', initials:'Ig', mark:'linear-gradient(135deg,#8a3ab9,#e1306c)', detail:'Token valid · 41 days', state:'Healthy', ok:'good' },
+      { name:'Facebook Pages', initials:'Fb', mark:'linear-gradient(135deg,#2b6cb0,#3b5a78)', detail:'Token renews in 6 days', state:'Renew soon', ok:'warn' },
+    ];
+    const healthVM=health.map(h=>{ const c=h.ok==='good'?'#2d6b28':h.ok==='warn'?'#8a6f3c':'#a5524a'; const bg=h.ok==='good'?'#d8ecd6':h.ok==='warn'?'#efe7d2':'#f0e2e0';
+      return { ...h, dotStyle:`width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0`,
+        labelStyle:`font-family:var(--font-mono);font-size:9.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;background:${bg};color:${c};padding:3px 8px;border-radius:999px;flex-shrink:0` }; });
+
+    return {
+      accent, ic, nav, clients, onCreate,
+      today:'Tuesday · Jul 22, 2026', greeting:'Good morning, Reggie',
+      statsVM, queueVM, recentVM, accountsVM, healthVM,
+      nudgeTitle:'Gastric IQ Brasil has a gap Thursday', nudgeBody:'No PT-BR post is queued for the 18:30 slot — your highest-reach window. A “protein checkpoint” carousel would fit the fade-day pillar.',
+    };
+  }
+}
+</script>
+</body>
+</html>

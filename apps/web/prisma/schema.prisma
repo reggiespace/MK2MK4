@@ -35,6 +35,8 @@ model Workspace {
   integrations Integration[]
   assets       Asset[]
   posts        Post[]
+  apiTokens    ApiToken[]
+  jobs         Job[]
 }
 
 model User {
@@ -45,6 +47,8 @@ model User {
   passwordHash String
   name         String?
   createdAt    DateTime  @default(now())
+
+  apiTokens ApiToken[]
 
   @@index([workspaceId])
 }
@@ -271,6 +275,16 @@ model Post {
   pillarId String?
   pillar   Pillar? @relation(fields: [pillarId], references: [id], onDelete: SetNull)
 
+  /// The agent's research that produced this post — auditable when a post reads oddly.
+  brief String? @db.Text
+
+  /// "ui" | "agent". Agents may only mutate posts they created.
+  createdVia String @default("ui")
+
+  /// Which agent token created it. Null for UI-created posts.
+  apiTokenId String?
+  apiToken   ApiToken? @relation(fields: [apiTokenId], references: [id], onDelete: SetNull)
+
   /// The full PostDoc: { slides:[{kind,f}], caption, first, hashtags, linkSticker, mention }.
   /// The manifests own this shape — see lib/templates/types.ts.
   doc Json
@@ -297,9 +311,11 @@ model Post {
 
   renderJobs     RenderJob[]
   scheduledPosts ScheduledPost[]
+  jobs           Job[]
 
   @@index([workspaceId, updatedAt])
   @@index([accountId, status])
+  @@index([apiTokenId, createdAt])
 }
 
 enum JobKind {
@@ -313,6 +329,11 @@ enum JobStatus {
   running
   done
   failed
+}
+
+enum AgentJobKind {
+  media
+  render
 }
 
 model RenderJob {
@@ -361,4 +382,85 @@ model ScheduledPost {
 
   @@index([scheduledAt, status])
   @@index([postId])
+}
+
+// ---------------------------------------------------------------------------
+// Agent MCP surface — bearer tokens and server-minted job handles for
+// agent-driven drafting, media generation and rendering.
+// ---------------------------------------------------------------------------
+
+/// A bearer credential letting one external agent drive this workspace.
+/// The plaintext is shown once at creation and never stored.
+model ApiToken {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Display name, one per client: "Hermes cron", "Claude web".
+  name String
+
+  /// sha256 hex of the full "rss_…" token. The only lookup key.
+  tokenHash String @unique
+  /// First 12 chars of the token, for identifying it in the UI.
+  prefix    String
+
+  /// Granted scopes: "draft" | "media" | "render". "publish" is reserved, never issued.
+  scopes String[]
+
+  /// Rolling-24h ceilings. A leaked token has a bounded daily blast radius.
+  dailyCapCents Int @default(500)
+  dailyDraftCap Int @default(5)
+
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  posts Post[]
+  jobs  Job[]
+
+  @@index([workspaceId, createdAt])
+}
+
+/// A server-minted handle for slow work the agent polls, covering both media
+/// generation and rendering. Protocol 2026-07-28 specifies exactly this shape:
+/// server-minted handles passed back as ordinary tool arguments.
+model Job {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  postId      String
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  apiTokenId  String?
+  apiToken    ApiToken? @relation(fields: [apiTokenId], references: [id], onDelete: SetNull)
+
+  kind  AgentJobKind
+  state JobStatus @default(queued)
+
+  total Int @default(0)
+  done  Int @default(0)
+
+  /// [{ slideIndex, slotId, assetId, url }] for media; [{ url }] for render.
+  results Json @default("[]")
+  /// [{ slideIndex, slotId, message }]
+  errors  Json @default("[]")
+
+  /// What this job spent with fal.ai / ElevenLabs, in cents.
+  ///
+  /// The spend ledger lives here rather than on Post because a job is created at
+  /// the moment money is spent. Summing Post.costCents over a rolling window
+  /// would miss repeated media calls against an older post — which is exactly
+  /// the unbounded loop the cap exists to stop.
+  costCents Int @default(0)
+
+  /// Set when the background task picks it up. A queued/running job older than
+  /// 10 minutes is presumed lost to a restart and reported failed.
+  startedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([postId, kind])
+  @@index([apiTokenId, createdAt])
 }

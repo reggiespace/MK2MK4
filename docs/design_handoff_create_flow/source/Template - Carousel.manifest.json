@@ -1,0 +1,312 @@
+{
+  "template": "carousel",
+  "version": "1.0",
+  "canvas": {
+    "width": 1080,
+    "height": 1350,
+    "aspect": "4:5"
+  },
+  "safeZone": {
+    "note": "Keep all text and logo inside a centered 1000x1270 box; design inset is 84-92px.",
+    "insetPx": 84
+  },
+  "aiContract": "Fill only the slots below and the brand tokens. Never move, add, remove, resize, or restyle elements. Empty optional slots collapse gracefully. On-slide copy is engagement-only — the app-download CTA belongs in postDelivery, never on a slide.",
+  "brandTokens": {
+    "accent": {
+      "type": "color",
+      "role": "single accent across every slide (kickers, rules, numerals, checks, active dot, buttons)",
+      "default": "#b89251",
+      "required": true
+    },
+    "brandName": {
+      "type": "text",
+      "role": "wordmark shown on every slide",
+      "default": "Gastric IQ",
+      "maxChars": 22,
+      "required": true
+    },
+    "handle": {
+      "type": "text",
+      "role": "@handle used on the CTA end slide",
+      "default": "@gastric_iq",
+      "maxChars": 30,
+      "required": true
+    },
+    "logo": {
+      "type": "image",
+      "role": "optional logo lockup; replaces the wordmark when supplied",
+      "aspect": "any",
+      "required": false
+    },
+    "slideCount": {
+      "type": "int",
+      "role": "drives the counter (NN/NN) and cover dot row",
+      "default": 7,
+      "min": 2,
+      "max": 20,
+      "required": true
+    }
+  },
+  "covers": {
+    "note": "Exactly ONE cover per carousel (slide 1). Pick an archetype. Hook must be a 5-8 word curiosity gap and the largest element on the slide.",
+    "archetypes": {
+      "1a-knockout": {
+        "ground": "dark",
+        "slots": {
+          "kicker": {
+            "type": "text",
+            "role": "section label",
+            "maxChars": 18,
+            "required": false
+          },
+          "hook": {
+            "type": "text",
+            "role": "one-phrase hook; wrap the pivot word in the accent emphasis",
+            "maxChars": 42,
+            "required": true
+          }
+        }
+      },
+      "1b-editorial": {
+        "ground": "light",
+        "slots": {
+          "kicker": {
+            "type": "text",
+            "role": "dispatch label + issue no.",
+            "maxChars": 22,
+            "required": false
+          },
+          "hook": {
+            "type": "text",
+            "role": "serif headline hook",
+            "maxChars": 60,
+            "required": true
+          },
+          "lead": {
+            "type": "text",
+            "role": "one supporting sentence",
+            "maxChars": 90,
+            "required": false
+          }
+        }
+      },
+      "1c-bigstat": {
+        "ground": "primary",
+        "slots": {
+          "kicker": {
+            "type": "text",
+            "role": "section label",
+            "maxChars": 18,
+            "required": false
+          },
+          "statValue": {
+            "type": "text",
+            "role": "dominant number/figure",
+            "maxChars": 8,
+            "required": true
+          },
+          "statLine": {
+            "type": "text",
+            "role": "what the number means",
+            "maxChars": 64,
+            "required": true
+          },
+          "source": {
+            "type": "text",
+            "role": "attribution line",
+            "maxChars": 48,
+            "required": false
+          }
+        }
+      },
+      "1d-quote": {
+        "ground": "secondary",
+        "slots": {
+          "kicker": {
+            "type": "text",
+            "role": "section label",
+            "maxChars": 18,
+            "required": false
+          },
+          "quote": {
+            "type": "text",
+            "role": "pull quote (italic)",
+            "maxChars": 80,
+            "required": true
+          },
+          "attribution": {
+            "type": "text",
+            "role": "who said it",
+            "maxChars": 48,
+            "required": false
+          }
+        }
+      }
+    }
+  },
+  "interiors": {
+    "note": "Choose 2-6 interior slides between the cover and the CTA end slide. One idea per slide. Put the strongest point by slide 3. Running header (brand + counter) and progress bar are auto-filled from brandTokens.",
+    "kinds": {
+      "2a-point": {
+        "slots": {
+          "index": {
+            "type": "text",
+            "role": "step number/marker",
+            "maxChars": 3,
+            "required": false
+          },
+          "label": {
+            "type": "text",
+            "role": "eyebrow",
+            "maxChars": 18,
+            "required": false
+          },
+          "heading": {
+            "type": "text",
+            "role": "the point",
+            "maxChars": 40,
+            "required": true
+          },
+          "body": {
+            "type": "text",
+            "role": "supporting detail",
+            "maxChars": 130,
+            "required": false
+          }
+        }
+      },
+      "2b-stat": {
+        "slots": {
+          "label": {
+            "type": "text",
+            "role": "eyebrow",
+            "maxChars": 18,
+            "required": false
+          },
+          "statValue": {
+            "type": "text",
+            "role": "figure in the card",
+            "maxChars": 8,
+            "required": true
+          },
+          "statLine": {
+            "type": "text",
+            "role": "what it means",
+            "maxChars": 70,
+            "required": true
+          }
+        }
+      },
+      "2c-list": {
+        "slots": {
+          "heading": {
+            "type": "text",
+            "role": "list title",
+            "maxChars": 44,
+            "required": true
+          },
+          "items": {
+            "type": "list",
+            "role": "3-4 items, each {lead<=28, detail<=40}",
+            "min": 3,
+            "max": 4,
+            "required": true
+          }
+        }
+      },
+      "2d-image": {
+        "slots": {
+          "image": {
+            "type": "image",
+            "role": "photo/screenshot/generated; fills the slot",
+            "aspect": "~4:3",
+            "required": true
+          },
+          "caption": {
+            "type": "text",
+            "role": "bold caption",
+            "maxChars": 40,
+            "required": true
+          },
+          "captionSub": {
+            "type": "text",
+            "role": "light second line",
+            "maxChars": 56,
+            "required": false
+          }
+        }
+      },
+      "2e-myth": {
+        "slots": {
+          "myth": {
+            "type": "text",
+            "role": "the misconception (struck through)",
+            "maxChars": 60,
+            "required": true
+          },
+          "fact": {
+            "type": "text",
+            "role": "the correction (accent block)",
+            "maxChars": 80,
+            "required": true
+          }
+        }
+      }
+    }
+  },
+  "ctaEnd": {
+    "id": "2f-cta",
+    "note": "ALWAYS the last slide. Engagement-only: save + follow. Never a download button.",
+    "ground": "dark",
+    "slots": {
+      "kicker": {
+        "type": "text",
+        "role": "e.g. 'Keep this'",
+        "maxChars": 16,
+        "required": false
+      },
+      "hook": {
+        "type": "text",
+        "role": "save-worthy line",
+        "maxChars": 40,
+        "required": true
+      },
+      "recap": {
+        "type": "list",
+        "role": "2-3 one-line takeaways (checklist recap)",
+        "min": 2,
+        "max": 3,
+        "required": true
+      },
+      "followLine": {
+        "type": "text",
+        "role": "value-framed follow ask (uses handle)",
+        "maxChars": 48,
+        "required": true
+      }
+    }
+  },
+  "postDelivery": {
+    "note": "Post-level fields the Create page assembles — NOT drawn on any slide. This is where the app-download / external CTA lives.",
+    "caption": {
+      "type": "text",
+      "role": "post caption; keyword-rich for SEO, ends with soft CTA '→ link in bio'; include the download ask here",
+      "maxChars": 2200,
+      "required": true
+    },
+    "firstComment": {
+      "type": "text",
+      "role": "auto-posted by Postiz; carries the actual download link + pitch (e.g. 'Get Gastric IQ → <url>')",
+      "maxChars": 2200,
+      "required": true
+    },
+    "hashtags": {
+      "type": "list",
+      "role": "5-10 niche tags, weighted under 100K posts",
+      "min": 5,
+      "max": 10,
+      "required": false
+    }
+  },
+  "accentGuardrail": "Accent legibility is auto-guarded: when the chosen accent collides with a slide's ground color, the template substitutes a legible sibling (contrast >= 2.2). The AI/user may pick any brand accent freely; do not hand-tune per slide."
+}

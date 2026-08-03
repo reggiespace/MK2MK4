@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/organic-fba2f3e9-5424-49b8-9045-1638206e120e/styles.css">
+<script src="_ds/organic-fba2f3e9-5424-49b8-9045-1638206e120e/_ds_bundle.js"></script>
+<style>
+  .rpt-wrap{max-width:1080px;margin:0 auto;padding:var(--space-8) var(--space-6) 96px}
+  .lede{font-size:20px;line-height:1.5}
+  .rule-accent{height:4px;width:64px;border-radius:999px;background:var(--color-accent);border:0;margin:0 0 var(--space-4)}
+  sup a{font-size:.62em;font-weight:700;text-decoration:none;color:var(--color-accent-700);padding:0 1px}
+  .drop::first-letter{font-family:var(--font-heading);font-size:3.1em;line-height:.82;float:left;padding:6px 10px 2px 0;color:var(--color-accent-700)}
+</style>
+</helmet>
+
+<div class="rpt-wrap">
+
+  <!-- ══ Masthead ══ -->
+  <header style="border-bottom:2px solid var(--color-text);padding-bottom:var(--space-4);margin-bottom:var(--space-8)">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:var(--space-2);margin-bottom:var(--space-6)">
+      <span style="font-family:var(--font-heading);font-size:15px">Reggie<span style="color:var(--color-accent)">Space</span> · Field Research</span>
+      <span class="text-muted" style="font-size:12px;font-family:var(--font-body);font-weight:600;letter-spacing:.04em">SOCIAL TEMPLATES · BRIEFING No. 01 · JULY 2026</span>
+    </div>
+    <hr class="rule-accent">
+    <h1 style="font-size:60px;line-height:.98;letter-spacing:-.02em;margin:0 0 var(--space-3);max-width:16ch">Built for the Scroll</h1>
+    <p class="lede text-muted" style="max-width:60ch;margin:0">How Instagram actually ranks Reels, carousels and Stories in 2026 — and the design decisions that turn a template into reach. A working brief for the people (and models) filling these surfaces.</p>
+  </header>
+
+  <!-- ══ Bottom line ══ -->
+  <section style="display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:var(--space-8);align-items:start;margin-bottom:var(--space-8)">
+    <div>
+      <h6 style="color:var(--color-accent-700);margin-bottom:var(--space-3)">The bottom line</h6>
+      <p class="drop" style="font-size:17px;line-height:1.6">There is no single Instagram algorithm. Meta runs four separate ranking systems — Feed, Reels, Stories and Explore — and each optimizes for a different question about the viewer.<sup><a href="#s5">5</a><a href="#s10">10</a></sup> A template that wins on Reels is not the one that wins in Feed. But one shift cuts across all of them: <strong>private sharing now outranks public applause.</strong> Instagram head Adam Mosseri has repeatedly called sends "one of the biggest signals we use in ranking" — and the loudest positive vote the system has.<sup><a href="#s5">5</a><a href="#s2">2</a></sup></p>
+      <p style="font-size:17px;line-height:1.6">Saves and sends are read as high-intent proof of value; watch-through decides whether video travels at all; likes have quietly become the weakest signal Meta still bothers to report.<sup><a href="#s2">2</a><a href="#s5">5</a><a href="#s9">9</a></sup> Every template in this system should be engineered to earn a save, provoke a send, or hold a watch — not to collect likes.</p>
+    </div>
+    <aside style="background:var(--color-surface);border-radius:var(--radius-lg);padding:var(--space-6);box-shadow:var(--shadow-sm)">
+      <h6 style="margin-bottom:var(--space-4)">The 2026 signal stack</h6>
+      <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+        <sc-for list="{{ signals }}" as="s" hint-placeholder-count="5">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
+              <span style="font-weight:700;font-size:13.5px">{{ s.label }}</span>
+              <span class="text-muted" style="font-size:11px;font-weight:600">{{ s.note }}</span>
+            </div>
+            <div style="height:12px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden">
+              <div style="height:100%;border-radius:999px;width:{{ s.w }};background:{{ s.fill }}"></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <p class="text-muted" style="font-size:11px;line-height:1.45;margin:var(--space-4) 0 0">Relative weighting, synthesized from Mosseri's stated hierarchy and third-party analytics — not published percentages. Order, not exact magnitude, is the point.<sup><a href="#s2">2</a><a href="#s16">16</a></sup></p>
+    </aside>
+  </section>
+
+  <!-- ══ Four surfaces ══ -->
+  <section style="margin-bottom:var(--space-8)">
+    <h2 style="margin-bottom:var(--space-2)">Four rooms, four questions</h2>
+    <p class="text-muted" style="max-width:64ch;margin-bottom:var(--space-6)">Each surface asks something different before it shows your post to one more person. Design the format to answer <em>its</em> question.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:var(--space-4)">
+      <sc-for list="{{ surfaces }}" as="c" hint-placeholder-count="4">
+        <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:var(--space-6);border:1px solid var(--color-divider)">
+          <div style="width:44px;height:44px;border-radius:999px;background:{{ c.tint }};display:flex;align-items:center;justify-content:center;color:{{ c.ink }};font-family:var(--font-heading);font-size:19px;margin-bottom:var(--space-3)">{{ c.mark }}</div>
+          <h4 style="margin-bottom:4px">{{ c.name }}</h4>
+          <p style="font-size:14px;font-style:italic;color:var(--color-accent-700);margin-bottom:var(--space-2)">“{{ c.q }}”</p>
+          <p class="text-muted" style="font-size:13.5px;line-height:1.5;margin:0">{{ c.signal }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ REELS ══ -->
+  <section style="margin-bottom:var(--space-8);scroll-margin-top:20px">
+    <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4)">
+      <span style="font-family:var(--font-heading);font-size:14px;color:#fff;background:var(--color-accent-700);padding:4px 14px;border-radius:999px">01</span>
+      <h2 style="margin:0">Reels — retention is the toll booth</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:var(--space-8);align-items:start">
+      <div>
+        <p style="font-size:16px;line-height:1.62">Watch time is the number-one ranking factor for Reels across both connected reach (your followers) and unconnected reach (recommendations), confirmed by Mosseri in January 2025 and reaffirmed through 2026.<sup><a href="#s11">11</a><a href="#s10">10</a></sup> The model reads both <em>relative</em> watch time (percent viewed) and <em>absolute</em> seconds — which is why a 14-second Reel watched twice often beats a 60-second Reel watched once.<sup><a href="#s11">11</a><a href="#s5">5</a></sup></p>
+        <p style="font-size:16px;line-height:1.62">The gate is the opening. The decision to keep watching is reflexive — viewers commit in under two seconds, and if they drop before the three-second mark Instagram throttles distribution.<sup><a href="#s14">14</a><a href="#s9">9</a></sup> That makes the <strong>first frame a design problem, not just a scripting one</strong>: a bold on-screen text hook, a visual pattern-interrupt, or a direct-to-camera statement has to land immediately.<sup><a href="#s4">4</a><a href="#s9">9</a></sup> For reaching non-followers, sends per reach then does the heavy lifting — DM shares are 3–5× more valuable than likes for new audiences, and an estimated 694,000 Reels are sent by DM every minute.<sup><a href="#s16">16</a><a href="#s7">7</a></sup></p>
+        <p style="font-size:16px;line-height:1.62">Two hygiene rules gate eligibility: keep it original (no TikTok/CapCut watermarks — recycled-looking video is deprioritized, and original content earns 40–60% more distribution) and keep it short. Reels up to three minutes can now reach non-followers, but 30–90 seconds consistently performs better.<sup><a href="#s12">12</a><a href="#s9">9</a><a href="#s6">6</a></sup></p>
+      </div>
+      <aside style="background:var(--color-accent-100);border-radius:var(--radius-lg);padding:var(--space-6)">
+        <div style="font-family:var(--font-heading);font-size:52px;line-height:.9;color:var(--color-accent-700)">3 sec</div>
+        <p style="font-size:14px;font-weight:600;margin:var(--space-2) 0 var(--space-4)">to survive the first retention check — or distribution is cut.<sup><a href="#s10">10</a></sup></p>
+        <div style="font-family:var(--font-heading);font-size:52px;line-height:.9;color:var(--color-accent-700)">3–5×</div>
+        <p style="font-size:14px;font-weight:600;margin:var(--space-2) 0 0">the reach value of a DM send versus a like, for new audiences.<sup><a href="#s16">16</a></sup></p>
+      </aside>
+    </div>
+
+    <!-- Safe zone -->
+    <div style="background:var(--color-text);color:var(--color-neutral-100);border-radius:var(--radius-lg);padding:var(--space-6) var(--space-8);margin-top:var(--space-6);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:var(--space-8);align-items:center">
+      <div>
+        <h6 style="color:var(--color-accent-300)">The 9:16 safe zone</h6>
+        <p style="font-size:14.5px;line-height:1.55;color:var(--color-neutral-200);margin:0">Instagram's UI got denser in late 2025. On a 1080×1920 frame, the app now overlays roughly the bottom 400–480px and the right 90–120px with caption, audio bar and action buttons. Keep every hook, caption and CTA inside a centered ≈900×1440 box.<sup><a href="#s28" style="color:var(--color-accent-300)">28</a><a href="#s32" style="color:var(--color-accent-300)">32</a><a href="#s27" style="color:var(--color-accent-300)">27</a></sup></p>
+      </div>
+      <div style="display:flex;gap:var(--space-6);justify-content:center;align-items:center;flex-wrap:wrap">
+        <div style="position:relative;width:132px;height:234px;border-radius:14px;background:var(--color-neutral-800);flex-shrink:0;overflow:hidden">
+          <div style="position:absolute;left:8px;right:14px;top:26px;bottom:58px;border:2px dashed var(--color-accent-400);border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:9px;line-height:1.3;color:var(--color-accent-300);font-weight:700;padding:6px">SAFE<br>≈900×1440</div>
+          <div style="position:absolute;left:0;right:0;bottom:0;height:52px;background:repeating-linear-gradient(45deg,var(--color-neutral-700),var(--color-neutral-700) 4px,var(--color-neutral-800) 4px,var(--color-neutral-800) 8px)"></div>
+          <div style="position:absolute;right:0;bottom:52px;width:14px;top:26px;background:repeating-linear-gradient(45deg,var(--color-neutral-700),var(--color-neutral-700) 4px,var(--color-neutral-800) 4px,var(--color-neutral-800) 8px)"></div>
+        </div>
+        <ul style="margin:0;padding:0;list-style:none;font-size:13px;line-height:1.5;color:var(--color-neutral-200);display:flex;flex-direction:column;gap:8px">
+          <li>▸ Hook text between <strong>y=200–600px</strong></li>
+          <li>▸ Clear the <strong>bottom 480px</strong> for captions</li>
+          <li>▸ Type <strong>≥45–60px</strong>, weight 700+, dark stroke</li>
+          <li>▸ <strong>≤10 words</strong> per on-screen block</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ CAROUSEL ══ -->
+  <section style="margin-bottom:var(--space-8)">
+    <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4)">
+      <span style="font-family:var(--font-heading);font-size:14px;color:#fff;background:var(--color-accent-2-700);padding:4px 14px;border-radius:999px">02</span>
+      <h2 style="margin:0">Carousels — the format the algorithm re-serves</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:var(--space-8);align-items:start">
+      <aside style="background:var(--color-accent-2-100);border-radius:var(--radius-lg);padding:var(--space-6);order:0">
+        <div style="font-family:var(--font-heading);font-size:52px;line-height:.9;color:var(--color-accent-2-700)">3–5×</div>
+        <p style="font-size:14px;font-weight:600;margin:var(--space-2) 0 var(--space-4)">more non-follower reach when 70%+ of viewers swipe through.<sup><a href="#s19">19</a></sup></p>
+        <div style="font-family:var(--font-heading);font-size:52px;line-height:.9;color:var(--color-accent-2-700)">slide 2</div>
+        <p style="font-size:14px;font-weight:600;margin:var(--space-2) 0 0">is a second cover — Instagram re-shows the post led by it if you don't swipe.<sup><a href="#s24">24</a></sup></p>
+      </aside>
+      <div>
+        <p style="font-size:16px;line-height:1.62">Carousels carry the highest engagement rate of any format in 2026 and out-reach single images by roughly 1.9–3× — largely because of one mechanic. When a viewer doesn't swipe, Instagram often gives the post a second chance and re-serves it led by the second slide, 24–48 hours later.<sup><a href="#s9">9</a><a href="#s24">24</a><a href="#s22">22</a></sup> More slides create more re-engagement windows; the format supports up to 20.<sup><a href="#s7">7</a><a href="#s1">1</a></sup></p>
+        <p style="font-size:16px;line-height:1.62">The cover slide is the single most important design asset in the system — it's the only slide the feed shows before any engagement, so it must stop the scroll, name its audience, and open a curiosity gap in one glance. The working formula: a <strong>5–8 word hook headline as the largest element</strong>, a high-contrast visual pattern-interrupt, and a promise that can't be resolved without swiping.<sup><a href="#s20">20</a><a href="#s22">22</a></sup> Because of the re-serve, treat slide 2 as an independent second hook, and place your most striking point by slide 3 — most viewers never reach slide 7.<sup><a href="#s24">24</a><a href="#s22">22</a></sup></p>
+        <p style="font-size:16px;line-height:1.62">Design the final slide to be <strong>saved and returned to</strong> — a checklist, summary, or one high-value statement that delivers even if it's the only slide someone keeps.<sup><a href="#s22">22</a></sup> Directional cues that point toward the next slide lift swipe-through, and mixed-media carousels (adding even one video slide) hit 2.33% engagement while only ~7% of posts use them — an open lane.<sup><a href="#s20">20</a><a href="#s24">24</a></sup></p>
+      </div>
+    </div>
+    <div style="background:var(--color-neutral-100);border:1px solid var(--color-divider);border-radius:var(--radius-lg);padding:var(--space-6);margin-top:var(--space-6)">
+      <h6 style="margin-bottom:var(--space-3)">Craft rules the winners share</h6>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-4);font-size:13.5px;line-height:1.5">
+        <div><strong>Frame at 4:5, 1080×1350.</strong> Portrait takes maximum feed height; keep key content inside a 1000×1270 center.<sup><a href="#s22">22</a><a href="#s27">27</a></sup></div>
+        <div><strong>Three colors, 60-30-10.</strong> One display + one body face; body 4.5:1 contrast minimum.<sup><a href="#s18">18</a></sup></div>
+        <div><strong>One idea per slide.</strong> 5–8 slides is the working band; visual consistency across all of them.<sup><a href="#s22">22</a><a href="#s19">19</a></sup></div>
+        <div><strong>Specific beats generic.</strong> "5 shifts that saved me 10 hrs/week" over "productivity tips."<sup><a href="#s19">19</a></sup></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ STORIES ══ -->
+  <section style="margin-bottom:var(--space-8)">
+    <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4)">
+      <span style="font-family:var(--font-heading);font-size:14px;color:#fff;background:var(--color-neutral-700);padding:4px 14px;border-radius:999px">03</span>
+      <h2 style="margin:0">Stories — the relationship engine, not a reach engine</h2>
+    </div>
+    <p style="font-size:16px;line-height:1.62;max-width:70ch">Mosseri has been explicit: Stories are not your tool for reaching new people. They deepen the relationship with existing followers — and those relationship signals are exactly what lift your Feed and Reels ranking <em>for those followers</em>.<sup><a href="#s39">39</a></sup> So Story templates optimize for a tap, a vote, a reply — not a swipe-away.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:var(--space-4);margin-top:var(--space-6)">
+      <div style="background:var(--color-surface);border-radius:var(--radius-lg);padding:var(--space-6)">
+        <h4 style="margin-bottom:var(--space-2)">Build a sticker in</h4>
+        <p class="text-muted" style="font-size:14px;line-height:1.5;margin:0">Interactive stickers — polls, questions, quizzes, emoji sliders — are the single most effective Stories engagement tool, and Story replies now score as one of the strongest relationship signals. Put a sticker on the <em>first</em> frame for an added boost.<sup><a href="#s39">39</a><a href="#s36">36</a><a href="#s34">34</a></sup></p>
+      </div>
+      <div style="background:var(--color-surface);border-radius:var(--radius-lg);padding:var(--space-6)">
+        <h4 style="margin-bottom:var(--space-2)">Poll first, then question</h4>
+        <p class="text-muted" style="font-size:14px;line-height:1.5;margin:0">The poll collects the most taps for the least viewer effort — start there. A question sticker on a later frame opens a text-reply channel into DMs, and replying by DM strengthens the signal further.<sup><a href="#s36">36</a><a href="#s41">41</a></sup></p>
+      </div>
+      <div style="background:var(--color-surface);border-radius:var(--radius-lg);padding:var(--space-6)">
+        <h4 style="margin-bottom:var(--space-2)">Frame &amp; cadence</h4>
+        <p class="text-muted" style="font-size:14px;line-height:1.5;margin:0">Keep content out of the top and bottom ~250px of the 1080×1920 frame. Post 1–3 Stories daily (up to 3–7 frames); tap-through tends to drop after the fifth.<sup><a href="#s27">27</a><a href="#s39">39</a><a href="#s14">14</a></sup></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ Hook library ══ -->
+  <section style="margin-bottom:var(--space-8)">
+    <h2 style="margin-bottom:var(--space-2)">The hook is the product</h2>
+    <p class="text-muted" style="max-width:66ch;margin-bottom:var(--space-6)">Across Reels, covers and Story openers the mechanic is identical: open a curiosity gap the viewer must close. Spoken or written, a hook should land in the first three seconds — roughly 10–14 words — and deliver on its promise, or completion (and reach) collapses.<sup><a href="#s44">44</a><a href="#s50">50</a></sup></p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--space-3)">
+      <sc-for list="{{ hooks }}" as="h" hint-placeholder-count="5">
+        <div style="background:var(--color-neutral-100);border:1px solid var(--color-divider);border-left:4px solid var(--color-accent);border-radius:var(--radius-md);padding:var(--space-4) var(--space-6)">
+          <div style="font-family:var(--font-heading);font-size:13px;color:var(--color-accent-700);margin-bottom:4px">{{ h.name }}</div>
+          <div style="font-size:14.5px;font-weight:600;font-style:italic">“{{ h.ex }}”</div>
+        </div>
+      </sc-for>
+    </div>
+    <p class="text-muted" style="font-size:12.5px;margin-top:var(--space-3)">Contrarian claim, mistake warning and list tease are the three most consistently viral formulas in 2026 — but top creators rotate 5–10 so audiences don't learn to skip the opener.<sup><a href="#s44">44</a></sup></p>
+  </section>
+
+  <!-- ══ Mandate ══ -->
+  <section style="background:var(--color-accent-700);color:var(--color-neutral-100);border-radius:var(--radius-lg);padding:var(--space-8);margin-bottom:var(--space-8)">
+    <h6 style="color:var(--color-accent-300)">What this means for our templates</h6>
+    <h2 style="color:#fff;margin-bottom:var(--space-6);max-width:22ch">Nine rules to bake into every surface we ship</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:var(--space-6)">
+      <sc-for list="{{ mandate }}" as="m" hint-placeholder-count="9">
+        <div style="display:flex;gap:var(--space-3);align-items:flex-start">
+          <span style="font-family:var(--font-heading);font-size:22px;color:var(--color-accent-300);line-height:1">{{ m.n }}</span>
+          <p style="font-size:14px;line-height:1.5;margin:0;color:var(--color-neutral-200)">{{ m.t }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ══ Sources ══ -->
+  <section>
+    <h2 style="margin-bottom:var(--space-2)">Sources</h2>
+    <p class="text-muted" style="font-size:13px;max-width:60ch;margin-bottom:var(--space-6)">Secondary analyses and platform-statement round-ups, July 2026. Load-bearing figures (signal order, the 3-second gate, safe-zone pixels, carousel re-serve) were cross-checked across independent sources; where guides disagreed on exact numbers, the more recent and more conservative figure is cited.</p>
+    <ol style="margin:0;padding:0;list-style:none;counter-reset:src;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2px var(--space-8)">
+      <sc-for list="{{ sources }}" as="s" hint-placeholder-count="12">
+        <li id="{{ s.id }}" style="display:flex;gap:var(--space-3);padding:var(--space-2) 0;border-bottom:1px solid var(--color-divider);font-size:13px;line-height:1.4;scroll-margin-top:20px">
+          <span style="font-family:var(--font-heading);color:var(--color-accent-700);min-width:22px">{{ s.n }}</span>
+          <span><a href="{{ s.url }}" target="_blank" style="font-weight:700">{{ s.pub }}</a><span class="text-muted"> — {{ s.title }}</span></span>
+        </li>
+      </sc-for>
+    </ol>
+  </section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1080}}">
+class Component extends DCLogic {
+  renderVals(){
+    const A='var(--color-accent-500)', A2='var(--color-accent-2-600)', N='var(--color-neutral-500)';
+    return {
+      signals:[
+        { label:'Sends / DM shares', note:'strongest', w:'100%', fill:A },
+        { label:'Saves', note:'high intent', w:'82%', fill:A },
+        { label:'Watch time / completion', note:'gates video', w:'90%', fill:A2 },
+        { label:'Comments (depth)', note:'moderate', w:'55%', fill:A2 },
+        { label:'Likes', note:'weakest reported', w:'28%', fill:N },
+      ],
+      surfaces:[
+        { mark:'F', name:'Feed & Carousel', q:'Would this person care?', signal:'Saves, sends and — rising fast — profile-visit rate. Relationship + high-intent actions.', tint:'var(--color-accent-200)', ink:'var(--color-accent-800)' },
+        { mark:'R', name:'Reels', q:'Would they watch it all the way through?', signal:'Watch time first; sends per reach for new audiences. Retention is everything.', tint:'var(--color-accent-2-200)', ink:'var(--color-accent-2-800)' },
+        { mark:'S', name:'Stories', q:'Do these two people actually talk?', signal:'Viewing history and replies. A relationship signal, not a discovery channel.', tint:'var(--color-neutral-200)', ink:'var(--color-neutral-800)' },
+        { mark:'E', name:'Explore', q:'Is this good enough for a stranger?', signal:'Early engagement velocity and interest-match; follower count barely matters.', tint:'var(--color-accent-200)', ink:'var(--color-accent-800)' },
+      ],
+      hooks:[
+        { name:'Contrarian claim', ex:"Everything you've been told about protein timing is backwards." },
+        { name:'Mistake warning', ex:'The one carousel mistake quietly killing your reach.' },
+        { name:'List tease', ex:'5 shifts that saved me 10 hours a week (#3 surprised me).' },
+        { name:'Open question', ex:'Why do some posts hit 200K while yours die at 2K?' },
+        { name:'Callout', ex:'Most people get this wrong about their fade days.' },
+        { name:'Reveal / POV', ex:"Here's what nobody tells you about week three." },
+      ],
+      mandate:[
+        { n:'1', t:'One hook, largest element. Every cover and title frame carries a 5–8 word curiosity gap as the biggest text on the surface.' },
+        { n:'2', t:'Design to be saved and sent. Build a reference-worthy end slide and "send this to someone who…" moments into the layout, not the caption.' },
+        { n:'3', t:'Respect the 9:16 safe zone. Lock a centered ≈900×1440 content box; keep the bottom 480px and right 120px clear of anything that matters.' },
+        { n:'4', t:'Slide 2 is a second cover. Make it independently compelling — the re-serve mechanic may show it first.' },
+        { n:'5', t:'Front-load the payoff. Strongest point by slide 3; never bury it on slide 7.' },
+        { n:'6', t:'Type that survives thumbnails. Display face for hooks at heavy weight; body ≥ platform-safe size at 4.5:1 contrast; dark stroke over imagery.' },
+        { n:'7', t:'Three colors, 60-30-10, one display + one body pairing. Visual consistency across every slide of a set.' },
+        { n:'8', t:'Motion & voice ready. Reel frames assume on-screen text = the ElevenLabs script and a fal.ai background; a directional cue points to what is next.' },
+        { n:'9', t:'A sticker zone on Stories. Reserve a tap target for a poll or question on frame one — the template invites interaction by default.' },
+      ],
+      sources:[
+        { id:'s1', n:1, pub:'Later', title:'Instagram algorithm in 2026: rank signals for growth', url:'https://later.com/blog/how-instagram-algorithm-works/' },
+        { id:'s2', n:2, pub:'Clixie', title:'Instagram algorithm 2026: the 4 ranking signals that matter', url:'https://www.clixie.ai/blog/instagram-algorithm' },
+        { id:'s4', n:4, pub:'Heropost', title:'Instagram Algorithm Changes in 2026', url:'https://heropost.io/instagram-algorithm-changes-2026/' },
+        { id:'s5', n:5, pub:'Mirra', title:'Instagram Algorithm 2026: What Works Best for Growth', url:'https://www.mirra.my/en/blog/instagram-algorithm-2026-complete-analysis' },
+        { id:'s6', n:6, pub:'Buffer', title:'How the Instagram Algorithm Works: Your 2026 Guide', url:'https://buffer.com/resources/instagram-algorithms/' },
+        { id:'s7', n:7, pub:'Orange Monke', title:'Instagram Algorithm 2026: Ranking Signals & Growth Tips', url:'https://orangemonke.com/blogs/instagram-algorithm/' },
+        { id:'s9', n:9, pub:'Creatorflow', title:'Instagram Algorithm 2026: What Changed (+ How to Adapt)', url:'https://creatorflow.so/blog/instagram-algorithm-2026/' },
+        { id:'s10', n:10, pub:'DataSlayer', title:'5 Ranking Signals Mosseri Confirmed', url:'https://www.dataslayer.ai/blog/instagram-algorithm-2025-complete-guide-for-marketers' },
+        { id:'s11', n:11, pub:'Fanpage Karma', title:'Instagram Reels Algorithm 2025: Key Ranking Factors', url:'https://www.fanpagekarma.com/insights/instagram-reels-algorithm/' },
+        { id:'s12', n:12, pub:'Torro', title:'Instagram Algorithm 2025 (Explained by Adam Mosseri)', url:'https://torro.io/blog/instagram-algorithm-2025-explained' },
+        { id:'s14', n:14, pub:'Funnl', title:'Instagram Algorithm 2025: How It Works and How to Win', url:'https://funnl.ai/instagram-algorithm-2025-how-it-works-and-how-to-win/' },
+        { id:'s16', n:16, pub:'Creatorflow', title:'2026 surface-by-surface signal breakdown', url:'https://creatorflow.so/blog/instagram-algorithm-2026/' },
+        { id:'s18', n:18, pub:'Pano', title:'Best Practices for First-Slide Carousel Hooks', url:'https://panocollages.com/blog/best-practices-for-first-slide-carousel-hooks' },
+        { id:'s19', n:19, pub:'Pineable', title:'Social Media Carousel Design Best Practices', url:'https://pineable.com/blog/social-media-carousel-design-best-practices' },
+        { id:'s20', n:20, pub:'Futuristic Marketing', title:'Instagram Carousel Design: Complete Guide', url:'https://futuristicmarketingservices.com/Blogs/graphic-designing/instagram-carousel-design-guide/' },
+        { id:'s22', n:22, pub:'Carouselli', title:'Instagram Carousel Best Practices 2026: 12 Rules', url:'https://carouselli.com/blog/instagram-carousel-best-practices' },
+        { id:'s24', n:24, pub:'PostEverywhere', title:'Instagram Carousel Best Practices for More Engagement', url:'https://posteverywhere.ai/blog/instagram-carousel-best-practices' },
+        { id:'s27', n:27, pub:'CampaignSwift', title:'Instagram Safe Zone Sizes Guide 2026', url:'https://campaignswift.com/blog/instagram-safe-zone-sizes' },
+        { id:'s28', n:28, pub:'Blitzcut AI', title:'Best Caption Size for Instagram Reels (2026)', url:'https://blitzcutai.com/blog/best-caption-size-instagram-reels-2026' },
+        { id:'s32', n:32, pub:'TryMyPost', title:'Instagram Reels Safe Zones & Text Placement 2026', url:'https://www.trymypost.com/blog/instagram-reels-safe-zones-text-placement-2026' },
+        { id:'s34', n:34, pub:'Later', title:'Stories stickers for engagement', url:'https://later.com/blog/how-instagram-algorithm-works/' },
+        { id:'s36', n:36, pub:'Storrito', title:'More Engagement with Polls and Questions', url:'https://storrito.com/resources/storrito-poll-question-stickers-instagram-2026-algorithm-replies/' },
+        { id:'s39', n:39, pub:'Aurelius Media', title:'What Actually Works on Instagram in 2026', url:'https://www.aureliusmedia.co/blog/what-works-on-instagram-2026' },
+        { id:'s41', n:41, pub:'Creatorflow', title:'Stories cadence & DM-reply strategy', url:'https://creatorflow.so/blog/instagram-algorithm-2026/' },
+        { id:'s44', n:44, pub:'Vexub', title:'25 Viral Hook Formulas — TikTok & Reels', url:'https://vexub.com/blog/viral-short-form-video-hooks' },
+        { id:'s50', n:50, pub:'Conbersa', title:'Best TikTok Hooks That Stop the Scroll in 2026', url:'https://www.conbersa.ai/learn/best-tiktok-hooks' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
