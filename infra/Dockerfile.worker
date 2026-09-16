@@ -3,7 +3,7 @@
 # The Playwright base image ships Chromium and every system library it needs,
 # which is a long and easily-broken list to reproduce by hand. Keep this tag in
 # step with the `playwright` version in apps/worker/pyproject.toml.
-FROM mcr.microsoft.com/playwright/python:v1.49.0-jammy
+FROM mcr.microsoft.com/playwright/python:v1.49.0-noble
 
 # ffmpeg for reel assembly; fonts-liberation covers generic fallbacks (brand
 # webfonts are served by the app itself and loaded by the browser).

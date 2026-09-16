@@ -77,14 +77,16 @@ export interface PromptContext {
 
 /**
  * Build the picker's starting prompt. An explicit `imagePrompt` on the frame
- * always wins — that is the AI's own considered prompt on the Photo format, and
- * nothing here should override it.
+ * always wins as the subject/composition — that is the AI's own considered
+ * prompt on the Photo format — but the no-text/no-logo guardrail is not
+ * optional and is appended regardless of whether the model's instructions
+ * included it.
  */
 export function suggestImagePrompt({ style, slide, topic = "", brand = "" }: PromptContext): string {
   if (!slide) return "";
 
   const explicit = txt(slide.f.imagePrompt);
-  if (explicit) return explicit;
+  if (explicit) return /no text/i.test(explicit) ? explicit : `${explicit} ${BASE}`;
 
   const subj = subject(slide, topic);
   if (!subj) return "";
