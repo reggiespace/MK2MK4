@@ -406,7 +406,7 @@ export function FillStep({
           }}
         >
           <Icon name="refresh" size={14} strokeWidth={2.4} />
-          Regenerate
+          Rewrite text
         </button>
       </div>
 

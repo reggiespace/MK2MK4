@@ -11,17 +11,27 @@ import type { TemplateStyleId } from "../types";
  */
 
 describe("suggestImagePrompt", () => {
-  it("returns the AI's own prompt untouched when the frame carries one", () => {
+  it("keeps the AI's own subject but always appends the no-text guardrail", () => {
     // Photo templates declare an `imagePrompt` slot and the model fills it.
-    // Nothing derived should ever override a considered prompt.
+    // Its subject/composition should win, but the model isn't trusted to have
+    // asked for no text/logos/watermarks itself — that's enforced here.
     const explicit = "A bowl of lentils on a linen cloth, morning light through a kitchen window.";
-    expect(
-      suggestImagePrompt({
-        style: "photo",
-        slide: { kind: "1a-lifestyle", f: { imagePrompt: explicit, headline: "Ignored" } },
-        topic: "fibre",
-      }),
-    ).toBe(explicit);
+    const out = suggestImagePrompt({
+      style: "photo",
+      slide: { kind: "1a-lifestyle", f: { imagePrompt: explicit, headline: "Ignored" } },
+      topic: "fibre",
+    });
+    expect(out).toContain(explicit);
+    expect(out).toContain("no text");
+  });
+
+  it("doesn't double up the guardrail when the model already asked for no text", () => {
+    const explicit = "A bowl of lentils, no text, no logos anywhere in frame.";
+    const out = suggestImagePrompt({
+      style: "photo",
+      slide: { kind: "1a-lifestyle", f: { imagePrompt: explicit } },
+    });
+    expect(out).toBe(explicit);
   });
 
   it("derives a prompt from the frame's own copy for formats with no prompt slot", () => {

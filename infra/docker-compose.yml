@@ -72,6 +72,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-giq}:${POSTGRES_PASSWORD:-giq_dev_password}@postgres:5432/${POSTGRES_DB:-giq_studio}
       REDIS_URL: redis://redis:6379
       SESSION_SECRET: ${SESSION_SECRET}
+      OPERATOR_EMAIL: ${OPERATOR_EMAIL}
+      OPERATOR_PASSWORD: ${OPERATOR_PASSWORD}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
       FAL_KEY: ${FAL_KEY}
@@ -79,6 +81,10 @@ services:
       ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY}
       POSTIZ_API_KEY: ${POSTIZ_API_KEY}
       POSTIZ_BASE_URL: ${POSTIZ_BASE_URL}
+      POSTIZ_CHANNEL_US_FACEBOOK: ${POSTIZ_CHANNEL_US_FACEBOOK}
+      POSTIZ_CHANNEL_US_INSTAGRAM: ${POSTIZ_CHANNEL_US_INSTAGRAM}
+      POSTIZ_CHANNEL_BR_FACEBOOK: ${POSTIZ_CHANNEL_BR_FACEBOOK}
+      POSTIZ_CHANNEL_BR_INSTAGRAM: ${POSTIZ_CHANNEL_BR_INSTAGRAM}
       # The worker screenshots the app's own render route, so this must be
       # reachable from the worker container, not from the browser.
       WEB_BASE_URL: http://web:3000
@@ -96,7 +102,7 @@ services:
     volumes:
       - mediadata:/data/storage
     ports:
-      - "3000:3000"
+      - "8088:3000"
 
 volumes:
   pgdata:

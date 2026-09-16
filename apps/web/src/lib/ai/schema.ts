@@ -119,6 +119,15 @@ export function describeSlots(style: TemplateStyleId, kind: string): string {
     // character budget. Printing "≤ 0 chars" told the model to emit nothing,
     // which then failed the Review gate for being empty and required.
     if (s.max === 0) return `  - ${s.id} (${s.label}): no length limit, ${req}`;
+    if (s.id === "imagePrompt") {
+      return [
+        `  - ${s.id} (${s.label}): ≤ ${s.max} chars, ${req}`,
+        `    A fal.ai prompt describing a photograph of this slide's actual subject/topic.`,
+        `    Never ask for text, letters, words, numbers, logos, watermarks, or brand names`,
+        `    to appear in the image — those are rendered separately by the app. Describe`,
+        `    only the photographic scene: subject, setting, lighting, composition.`,
+      ].join("\n");
+    }
     return `  - ${s.id} (${s.label}): ≤ ${s.max} chars, ${req}`;
   });
   return `${kind} — ${k.name}: ${k.desc}\n${lines.join("\n")}`;

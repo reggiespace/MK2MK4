@@ -18,6 +18,10 @@ COPY . .
 # prisma generate only needs DATABASE_URL to be present (no real connection is
 # made); the real value is injected at container runtime, not build time.
 ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
+# next build statically collects page data, which imports session.ts, which
+# reads SESSION_SECRET eagerly at module load; the real value is injected at
+# container runtime, not build time.
+ENV SESSION_SECRET="build-time-placeholder-not-used-at-runtime"
 RUN pnpm --filter @giq/web exec prisma generate
 RUN pnpm --filter @giq/web build
 
