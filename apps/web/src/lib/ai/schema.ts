@@ -118,7 +118,7 @@ export function describeSlots(style: TemplateStyleId, kind: string): string {
     // `max: 0` means unbounded — URLs, timestamps and post refs carry no
     // character budget. Printing "≤ 0 chars" told the model to emit nothing,
     // which then failed the Review gate for being empty and required.
-    if (s.max === 0) return `  - ${s.id} (${s.label}): no length limit, ${req}`;
+    if (s.max <= 0) return `  - ${s.id} (${s.label}): no length limit, ${req}`;
     if (s.id === "imagePrompt") {
       return [
         `  - ${s.id} (${s.label}): ≤ ${s.max} chars, ${req}`,
