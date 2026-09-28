@@ -134,9 +134,9 @@ Note: `Slide.tsx` and `theme.ts` are both in the concurrent-edit zone, so this m
 
 ---
 
-### Gap 7 — Two smaller manifest/prompt defects worth fixing
+### Gap 7 — Two smaller manifest/prompt defects (one fixed, one worth fixing)
 
-1. **`≤ 0 chars` in the prompt.** `describeSlots` emits `` `≤ ${s.max} chars` `` for plain text slots (`lib/ai/schema.ts:118`). Slots declared with `max: 0` to mean "unbounded" — story `targetTime`, `linkUrl` (`manifests.ts:336, 338`) and `postRef` (`manifests.ts:347`) — are therefore described to the model as "≤ 0 chars, required". All three are `required: true`, so `validateDoc` (`doc.ts:194`) blocks publish if the model complies with the instruction. Fix in `schema.ts:118`: emit "no limit" when `s.max <= 0`. `fitToBudget` already treats `max <= 0` as unbounded (`schema.ts:94`) — only the description is wrong.
+1. **Fixed — `≤ 0 chars` in the prompt.** `describeSlots` used to emit `` `≤ ${s.max} chars` `` unconditionally for plain text slots, so `max: 0` slots ("unbounded") — story `targetTime`, `linkUrl` and `postRef` — were described to the model as "≤ 0 chars, required", which could block publish via `validateDoc` (`doc.ts:194`). `describeSlots` (`lib/ai/schema.ts:118`) now emits "no length limit" whenever `s.max <= 0`, matching `fitToBudget`'s existing unbounded check (`schema.ts:94`).
 2. **`kind.sticker` is inert.** Declared in `types.ts:50`, populated for all six story kinds, read by nothing. `validateDoc` has no story-specific check. Convention C4 holds only because every story kind happens to declare one — and `1e-countdown` declares `"countdown+link"`, which is two stickers. If the "exactly one" rule matters, add a story branch to `validateDoc` in `apps/web/src/lib/templates/doc.ts` and surface `kind.sticker` in the Slots tab header so the user can see which tap target a frame carries.
 
 ---
